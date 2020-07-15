@@ -25,8 +25,6 @@
 
 \usepackage{libertine}
 
-%\usepackage{natbib}
-
 \usepackage{color}
 \usepackage{changebar}
 \usepackage{soul}
@@ -85,7 +83,13 @@
 ,style=authoryear
 ,backend=biber
 ]{biblatex}
-\addbibresource{bibliography/dissertation.bib}
+\addbibresource{bibliography/ml/papers.bib}
+\addbibresource{bibliography/ml/confs.bib}
+\addbibresource{bibliography/ml/misc.bib}
+\addbibresource{bibliography/network/papers.bib}
+\addbibresource{bibliography/network/confs.bib}
+\addbibresource{bibliography/network/misc.bib}
+\addbibresource{bibliography/network/rfcs.bib}
 
 % Need to call 'makeglossaries'...
 \makeglossaries
@@ -183,6 +187,7 @@
 % Introduction and research problem
 \part{Introduction and Background}
 \input{"chapters/p1-introduction/intro.tex"}
+\input{"chapters/p1-introduction/lit-networks.tex"}
 
 \part{Real stuff}
 
