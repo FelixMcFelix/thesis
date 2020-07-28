@@ -1,7 +1,12 @@
 % !TeX document-id = {29d93272-0c70-47c0-a2c9-f98f7fffc7db}
+% !TeX program = xelatex
 % !BIB program = biber
 
+% \documentclass[twoside,hidelink]{glasgowthesis}
 \documentclass[twoside,hidelinks]{glasgowthesis}
+%\documentclass[11pt,paper=b5,footinclude,headinclude]{scrbook}
+%\usepackage{classicthesis}
+
 % ^^ draft shows overfilled boxes.
 % ^^ replace "oneside" with "twoside" to set the gutter correctly for
 %    two-sided printing.
@@ -10,6 +15,7 @@
 
 \usepackage[T1]{fontenc}
 
+\usepackage[UKenglish]{babel}
 \usepackage{graphics}
 \usepackage{graphicx}
 \usepackage{url}
@@ -22,8 +28,16 @@
 \usepackage{bookmark}
 \usepackage[acronym, toc]{glossaries}
 \usepackage[notbib,nottoc,chapter]{tocbibind}
+\usepackage{blindtext}
+\usepackage[binary-units, per-mode=symbol]{siunitx}
 
+%\usepackage{Alegreya}
+\usepackage{AlegreyaSans}
+%\usepackage[sfdefault]{AlegreyaSans}
+
+%\usepackage{tgpagella}
 \usepackage{libertine}
+%\usepackage{FiraSans}
 
 \usepackage{color}
 \usepackage{changebar}
@@ -52,8 +66,8 @@
 \fancyfoot{}                            % Delete current footer settings
 \renewcommand{\headrulewidth}{0.2pt}
 \fancyhead[LE,RO]{\bfseries\thepage}    % Page number (boldface): left-even, right-odd
-%\fancyhead[RE]{\bfseries\nouppercase{\leftmark}}      % Chapter in the right on even pages
-\fancyhead[LO]{\bfseries\nouppercase{\rightmark}}     % Section in the left on odd pages
+\fancyhead[RE]{\sffamily\nouppercase{\leftmark}}      % Chapter in the right on even pages
+\fancyhead[LO]{\sffamily\nouppercase{\rightmark}}     % Section in the left on odd pages
 
 
 \setlength{\headheight}{15pt}        % adjust for fancyhdr warning
@@ -80,21 +94,32 @@
 
 \usepackage[sortcites
 %,style=numeric-comp
-,style=authoryear
+,style=apa
+%,style=authoryear
+%,style=ext-authoryear-comp
+%,style=ext-alphabetic
+,maxcitenames=2
+,maxbibnames=99
 ,backend=biber
 ]{biblatex}
 \addbibresource{bibliography/ml/papers.bib}
 \addbibresource{bibliography/ml/confs.bib}
 \addbibresource{bibliography/ml/misc.bib}
+\addbibresource{bibliography/ml/books.bib}
 \addbibresource{bibliography/network/papers.bib}
 \addbibresource{bibliography/network/confs.bib}
 \addbibresource{bibliography/network/misc.bib}
 \addbibresource{bibliography/network/rfcs.bib}
+\DefineBibliographyStrings{english}{%
+	andothers = {\emph{et al}\adddot}
+}
 
 % Need to call 'makeglossaries'...
 \makeglossaries
 \input{"glossary.tex"}
 \input{"acronyms.tex"}
+
+\input{"uofg-colours.tex"}
 
 \newcommand{\mytitle}{Programmable, Data-driven Networks for the Masses}
 \newcommand{\myname}{Kyle A. Simpson}
@@ -125,12 +150,14 @@
 
 \cleardoublepage
 
+\newgeometry{textwidth=12.5cm}
+
 \pagenumbering{roman}
 
 \input{"chapters/frontmatter/abstract.tex"} 
 
 \newpage
-\input{"chapters/frontmatter/acks.tex"} 
+\input{"chapters/frontmatter/acks.tex"}
 
 \newpage
 \input{"chapters/frontmatter/original.tex"} 
@@ -185,17 +212,27 @@
 
 % -----------------------------------------------------------------------------
 % Introduction and research problem
-\part{Introduction and Background}
+%\part{Background}
 \input{"chapters/p1-introduction/intro.tex"}
+
+\part{Background}
 \input{"chapters/p1-introduction/lit-networks.tex"}
+\input{"chapters/p1-introduction/lit-ddn.tex"}
+\input{"chapters/p1-introduction/lit-pdp.tex"}
 
-\part{Real stuff}
+\part{Improving Deployability}
 
-\chapter{A real thing}
+\chapter{TNSM -- MaRL}
 
-\part{Realer Stuff}
+\chapter{(Hopefully) SoSR -- RL-PDP}
 
-\chapter{A realer thing}
+\part{Enabling New Use-Cases with Programmability}
+
+\chapter{(Hopefully) GlobeCom -- Sei{\dh}r}
+
+\part{Conclusions}
+
+\chapter{The End.}
 
 % -----------------------------------------------------------------------------
 
@@ -206,7 +243,9 @@
 
 % -----------------------------------------------------------------------------
 \newpage
-
+%\makeatletter
+%\let\ps@plain=\ps@fancy
+%\makeatother
 % Bibliography
 \addcontentsline{toc}{part}{References}
 \printbibliography[title={References}]

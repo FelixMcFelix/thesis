@@ -1,0 +1,65 @@
+\chapter{Programmable Data-Planes}
+
+?? arbitrarily reconfigurable hardware located directly on the data path
+
+?? mention how it came to this: this was an alternate solution to latency/throughput concerns which plague VNF approaches as they scale (see Metron paper for good discussion of RSS, etc., which solve these problems in their own way)
+
+?? new ways to implement stateful + stateless packet processing.
+
+?? History? RMT~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13}, ClickNP, GPU offload papers. See Metron paper for cites.
+
+\marginnote{Test text hello.}
+
+?? RMT was the first big innovation over OpenFlow --- read this!!
+
+\section{Control and Management}
+
+?? Refer back to History through OpenFlow -- what prompted the evolution?
+
+?? Control of these devices has a lot in common with OpenFlow -- controller, except using commodity hardware to install firmwares, and so on,
+
+\section{Software Frameworks}
+
+\subsection{eBPF}
+?? eBPF
+
+?? BPFabric
+
+\subsection{P4}
+?? P4
+
+?? Others who lost?
+
+?? How do these differ? What do they share?
+
+?? Popular frameworks now support this -- ONOS, eBPF translators, behavioural model software switch...
+
+\section{Use Cases}
+
+\subsection{In-Network Computation}
+?? In-network computation.
+
+\subsection{Network Telemetry}
+?? Others (try to avoid DDN cases here).
+
+\subsection{Transport Layer Optimisation}
+?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
+
+\section{Hardware Designs}
+
+?? Mention FPGA vs many-core
+
+?? P4 etc. can actually all run on commodity hardware, which offers a third (suboptimal) hardware class.
+
+?? Ref the paper that Haruna presented: pareto front of work-division optimality for SmartNICs (i.e., addition of high-latency cores).
+
+?? How do these limit and influence what code can be run on different device classes? The time taken to adapt the network?
+
+\subsection{Models of Parallelism}
+
+\subsection{Flexibility}
+
+\subsection{Mapping Software Frameworks}
+
+\section{Summary}
+Eh. \marginnote{Test text hello. Test text hello. Test text hello. Test text hello. Test text hello. Test text hello. Test text hello. Test text hello. Test text hello.}

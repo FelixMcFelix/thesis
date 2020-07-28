@@ -16,15 +16,19 @@
 %   'nogutter' option for digital copy.
 % ]
 \ProvidesClass{glasgowthesis}
-\PassOptionsToPackage{bindingoffset=2.5cm, left=1.5cm, right=1.5cm, top=1.8cm, bottom=1.8cm, includehead, includefoot}{geometry}
+\PassOptionsToPackage{bindingoffset=2.5cm, left=1.5cm, right=1.5cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=15.5cm}{geometry}
+%\PassOptionsToPackage{bindingoffset=2.5cm, margin=2in, includehead, includefoot}{geometry}
 \DeclareOption{nogutter}{
-  \PassOptionsToPackage{bindingoffset=0cm, left=2.75cm, right=2.75cm, top=1.8cm, bottom=1.8cm, includehead, includefoot}{geometry}
+  \PassOptionsToPackage{bindingoffset=0cm, left=2.75cm, right=2.75cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=15.5cm}{geometry}
 }
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{book}}
 \ProcessOptions
 \LoadClass[12pt,a4paper,openright]{book}
 
+\usepackage{marginnote}
 \usepackage{geometry}
+
+\usepackage[hyphens,spaces,obeyspaces]{url}\urlstyle{sf}
 
 \usepackage{ifpdf}
 \ifpdf
@@ -35,11 +39,11 @@
 
 % Fonts.
 % Times New Roman for the body.
-\usepackage{times}
+% \usepackage{times}
 % The guidelines state Arial for the headings. Really. Helvetica is
 % close enough.
 \usepackage{sectsty}
-\usepackage{helvet}
+% \usepackage{helvet}
 \allsectionsfont{\sffamily}
 
 % Set paragraph layout.
@@ -49,6 +53,7 @@
 % Set line spacing to one-and-a-half.
 \usepackage{setspace}
 \onehalfspacing
+\setstretch{0.9}
 
 % Page margins. The University requires A4 (210 × 297 mm), with the following
 % spacings:
@@ -62,7 +67,7 @@
 %  http://amath.colorado.edu/documentation/LaTeX/reference/layout.html
 
 % The actual width of the body text must be 15.5cm.
-\textwidth 15.5cm
+% \textwidth 15.5cm
 
 % The default side margin is 1" + whatever is set here. 1" == 2.54cm.
 % To meet the 4.0cm of 1.5cm margin + 2.5cm gutter:

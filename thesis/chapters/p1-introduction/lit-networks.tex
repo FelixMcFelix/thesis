@@ -1,12 +1,12 @@
-% TODO: split file by chapter.
-
 \chapter{Computer Networks}
 
 ?? What are networks?
 
 ?? Possibly discuss the internet
 
-\section{Operation}
+?? Lead in from ARPAnet et al. (2 paras). Scientific comms -> general use,
+
+\section{Operation and Management}
 
 ?? network-network comms? BGP
 
@@ -18,6 +18,12 @@
 
 ?? Two axes: end-to-end protocol and fabric behaviour. interact in a very delicate way (i.e., host )
 
+\subsection{Software-Defined Networking}
+
+?? Run through the historical context. Why? What led into P4 (OpenFlow, network operating systems...)
+
+\subsection{?? Something else}
+
 \section{Traffic Characteristics}
 
 ?? Can (and should probably) discuss different traffic classes here: congestion-aware, -unaware...
@@ -26,124 +32,23 @@
 
 ?? Discussion of evolution of traffic: what's come before, what's coming next.
 
-\section{Software-Defined Networking}
+\subsection{Evolution}
 
-?? Run through the historical context. Why? What led into P4 (OpenFlow, network operating systems...)
+\subsection{Emerging Protocols}
 
-\section{Attacks on the Internet}
+\subsection{Limitations}
+
+\section{Problems in Modern Networks}
+
+\subsection{Attacks on the Internet}
 
 ?? DDoS -> split by type.
 
 ?? Other attacks?
 
-\section{Summary}
+\subsection{Scaling}
 
-% -------------------------
-
-\chapter{Data-driven Networking}
-
-?? Firstly, what is data-driven networking? Probably: making use of measurements, observations, and statistics (run-time, simulation, pen-and-paper) to enhance and improve the operation of a computer network.
-
-?? enhance in what way? what metrics?
-
-\section{Use Cases}
-
-?? Optimisation
-
-?? Design
-
-?? Detection / telemetry / inference
-
-?? Refer back to the computer networks chapter: topologies, routing, defence, ... all present problems who are often served and solved by the use of heuristics.
-
-\section{Function approximation}
-
-?? Explain how different approximators work, I suppose?
-
-?? Linear coding
-
-?? Neural networks
-
-\section{Learning an approximation}
-
-?? How do we learn a nice policy?
-
-\subsection{Gradient Descent}
-
-?? The standard. Probably space here to reference a good many techniques.
-
-\subsection{Federated Learning}
-
-?? Describe it here
-
-?? Issue? Only works on certain problems (explicitly unsupervised, or easy to acquire local supervised measurements).
-
-\subsection{Reinforcement Learning}
-
-?? RL works in tandem with other mathematical training approaches: the key insight is that the structure of an MDP allows external information and model(-free) observation to strengthen or weaken different function responses.
-
-\section{Hardware considerations}
-
-?? Put in all the stuff about quantisation here?
-
-\section{Security}
-
-?? Discuss attacks on ML models, techniques, paradigms here.
-
-\subsection{Attacks on Data-Driven Techniques}
-
-?? White-box attacks -- evasion, adversarial examples, etc.
-
-\subsection{Defences on above}
-
-?? DIstillation, other papers I read ages ago.
-
-?? Mine the relevant conferences for more...
+\subsection{Fairness}
 
 \section{Summary}
-
-% -------------------------
-
-\chapter{Programmable Data-Planes}
-
-?? arbitrarily reconfigurable hardware located directly on the data path
-
-?? mention 
-
-\section{Control and Management}
-
-?? Refer back to History through OpenFlow -- what prompted the evolution?
-
-?? Control of these devices has a lot in common with OpenFlow -- controller, except using commodity hardware to install firmwares, and so on,
-
-\section{Frameworks}
-
-?? eBPF
-
-?? BPFabric
-
-?? P4
-
-?? Others who lost?
-
-?? How do these differ? What do they share?
-
-\section{Use Cases}
-
-?? In-network computation.
-
-?? Others (try to avoid DDN cases here).
-
-\section{Hardware designs}
-
-?? Mention FPGA vs many-core
-
-?? P4 etc. can actually all run on commodity hardware, which offers a third (suboptimal) hardware class.
-
-?? Ref the paper that Haruna presented: pareto front of work-division optimality for SmartNICs (i.e., addition of high-latency cores).
-
-?? How do these limit and influence what code can be run on different device classes? The time taken to adapt the network?
-
-\section{Summary}
-
-% -------------------------
+Eh.
