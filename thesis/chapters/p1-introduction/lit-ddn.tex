@@ -122,8 +122,11 @@ It isn't made clear how these findings relate to more complex systems or models,
 
 \paragraph{Evasion Attacks/Adversarial Examples}
 
+?? Be clear---this is still evolving today!
+
 ?? Yeah these are a thing (note: haven't actually read most of these aside from the wonderful turtle-rifle 3d printer one).
-?? The one, the only, the original \cite{DBLP:journals/corr/SzegedyZSBEGF13}, the application \cite{DBLP:journals/corr/GoodfellowSS14}.
+?? The one, the only, the original \parencite{DBLP:journals/corr/SzegedyZSBEGF13}, the application \parencite{DBLP:journals/corr/GoodfellowSS14}.
+?? Second one here suggests that part of the weakness is that models fall back on their heavily linear components -- verify this.
 
 ?? Most recently summed up in the SoK paper by \textcite{DBLP:conf/eurosp/PapernotMSW18}.
 
@@ -145,6 +148,9 @@ Furthermore, from their retrained models they are able to extract images of face
 As far as defences go, they recommend: hiding or rounding confidence values (to limited success); applying differential privacy to mode parameters (an open question); and ensemble methods (which may still be beaten by evasion attacks).
 
 ?? RL algorithms based on NNs are just as vulnerable \cite{DBLP:journals/corr/HuangPGDA17}!
+
+?? New work \parencite{DBLP:journals/corr/abs-2002-04599} covering the balancing attack between sensitivity/invariance-based attacks. Sensitivity is what we usually think of (small change which doesn't impact the true label), invariance is a change which \emph{would} change the true label, but is performed in such a way that the model still outputs the old label. Implication: defending against one makes you more sensitive to the other (specifically, attacks within some $\ell_p$ norm ball)---even more sensitive than an undefended network.
+?? Even modern provably robust systems based on $\ell_\infty$ \parencite{DBLP:conf/iclr/ZhangCXGSLBH20} are vuln.
 
 \subsection{Defences on above}
 

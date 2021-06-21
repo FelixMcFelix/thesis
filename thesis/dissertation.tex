@@ -215,20 +215,74 @@
 %\part{Background}
 \input{"chapters/p1-introduction/intro.tex"}
 
+% -----
+
 \part{Background}
 \input{"chapters/p1-introduction/lit-networks.tex"}
 \input{"chapters/p1-introduction/lit-ddn.tex"}
 \input{"chapters/p1-introduction/lit-pdp.tex"}
 
+% -----
+
 \part{Improving Deployability}
 
-\chapter{TNSM -- MaRL}
+\chapter{DDoS Prevention by Multi-Agent Reinforcement Learning}
+\section{Threat Model}
+\section{Agent Design}
+\subsection{Weaknesses in Prior Art}
+\subsection{Feature Spaces}
+\subsection{Reward Functions}
+\subsection{Action Spaces}
+\subsection{Systems and Threat Considerations}
+\section{System Design}
+\section{Modified Learning Algorithms}
+\section{Methodology}
+\subsection{Traffic Modelling}
+\subsection{Topologies and Testing Environments}
+\section{Evaluation}
+\subsection{Congestion-aware Traffic}
+\subsection{Congestion-unaware Traffic}
+\subsection{Increased Attack Volume}
+\subsection{Computational Cost}
 
-\chapter{(Hopefully) SoSR -- RL-PDP}
+\chapter{In-network Reinforcement Learning}
+\section{Analysing State Slippage}
+\section{Design}
+\subsection{Functional Requirements}
+\subsection{SmartNIC Targeted Designs}
+\subsection{Other Proposals}
+\section{Methodology}
+\subsection{Topologies and Testing Environments}
+\section{Evaluation}
+\subsection{Quantisation}
+\subsection{Effects on Background Traffic}
+\subsection{Scaling with Device Resources}
+\subsection{State Slippage}
+\subsection{Training Time}
+\subsection{Accuracy in MARL anti-DDoS}
 
-\part{Enabling New Use-Cases with Programmability}
+% -----
 
-\chapter{(Hopefully) GlobeCom -- Sei{\dh}r}
+\part{Enabling New Use Cases}
+
+\chapter{Scalable Flow Classification}
+\section{Motivation}
+\section{Sei\dh{}r Histograms}
+\subsection{Algorithm}
+\subsection{Packet Generation on PSA}
+\section{Use case: TCP CCA Detection}
+\subsection{Observable Differences}
+\subsection{Investigating the BBR Algorithm}
+\section{Methodology}
+\subsection{Testing Environments}
+\subsection{Data Collection/Generation}
+\subsection{ML Model Architecture}
+\section{Evaluation}
+\subsection{Device Memory Costs}
+\subsection{Bandwidth Costs}
+\subsection{CCA Detection Accuracy and Costs}
+
+\chapter{Dynamic Fault Detection}
 
 \part{Conclusions}
 
