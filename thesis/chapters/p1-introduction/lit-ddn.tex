@@ -82,7 +82,7 @@ Invented by \textcite{DBLP:journals/corr/KonecnyMRR16}.
 
 ?? RL works in tandem with other mathematical training approaches: the key insight is that the structure of an MDP allows external information and model(-free) observation to strengthen or weaken different function responses.
 
-?? The reference~\cite{DBLP:books/lib/SuttonB18}
+?? The reference~\parencite{RL2E}
 
 Automatic, adaptive network control and optimisation requires accurate, recent state to make optimal decisions and to act in a timely manner.
 Action execution, computation and training have real costs, which have been shown to negatively affect the performance of asynchronous RL systems~\cite{DBLP:journals/firai/TravnikMSP18}---hence, data-driven networking applications are profoundly affected.
@@ -91,9 +91,110 @@ Placing learning algorithms, policy execution, and measurement into the network 
 
 ?? Can we relate this to the broader ML notion of concept drift?
 
-\section{Hardware considerations}
+\emph{Reinforcement learning} (RL) algorithms are methods of training an \emph{agent} to choose an optimal sequence of actions in pursuit of a given task \cite{RL2E}.
+Like most machine learning methods, an RL algorithm uses gradient information to update the parameters used to approximate a function.
+In RL contexts, this is a state$\rightarrow$action function known as a \emph{policy}.
+When training, agents are given \emph{reward measurements} and a learned policy acts to maximise the \emph{expected discounted reward} received.
+When a pre-trained policy is deployed, this signal is not required.
 
-?? Put in all the stuff about quantisation here?
+It's useful to consider how these algorithms differ from other ML use cases, such as classifiers.
+The main differences lie in how this gradient information is used, and combined with \emph{reward measurements} received from the environment.
+Rather than adapting the learned parameters along the gradient using an error value from a target value, because the optimal actions aren't known they adjust values using a \emph{Markov Decision Process} (MDP)---capturing state trajectories to adjust value based on past and future decisions.
+
+Consider the single-step, semi-gradient Sarsa algorithm~\cite[pp. \numrange{217}{221}]{RL2E}:
+\begin{subequations}
+	\begin{gather}
+		\delta_t = R_{t+1} + \gamma \acval{S_{t+1}}{A_{t+1}}{\wvec{t}} - \acval{S_t}{A_t}{\wvec{t}},\\
+		\bm{w}_{t+1} = \bm{w}_{t} + \alpha \delta_t \nabla{\acval{S_t}{A_t}{\wvec{t}}},
+	\end{gather}%
+	\label{eqn:sg-sarsa}%
+	where $\delta_t$ is known as the \emph{temporal-difference} (TD) error, $\acval{S}{A}{\wvec{}}$ denotes the \emph{value} of an action $A$ taken in state $S$ according to the policy $\wvec{}$, and the vector gradient $\nabla$ is taken with respect to $\wvec{}$. $\gamma,\alpha\in[0,1]$ are the discount factor and learning rate (governing the degree of forward planning and policy stability, respectively).
+\end{subequations}
+In essence, at each timestep the policy parameters ($\wvec{}$) are increased along the gradient ($\nabla{\acvalblank}$) using a fixed learning rate ($\alpha$) and a computed adjustment ($\delta_t$).
+This adjustment is equal to the difference between the chosen action $A$'s value in state $S$ and the reward received ($R_{t+1} - \acval{S_t}{A_t}{\wvec{}}$), \emph{plus} some part of the \emph{next} action's value ($\gamma\acval{S_{t+1}}{A_{t+1}}{\wvec{}}$).
+To give some context on the design space here, other algorithms may employ separate state value approximations, use the entirety of an agent's trace, or be tailored to characteristics of the policy approximator (e.g., how neural networks benefit from batching).
+
+\fakepara{RL in asynchronous environments}
+There remains some degree of divergence between the theory and implementation of RL agents.
+Consider \cref{fig:state-slip}: the traditional formulation of a Markov decision process assumes that an agent receives a new view of the world's state at fixed time intervals, and then decides upon and executes an action instantly.
+The reality is that state information takes time to traverse the network, service times are offset by how quickly hosts respond to interrupts and deserialise requests, and action preference lists are often computed via expensive policy approximations.
+Action installation also incurs costs in fields such as network administration, initially to contact the controller and then for those actions to be installed via the control plane.
+
+These delays (and variance thereof) add noise to the state-action mapping being learned, which has a potent reduction to learning rate and final accuracy, even for simple grid world tasks according to \textcite{DBLP:journals/firai/TravnikMSP18}.
+They in turn show that reordering algorithmic steps can reduce these costs for online 1-step algorithms, but that reducing this further requires detailed agent-environment co-design.
+This principle has influenced the design of real network use cases, such RL-based congestion-control algorithms~\parencite{DBLP:journals/corr/abs-1910-04054}, showing that asynchrony is necessary for high-speed applications.
+Achieving this often requires that state measurements are combined or coalesced~\parencite{DBLP:journals/corr/abs-1910-04054,DBLP:journals/tnsm/SimpsonRP20} while expensive computations are ongoing.
+`Stopping the world' in the algorithmic sense causes significant performance degradation, as inference takes up to \SI{30}{\milli\second} in the above work on congestion control, or any time-sensitive control problems.
+
+\begin{figure}
+	\begin{subfigure}{0.45\linewidth}
+		\resizebox{\linewidth}{!}{
+			\centering
+			\begin{tikzpicture}
+				\node[circle, draw] (state) {$S$};
+				\node[circle, draw] (state') at ($(state) + (0, -2)$) {$S'$};
+				
+				\node (agent) at ($(2, 0) + (state)$) {Agent};
+				\node[below of=agent] (action) {Action $A$};
+				
+				\node[right of=state'] {$+ R$};
+				
+				\draw[->] (state) -- (state') node[midway, right] {$A$};
+				
+				\draw[dotted, ->, bend left = 30] (state) -- (agent);
+				\draw[->] (agent) -- (action);
+				\draw[dotted, ->] (action) -- (state);
+		\end{tikzpicture}}
+		\caption{Theory: state measurement, action computation, and learning are zero-cost.}
+	\end{subfigure}
+	\hspace{0.05\linewidth}
+	\begin{subfigure}{0.45\linewidth}
+		\resizebox{0.75\linewidth}{!}{
+			\centering
+			\begin{tikzpicture}
+				\node[circle, draw] (state) {$S$};
+				\node[circle, draw] (state') at ($(state) + (0, -1.5)$) {$S'$};
+				\node[circle, draw] (state'') at ($(state') + (0, -1.5)$) {$S''$};
+				
+				\node (agent) at ($(2, 0) + (state)$) {Agent};
+				\node[below of=agent] (action) {Action $A$};
+				
+				\node[right of=state''] {$+ R$};
+				
+				\draw[->] (state) -- (state') node[midway, right] {$\varnothing$};
+				\draw[->] (state') -- (state'') node[midway, right] {$A$};
+				
+				\draw[dotted, ->, bend left = 30] (state) -- (agent) node[midway, above] {$t_1$};
+				\draw[->] (agent) -- (action) node[midway, right] {$t_2$};
+				\draw[dotted, ->] (action) -- (state') node[midway, below] {$t_3$};
+		\end{tikzpicture}}
+		\caption{Reality: costs of measurement and action lead to \emph{state drift}---over a time delay $t_1+t_2+t_3$, inaction transforms state $S$ into $S'$.}
+	\end{subfigure}
+	\caption{Asynchronous RL delays and state slippage (policy updates omitted).\label{fig:state-slip}}
+\end{figure}
+
+%?? Find some cites citing the relevance of this problem wrt. self-driving cars, robotics, etc.
+
+The solution we propose is to make use of the recent wave of programmable network devices to \emph{bring reinforcement learning to the dataplane}---referring again to \cref{fig:state-slip}, we would place place state measurement ($t_1$), low-cost decision-making processes ($t_2$), and controlled systems ($t_3$) as close to one another as possible.
+In networks, actions are most likely to be installed on backbone switches, bump-in-the-wire NICs or middleboxes, and in the NICs of end-hosts.
+Ideally, these functions which comprise an RL agent would all be collocated on the same chip or device, but this is easier said than done. 
+Both programmable devices and the network environment make this more difficult, as we'll examine in the sequel.
+
+\section{Numerical representations for embedded ML}
+A key feature universally lacking from the target environments is floating-point arithmetic support.
+Luckily, the task of bringing machine learning models to resource-constrained environments without these capabilities is well-studied.
+Quantisation and alternative data formats have been suggested to make ML inference feasible on resource- and power-limited platforms, work around hardware constraints, or compute faster and more efficiently.
+Lower bit depths reduce memory footprints, and improve throughput in designs such as \emph{bfloat16}~\parencite{bfloat16-blog} in Google TPUs~\parencite{DBLP:journals/sigops/XieDMKVZT18}, \emph{hfp8}~\parencite{DBLP:conf/nips/SunCCWVSCZG19}, and other floating point formats~\parencite{DBLP:journals/corr/abs-2007-01530}.
+In many cases, accuracy losses for doing so are negligible.
+Much of this work goes further still towards integer~\parencite{tensorrt-8bit} or binarised~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16} representations, sacrificing dynamic range for simpler arithmetic operations.
+The works mentions above use similar techniques to make inference tractable on network hardware, i.e., to bring neural networks to the dataplane~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}.
+
+To make RL workloads feasible under such constraints, we propose the use of quantised, fixed-point representations such as $Qm.n$ (i.e., $m$\si{bit} signed integers with an $n$\si{bit} fractional part), which allow us to evaluate and update policies using only integer arithmetic.
+This is not only essential in performing this work, but also serves as a mechanism for reducing the processing and memory costs of function approximation ($t_2$, \cref{fig:state-slip}).
+
+When combined with the above P4-driven techniques for in-network flow/device measurement, we at last have the mechanisms to collocate the key processes of an RL agent.
+Moreover, the base P4 dataplane can be used to simplify parsing logic and offer runtime control over which flows/packets are monitored, alongside other packet actions.
+This again fits our goals of integrating RL techniques directly within bump-in-the-wire installations and at end-hosts.
 
 \section{Security}
 
@@ -187,3 +288,29 @@ An interesting area that isn't discussed is how different sampling distributions
 
 \section{Summary}
 Eh.
+
+\subsection{Efficient policy approximation}
+Some problems either evolve over time in unpredictable ways, or cannot be easily modelled.
+This can then make \emph{online} learning of the task an attractive prospect, using a single available stream of experience.
+\emph{Deep neural networks} (DNNs), particularly when used as the basis for an RL agent's policy, require vast amounts of experience to converge on an accurate parameter set.
+In many problem domains, this equates to training from compute-years worth of distributed offline simulations, which is at odds with the need to adapt to changes in the underlying problem \emph{as they happen}.
+Achieving stable learning requires sizeable batches of gradients to be computed, potentially using the entire experience replay from each simulation.
+Although there has been a vested interest in efficiently \emph{executing} more complex function approximators such as DNNs in-NIC~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:journals/corr/abs-2009-02353,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,langlet-ml-netronome}, the computational cost of gradient computation via backpropagation remains too significant on embedded hardware.
+
+%?? Probably want some cites on the need for batching in NN methods, even though this is understood. DL book?
+
+We then return again to what classical RL methods can offer us; in particular, the simple linear function approximation given by \emph{tile coding} \cite[pp.\ \numrange{217}{221}]{RL2E}.
+The idea is simple: a policy is represented by sets of tiles, each covering one or more dimensions of the input state with several overlapping tilings (offset stepwise to provide generalisation).
+A state vector produces a single `hit' in each tiling, which provides both the set of action preference lists to sum during inference \emph{and} the set of tiles to update at the next timestep.
+Crucially, this internal representation ensures that there are no data dependencies between any tile hit calculations for an input state vector.
+This has important benefits for parallelisation.
+To select an action, we can produce a task for each tiling---retrieving the list of action values contributed by the tile activated by the input state.
+An aggregate step sums up all action preference lists, and the action with the highest value is then selected.
+Updating the policy (with a new $\delta_t$ value) has no aggregate step, and as tile indices map to disjoint memory regions no locks are required.
+
+For instance, a policy with $m$ sets of tiles (each having its own set of input dimensions), each containing $n$ overlapping tilings then creates $m \times n$ separate tasks.\sidenote{Retrieving each individual action's value can be considered a work item (giving $m \times n \times a$ tasks when there are $a$ actions). However, this requires the tile coding operation to repeated $a$ times per tile, which is likely extremely wasteful outside of extreme degrees of parallelism.}
+As an example, a real-world policy size which we examine later (\cref{sec:experimental-setup}) with one bias tile and \num{16} sets containing \num{8} tilings creates \num{129} work items.
+
+Computing a tile hit requires one division per dimension, which is an expensive addition to the ALU operations we require from a platform.
+However, if the width of tiles are fixed at powers-of-two, then these may be replaced with right bitshifts.
+As we shall see shortly, this aligns with our choice of numerical representation.

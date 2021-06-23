@@ -1,0 +1,90 @@
+% Hack command to insert tables.
+\makeatletter\let\expandableinput\@@input\makeatother
+
+% Wingdings for tables etc.
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+% \paragraph, without the paragraph.
+\newcommand{\fakepara}[1]{\noindent\textbf{#1:}}
+
+% Get Booktab style ruling in algorithm blocks.
+% Values shamelessly taken from egreg's answer in 
+% https://tex.stackexchange.com/a/345745/82917
+\makeatletter
+\renewcommand*{\@algocf@pre@ruled}{\hrule height\heavyrulewidth depth0pt \kern\belowrulesep}
+\renewcommand*{\algocf@caption@ruled}{\box\algocf@capbox\kern\aboverulesep\hrule height\lightrulewidth\kern\belowrulesep}
+\renewcommand*{\@algocf@post@ruled}{\kern\aboverulesep\hrule height\heavyrulewidth\relax}
+\makeatother
+
+% Needed to put emph, uline, bm into mathy places like an SI-format table
+\robustify\bfseries
+\robustify\emph
+%\robustify\uline
+
+% Nicer et al.
+\DefineBibliographyStrings{english}{%
+	andothers = {\emph{et al}\adddot}
+}
+
+% `Encourage' cref to be nicer.
+\newcommand{\crefrangeconjunction}{--}
+\crefname{table}{table}{tables}
+
+% Terms used in the OPaL paper so that I could rename it down the line if I so chose.
+\newcommand{\approach}{On Path Learning}
+\newcommand{\approachshort}{OPaL}
+\newcommand{\Coopfw}{\emph{CoOp}}
+\newcommand{\coopfw}{\Coopfw}
+\newcommand{\Indfw}{\emph{Ind}}
+\newcommand{\indfw}{\Indfw}
+\newcommand{\inring}{\textsc{In}}
+\newcommand{\outring}{\textsc{Out}}
+
+% Insight environment; pretty, but pretentious!
+\newcounter{insightc}
+\newenvironment{insight}
+	{
+		\begin{tipblock}\refstepcounter{insightc}\textbf{Insight \theinsightc:}\em
+	}
+	{
+		\end{tipblock}
+	}
+
+% ToC lettering: change page numbers to be SF family.
+\makeatletter
+\let\oldl@chapter\l@chapter
+\def\l@chapter#1#2{\oldl@chapter{#1}{\sffamily{\itshape#2}}}
+
+\let\old@dottedcontentsline\@dottedtocline
+\def\@dottedtocline#1#2#3#4#5{%
+	\old@dottedcontentsline{#1}{#2}{#3}{#4}{{\sffamily{\itshape#5}}}}
+\makeatother
+
+%
+% Below here are some default additions from Stephen Strowes's template.
+%
+\hyphenation{Internet analysis analyse}
+
+\newcommand\TLSins[1]{
+  \cbstart{}
+  {
+    \color{blue}
+    \ul{#1}
+  }
+  \cbend{}
+}
+
+\newcommand\TLSdel[1]{
+  \cbdelete{}
+  {
+    \color{red}
+    \st{#1}
+  }
+}
+
+\newenvironment{codelisting}
+{\begin{list}{}{\setlength{\leftmargin}{1em}}\item\scriptsize\bfseries}
+{\end{list}}
+
+\newcommand{\note}[1]{\emph{\textbf{Note:}[#1]}}

@@ -16,14 +16,25 @@
 %   'nogutter' option for digital copy.
 % ]
 \ProvidesClass{glasgowthesis}
-\PassOptionsToPackage{bindingoffset=2.5cm, left=1.5cm, right=1.5cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=15.5cm}{geometry}
+
+%% These are the 12pt margins
+\PassOptionsToPackage{bindingoffset=2.5cm, left=1.5cm, right=1.5cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=15.5cm, showframe}{geometry}
 %\PassOptionsToPackage{bindingoffset=2.5cm, margin=2in, includehead, includefoot}{geometry}
 \DeclareOption{nogutter}{
   \PassOptionsToPackage{bindingoffset=0cm, left=2.75cm, right=2.75cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=15.5cm}{geometry}
 }
+
+%% These are the 11pt margins
+% \PassOptionsToPackage{bindingoffset=2.5cm, left=2.0cm, right=2.0cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=14.5cm, showframe}{geometry}
+% %\PassOptionsToPackage{bindingoffset=2.5cm, margin=2in, includehead, includefoot}{geometry}
+% \DeclareOption{nogutter}{
+%   \PassOptionsToPackage{bindingoffset=0cm, left=2.75cm, right=2.75cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=15cm}{geometry}
+% }
+
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{book}}
 \ProcessOptions
-\LoadClass[12pt,a4paper,openright]{book}
+\LoadClass[11pt,a4paper,openright]{book}
+% \LoadClass[12pt,a4paper,openright]{scrbook}
 
 \usepackage{marginnote}
 \usepackage{geometry}
@@ -53,7 +64,7 @@
 % Set line spacing to one-and-a-half.
 \usepackage{setspace}
 \onehalfspacing
-\setstretch{0.9}
+\setstretch{0.95}
 
 % Page margins. The University requires A4 (210 × 297 mm), with the following
 % spacings:
