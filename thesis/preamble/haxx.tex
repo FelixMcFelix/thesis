@@ -61,6 +61,27 @@
 	\old@dottedcontentsline{#1}{#2}{#3}{#4}{{\sffamily{\itshape#5}}}}
 \makeatother
 
+% Figure label formatting
+\captionsetup[figure]{labelfont=bf}
+\captionsetup[subfigure]{labelfont={bf,it},textfont={it}}
+
+% \sidenotetext
+% Used in \sidenote
+% Changed to meet the question of user J. Bratt (https://tex.stackexchange.com/questions/361622).
+\makeatletter
+\RenewDocumentCommand\sidenotetext{ o o +m }{%      
+	\IfNoValueOrEmptyTF{#1}{%
+		\@sidenotes@placemarginal{#2}{\textsuperscript{\thesidenote}{}~\footnotesize#3}%
+		\refstepcounter{sidenote}%
+	}{%
+		\@sidenotes@placemarginal{#2}{\textsuperscript{#1}~#3}%
+	}%
+}
+\makeatother
+
+% Consistent acronym expansion
+\renewcommand*{\glsfirstlongdefaultfont}[1]{\emph{#1}}
+
 %
 % Below here are some default additions from Stephen Strowes's template.
 %

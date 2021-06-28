@@ -18,7 +18,7 @@
 \ProvidesClass{glasgowthesis}
 
 %% These are the 12pt margins
-\PassOptionsToPackage{bindingoffset=2.5cm, left=1.5cm, right=1.5cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=15.5cm, showframe}{geometry}
+\PassOptionsToPackage{bindingoffset=2.5cm, left=1.5cm, right=1.5cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=15.5cm}{geometry}
 %\PassOptionsToPackage{bindingoffset=2.5cm, margin=2in, includehead, includefoot}{geometry}
 \DeclareOption{nogutter}{
   \PassOptionsToPackage{bindingoffset=0cm, left=2.75cm, right=2.75cm, top=1.8cm, bottom=1.8cm, includehead, includefoot, textwidth=15.5cm}{geometry}
@@ -103,6 +103,7 @@
 % of 26.1cm, I set the text height to (26.1cm - 1.8cm), so the header
 % gets 1.8cm and the body text still fits within guidelines.
 \textheight 24.3cm
+% \textheight 29.7cm
 
 
 % Specify page titles for well-known sections.

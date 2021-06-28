@@ -1,21 +1,36 @@
 \chapter{Data-driven Networking}
+Once we have any computer network as described above, we have a good basis for not only allowing two machines to communicate with one another, but also to do so \emph{efficiently}.
+That isn't to say that there is no room to improve on how networks and operating systems provide this functionality.
+Many aspects of modern networks, such as \glspl{cca}, thresholds for differentiating services, and flow classification rely heavily upon hand-tuned heuristics.
+As in \cref{sec:problems-in-modern-networks}, there is still vast scope to improve on communication latency and throughput, or to avoid and work around deleterious traffic patterns (such as incast communication).
+As a result, research into \glspl{cca}, network designs, and routing procedures is very much ongoing.
+Crucially, as these operations lie at the core of network operation their solutions tend towards extremely efficient heuristic methods; they must be evaluated per-packet or react as quickly as possible to state change.
+Designing new methods for network optimisation then requires deep insight into any problem, its edge cases, and the hardware/performance characteristics of the target environment.\sidenote{This affects how we design such heuristics even on commodity hosts---kernel-space \glspl{cca} (i.e., as part of the TCP stack) are unable to use floating point arithmetic.}
 
-?? Firstly, what is data-driven networking? Probably: making use of measurements, observations, and statistics (run-time, simulation, pen-and-paper) to enhance and improve the operation of a computer network.
+Suppose that, as network administrators or protocol designers, we have access to a reasonable amount of information about the machines, network segments or \glspl{as} under our control---measurements, observations, and statistics taken at run-time, from simulation, or by modelling.
+A natural question to ask, then, is whether we can use this data to enhance and improve the operation and use of our network automatically.
+Thinking further still, we might wonder whether we can outperform the general (yet useful) heuristics which are widely deployed and researched, tailoring network behaviour according to its environment and traffic patterns.
+These questions are the founding principles of \gls{ddn}\sidenote{Alternatively titled \emph{self-driving networks}.}, a recent field of research focussed on the automatic control and optimisation of network systems, which has sprung forth due to recent advances in \gls{ml} and \gls{rl}.
 
-?? enhance in what way? what metrics?
+The ideas and goals of automated network control have existed in some form or another for years as computational inference has grown more powerful.
+This concept was famously formalised in a position paper as the \emph{knowledge plane}~\parencite{DBLP:conf/sigcomm/ClarkPRW03}, in contrast to the \emph{data} and \emph{control} planes.
 
-\emph{Data-driven networking} is a recent field of research focussed on the automatic control and optimisation of network systems, which has sprung forth due to recent advances in RL and ML.
-Many aspects of modern networks, such as congestion control algorithms, or thresholds for differentiating services and flow classification rely heavily upon hand-tuned heuristics.
 
-?? Likely started with lofty goal of ``knowledge plane''~\cite{DBLP:conf/sigcomm/ClarkPRW03}
+?? Likely started with lofty goal of ``knowledge plane''~\parencite{DBLP:conf/sigcomm/ClarkPRW03}
+?? ``Knowledge''-defined networking~\parencite{DBLP:journals/corr/MestresRCBASMMB16}
 
-?? DDN risks~\cite{DBLP:conf/hotnets/BartulovicJBSS17}.
+?? \gls{ddn} risks~\parencite{DBLP:conf/hotnets/BartulovicJBSS17}.
 
-?? DDN paper~\cite{DBLP:conf/comsnets/JiangSSZ17}
+?? DDN paper~\parencite{DBLP:conf/comsnets/JiangSSZ17}
 
-?? ``Knowledge''-defined networking~\cite{DBLP:journals/corr/MestresRCBASMMB16}
 
-\section{Use Cases}
+
+Starting out with the aim of emphasising and motivating the value of \gls{ddn}, I discuss and introduce some of the recent developments and applications of \gls{ml} and \gls{rl} techniques in computer networking (\cref{sec:use-cases}), before then moving onto to explain the `building blocks' underlying these approaches (\crefrange{sec:function-approximation}{sec:numerical-representations-for-embedded-ml}).
+\Cref{sec:ddn-security} then presents an overview of security perspective surrounding current \gls{ml} and \gls{ddn} approaches.
+Although this context and its challenges are rapidly evolving, an understanding of security issues is key to offering a complete picture of the viability of \gls{ddn} and the care which must be taken in its research.
+Sadly, full examination and further development lies beyond the scope of this thesis, and is in fact a thesis-worthy topic in its own right~\parencite{papernot-thesis}.
+
+\section{Use Cases}\label{sec:use-cases}
 
 ?? Optimisation
 
@@ -25,7 +40,9 @@ Many aspects of modern networks, such as congestion control algorithms, or thres
 
 ?? Refer back to the computer networks chapter: topologies, routing, defence, ... all present problems who are often served and solved by the use of heuristics.
 
-\section{Function approximation}
+?? Also heuristics to generate fast approaches? LUTs etc.
+
+\section{Function approximation}\label{sec:function-approximation}
 
 ?? Explain how different approximators work, I suppose?
 
@@ -45,7 +62,7 @@ Many aspects of modern networks, such as congestion control algorithms, or thres
 
 ?? Neural networks
 
-\section{Learning an approximation}
+\section{Learning an approximation}\label{sec:learning-an-approximation}
 
 ?? How do we learn a nice policy?
 
@@ -79,6 +96,8 @@ Invented by \textcite{DBLP:journals/corr/KonecnyMRR16}.
 ?? Core idea---still essentially just taking (weighted) average of the policies from edge learners. Pretty important that they're all initialised from the same seed, at least then. Better convexity behaviour than expected.
 
 \subsection{Reinforcement Learning}
+
+?? 2021 --- need to emphasise that we're using a goodness metric to learn a state-action map without an explicit model of the system we're learning to control.
 
 ?? RL works in tandem with other mathematical training approaches: the key insight is that the structure of an MDP allows external information and model(-free) observation to strengthen or weaken different function responses.
 
@@ -180,7 +199,7 @@ In networks, actions are most likely to be installed on backbone switches, bump-
 Ideally, these functions which comprise an RL agent would all be collocated on the same chip or device, but this is easier said than done. 
 Both programmable devices and the network environment make this more difficult, as we'll examine in the sequel.
 
-\section{Numerical representations for embedded ML}
+\section{Numerical representations for embedded ML}\label{sec:numerical-representations-for-embedded-ml}
 A key feature universally lacking from the target environments is floating-point arithmetic support.
 Luckily, the task of bringing machine learning models to resource-constrained environments without these capabilities is well-studied.
 Quantisation and alternative data formats have been suggested to make ML inference feasible on resource- and power-limited platforms, work around hardware constraints, or compute faster and more efficiently.
@@ -196,7 +215,7 @@ When combined with the above P4-driven techniques for in-network flow/device mea
 Moreover, the base P4 dataplane can be used to simplify parsing logic and offer runtime control over which flows/packets are monitored, alongside other packet actions.
 This again fits our goals of integrating RL techniques directly within bump-in-the-wire installations and at end-hosts.
 
-\section{Security}
+\section{Security}\label{sec:ddn-security}
 
 ?? Discuss attacks on ML models, techniques, paradigms here.
 
