@@ -1,8 +1,13 @@
 \chapter{Programmable Data-Planes}
 
+?? 2021 --- crucial to sell the why! What can be gained moving to this level, new state measures enable new applications, in-nic/switch exec reduces latencies, increases throughputs, etc...
+?? Probably want a worked example showing how in-network compute helps. I.e., network graph, show processing at nodes
+
+?? Evidence of deployment in real, huge transit networks~\sidenote{\url{https://wiki.geant.org/display/RARE/Home}, \url{https://wiki.geant.org/display/NETDEV}}
+
 ?? arbitrarily reconfigurable hardware located directly on the data path
 
-?? mention how it came to this: this was an alternate solution to latency/throughput concerns which plague VNF approaches as they scale (see Metron paper for good discussion of RSS, etc., which solve these problems in their own way)
+?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron paper for good discussion of RSS, etc., which solve these problems in their own way)
 
 ?? new ways to implement stateful + stateless packet processing.
 
@@ -47,6 +52,9 @@
 
 \subsection{Active Queue Management}
 Turns out that you can't just write it in P4, you need to co-design for the target environment---with meaningful performance cost to boot, based on the tradeoffs you need to make~\parencite{Kunze-P4-AQM}.
+
+\subsection{KV Stores}
+NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
 
 \section{Hardware Designs}
 

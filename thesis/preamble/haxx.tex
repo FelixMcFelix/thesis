@@ -82,6 +82,74 @@
 % Consistent acronym expansion
 \renewcommand*{\glsfirstlongdefaultfont}[1]{\emph{#1}}
 
+% Try to stop apa style from crushing caps.
+\DeclareFieldFormat{apacase}{#1}
+
+% Backrefs in bibliography
+\DefineBibliographyStrings{english}{%
+	backrefpage  = {see p.}, % for single page number
+	backrefpages = {see pp.} % for multiple page numbers
+}
+
+% Wacky protrusion on Big Letters (see: Stripe publications)
+% and superscript numbers.
+% \SetProtrusion{
+% 	encoding={*},
+% 	family={bch},
+% 	series={*},
+% 	size={6,7}
+% }{
+% 	1={ ,750},
+% 	2={ ,500},
+% 	3={ ,500},
+% 	4={ ,500},
+% 	5={ ,500},
+% 	6={ ,500},
+% 	7={ ,600},
+% 	8={ ,500},
+% 	9={ ,500},
+% 	0={ ,500}
+% }
+
+% Look into https://github.com/cgnieder/microtype-config for libertinus
+% I couldn't get it to work for the followign letters: T, W, w, A, J, Y, y, V, v
+
+% Hyperlink all of APA cite
+% https://tex.stackexchange.com/questions/15951/hyperlink-name-with-biblatex-authoryear-biblatex-1-4b
+\DeclareFieldFormat{citehyperref}{%
+  \DeclareFieldAlias{bibhyperref}{noformat}% Avoid nested links
+  \bibhyperref{#1}}
+
+\DeclareFieldFormat{textcitehyperref}{%
+  \DeclareFieldAlias{bibhyperref}{noformat}% Avoid nested links
+  \bibhyperref{%
+    #1%
+    \ifbool{cbx:parens}
+      {\bibcloseparen\global\boolfalse{cbx:parens}}
+      {}}}
+
+\savebibmacro{cite}
+\savebibmacro{textcite}
+
+\renewbibmacro*{cite}{%
+  \printtext[citehyperref]{%
+    \restorebibmacro{cite}%
+    \usebibmacro{cite}}}
+
+\renewbibmacro*{textcite}{%
+  \ifboolexpr{
+    ( not test {\iffieldundef{prenote}} and
+      test {\ifnumequal{\value{citecount}}{1}} )
+    or
+    ( not test {\iffieldundef{postnote}} and
+      test {\ifnumequal{\value{citecount}}{\value{citetotal}}} )
+  }
+    {\DeclareFieldAlias{textcitehyperref}{noformat}}
+    {}%
+  \printtext[textcitehyperref]{%
+    \restorebibmacro{textcite}%
+    \usebibmacro{textcite}}}
+
 %
 % Below here are some default additions from Stephen Strowes's template.
 %

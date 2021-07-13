@@ -1,11 +1,59 @@
+\usepackage[no-math]{fontspec}
+
+\renewcommand{\rmdefault}{minlibertine}
+\usepackage[libertine,upint]{newtxmath}
+\usepackage[scr=rsfso]{mathalfa}% helps with loading of math alphabets
+
 %\usepackage{Alegreya}
-\usepackage{AlegreyaSans}
+\usepackage[oldstyle]{AlegreyaSans}
 %\usepackage[sfdefault]{AlegreyaSans}
 
 %\usepackage{tgpagella}
-\usepackage{libertine}
+% \usepackage[oldstyle]{libertine}
+\usepackage[oldstyle]{libertine}
 % \usepackage{libertinust1math}
-\usepackage[libertine]{newtxmath}
 %\usepackage{newpxtext}
 %\usepackage{newpxmath}
 %\usepackage{FiraSans}
+
+%\usepackage[
+%    math-style=ISO,
+%    bold-style=ISO,
+%    partial=upright,
+%    nabla=upright
+%]{unicode-math}
+
+% \usepackage{unicode-math}
+% \setmathfont[Scale=MatchUppercase]{libertinusmath-regular.otf}
+
+% \setmainfont{Libertinus Serif}
+% \setsansfont{Libertinus Sans}
+% \setmathfont{Libertinus Math}
+
+%\DeclareSymbolFont{liningdigits}{\encodingdefault}{LinuxLibertineT-TLF}{m}{n}
+%\SetSymbolFont{liningdigits}{bold}{\encodingdefault}{LinuxLibertineT-TLF}{b}{n}
+%\DeclareMathSymbol{0}{\mathalpha}{liningdigits}{`0}
+%\DeclareMathSymbol{1}{\mathalpha}{liningdigits}{`1}
+%\DeclareMathSymbol{2}{\mathalpha}{liningdigits}{`2}
+%\DeclareMathSymbol{3}{\mathalpha}{liningdigits}{`3}
+%\DeclareMathSymbol{4}{\mathalpha}{liningdigits}{`4}
+%\DeclareMathSymbol{5}{\mathalpha}{liningdigits}{`5}
+%\DeclareMathSymbol{6}{\mathalpha}{liningdigits}{`6}
+%\DeclareMathSymbol{7}{\mathalpha}{liningdigits}{`7}
+%\DeclareMathSymbol{8}{\mathalpha}{liningdigits}{`8}
+%\DeclareMathSymbol{9}{\mathalpha}{liningdigits}{`0}
+
+\AtBeginDocument{%
+  \Umathcode`0="7 "0 `0
+  \Umathcode`1="7 "0 `1
+  \Umathcode`2="7 "0 `2
+  \Umathcode`3="7 "0 `3
+  \Umathcode`4="7 "0 `4
+  \Umathcode`5="7 "0 `5
+  \Umathcode`6="7 "0 `6
+  \Umathcode`7="7 "0 `7
+  \Umathcode`8="7 "0 `8
+  \Umathcode`9="7 "0 `9
+}
+
+% \SetTracking{encoding={*}, shape=sc}{40}

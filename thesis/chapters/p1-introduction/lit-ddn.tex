@@ -1,36 +1,34 @@
 \chapter{Data-driven Networking}
 Once we have any computer network as described above, we have a good basis for not only allowing two machines to communicate with one another, but also to do so \emph{efficiently}.
 That isn't to say that there is no room to improve on how networks and operating systems provide this functionality.
-Many aspects of modern networks, such as \glspl{cca}, thresholds for differentiating services, and flow classification rely heavily upon hand-tuned heuristics.
+Many aspects of modern networks, such as \glspl{acr:cca}, thresholds for differentiating services, and flow classification rely heavily upon hand-tuned heuristics.
 As in \cref{sec:problems-in-modern-networks}, there is still vast scope to improve on communication latency and throughput, or to avoid and work around deleterious traffic patterns (such as incast communication).
-As a result, research into \glspl{cca}, network designs, and routing procedures is very much ongoing.
+As a result, research into \glspl{acr:cca}, network designs, and routing procedures is very much ongoing.
 Crucially, as these operations lie at the core of network operation their solutions tend towards extremely efficient heuristic methods; they must be evaluated per-packet or react as quickly as possible to state change.
-Designing new methods for network optimisation then requires deep insight into any problem, its edge cases, and the hardware/performance characteristics of the target environment.\sidenote{This affects how we design such heuristics even on commodity hosts---kernel-space \glspl{cca} (i.e., as part of the TCP stack) are unable to use floating point arithmetic.}
+Designing new methods for network optimisation then requires deep insight into any problem, its edge cases, and the hardware/performance characteristics of the target environment.\sidenote{This affects how we design such heuristics even on commodity hosts---kernel-space \glspl{acr:cca} (i.e., as part of the TCP stack) are unable to use floating point arithmetic.}
 
-Suppose that, as network administrators or protocol designers, we have access to a reasonable amount of information about the machines, network segments or \glspl{as} under our control---measurements, observations, and statistics taken at run-time, from simulation, or by modelling.
+Suppose that, as network administrators or protocol designers, we have access to a reasonable amount of information about the machines, network segments or \glspl{acr:as} under our control---measurements, observations, and statistics taken at run-time, from simulation, or by modelling.
 A natural question to ask, then, is whether we can use this data to enhance and improve the operation and use of our network automatically.
 Thinking further still, we might wonder whether we can outperform the general (yet useful) heuristics which are widely deployed and researched, tailoring network behaviour according to its environment and traffic patterns.
-These questions are the founding principles of \gls{ddn}\sidenote{Alternatively titled \emph{self-driving networks}.}, a recent field of research focussed on the automatic control and optimisation of network systems, which has sprung forth due to recent advances in \gls{ml} and \gls{rl}.
+These questions are the founding principles of \gls{acr:ddn}\sidenote{Alternatively titled \emph{self-driving networks}.}, a recent field of research focussed on the automatic control and optimisation of network systems, which has sprung forth due to recent advances in \gls{acr:ml} and \gls{acr:rl}.
 
-The ideas and goals of automated network control have existed in some form or another for years as computational inference has grown more powerful.
-This concept was famously formalised in a position paper as the \emph{knowledge plane}~\parencite{DBLP:conf/sigcomm/ClarkPRW03}, in contrast to the \emph{data} and \emph{control} planes.
+The ideas and goals of automated network control have existed and evolved in one form or another, particularly as computational inference and learning have grown more powerful.
+Primarily these ideas have propagated via position papers offering a `vision of things to come'.
+This was first famously formalised as the \emph{knowledge plane}~\parencite{DBLP:conf/sigcomm/ClarkPRW03}, in contrast to the \emph{data} and \emph{control} planes.
+This proposal captures not only the above concepts of automation as a means for network control, but also for collaborative or commercial sharing of information between end-hosts, transit \glspl{acr:as}, and organisations to build up a global picture of the needs of the network.
+As it turns out, over the past \num{18} years we have moved no closer to such a unified substrate, though automated inference based on the data we \emph{do} have is richly researched.
+A later attempt to combine this with \gls{acr:sdn} as \emph{Knowledge}-defined networking~\parencite{DBLP:journals/corr/MestresRCBASMMB16} takes key steps in clarifying the field, through concrete problems and promising \gls{acr:ml} developments, but effectively curtails the scale of knowledge sharing.
+\gls{acr:ddn} itself is named and defined by \Textcite{DBLP:conf/comsnets/JiangSSZ17}, who again expand the scope for optimisation beyond network control to include \emph{end-points}; towards application and transport layer optimisation for hosts and servers, as well as control of the underlying fabric.
 
-
-?? Likely started with lofty goal of ``knowledge plane''~\parencite{DBLP:conf/sigcomm/ClarkPRW03}
-?? ``Knowledge''-defined networking~\parencite{DBLP:journals/corr/MestresRCBASMMB16}
-
-?? \gls{ddn} risks~\parencite{DBLP:conf/hotnets/BartulovicJBSS17}.
-
-?? DDN paper~\parencite{DBLP:conf/comsnets/JiangSSZ17}
-
-
-
-Starting out with the aim of emphasising and motivating the value of \gls{ddn}, I discuss and introduce some of the recent developments and applications of \gls{ml} and \gls{rl} techniques in computer networking (\cref{sec:use-cases}), before then moving onto to explain the `building blocks' underlying these approaches (\crefrange{sec:function-approximation}{sec:numerical-representations-for-embedded-ml}).
-\Cref{sec:ddn-security} then presents an overview of security perspective surrounding current \gls{ml} and \gls{ddn} approaches.
-Although this context and its challenges are rapidly evolving, an understanding of security issues is key to offering a complete picture of the viability of \gls{ddn} and the care which must be taken in its research.
-Sadly, full examination and further development lies beyond the scope of this thesis, and is in fact a thesis-worthy topic in its own right~\parencite{papernot-thesis}.
+Starting out with the aim of emphasising and motivating the value of \gls{acr:ddn}, I discuss and introduce some of the recent developments and applications of \gls{acr:ml} and \gls{acr:rl} techniques in computer networking (\cref{sec:use-cases}), before then moving onto to explain the `building blocks' underlying these approaches (\crefrange{sec:function-approximation}{sec:numerical-representations-for-embedded-ml}).
+\Cref{sec:ddn-security} then presents an overview of security perspective surrounding current \gls{acr:ml} and \gls{acr:ddn} approaches.
+Although this context and its challenges are rapidly evolving, an understanding of security issues is key to offering a complete picture of the viability of \gls{acr:ddn} and the care which must be taken in its research.
+Sadly, full examination and further development lies beyond the scope of this thesis---it is, in fact, a thesis-worthy topic in its own right~\parencite{papernot-thesis}.
 
 \section{Use Cases}\label{sec:use-cases}
+To give a clear (if somewhat informal) introduction to what different processing techniques can offer, I present a selection of \gls{acr:ddn} use cases.
+The aims of this section are threefold: to offer a rough intuition of the capabilities of state-of-the-art \gls{acr:ml}/\gls{acr:rl} techniques, to present the breadth of optimisation and control problems in \gls{acr:ddn}, and to describe the sorts of interaction model and co-design required to meet performance guarantees.
+In the case of \gls{acr:rl}-based works, I highlight the state space (\rllitstate), action space (\rllitact{} if discrete, \rllitactreal{} if real-valued), and reward source (\rllitreward).
 
 ?? Optimisation
 
@@ -41,6 +39,125 @@ Sadly, full examination and further development lies beyond the scope of this th
 ?? Refer back to the computer networks chapter: topologies, routing, defence, ... all present problems who are often served and solved by the use of heuristics.
 
 ?? Also heuristics to generate fast approaches? LUTs etc.
+
+?? \gls{acr:ddn} risks~\parencite{DBLP:conf/hotnets/BartulovicJBSS17}.
+
+led the charge in data-driven networking, enhancing automatic traffic optimisation~\parencite{DBLP:conf/sigcomm/ChenL0L18,DBLP:conf/sigcomm/MaoNA17}, congestion control~\parencite{DBLP:journals/corr/abs-1910-04054}, adaptive routing~\parencite{DBLP:conf/hotnets/ValadarskySST17,DBLP:conf/conext/GiladSGRS20}, resource management~\parencite{DBLP:conf/hotnets/MaoAMK16}, and packet classification~\parencite{DBLP:conf/sigcomm/LiangZJS19}.
+
+?? Can I please dig up some CNN/LSTM/non-RL-based variants so that this isn't the RL show?
+
+Hopefully, it should be apparent that a consistent feature ...
+?? Decisions taken with reduced frequency, out of the critical data path
+?? Per-packet/flow are mostly restricted to end-hosts.
+
+?? Common drawback here is that inference, while quite fast, is too slow 
+
+?? Any general points on training duration I can/should make?
+
+\subsection{Network Management}
+
+\paragraph{Routing and Traffic Optimisation}
+As discussed earlier, routing is the task of moving packets of network data from their source to their destination, ideally without losing any in transit and as quickly as possible.
+We can look at this as how to move a packet towards the \gls{acr:as} where the destination is located using logical boundary information (\emph{inter-\gls{acr:as} routing}), and how to move packets over the physical infrastructure within an \gls{acr:as} (\emph{intra-\gls{acr:as} routing}).
+As inter-\gls{acr:as} routing requires consistent protocols and negotiation between organisations, intra-\gls{acr:as} routing offers more scope for optimisation and innovation.
+The usual term for such processes is \gls{acr:to}/\gls{acr:te}, aiming to minimise congestion and increase client \gls{acr:qos}~\parencite{rfc3272}.
+
+\textcite{DBLP:conf/hotnets/ValadarskySST17} show how \gls{acr:rl} can be used to map the last $k$ demand matrices (\rllitstate) into a set of edge weights (\rllitactreal).
+The calculated weights are used as the input to compute probabilistic forwarding strategies based on classical hop-by-hop routing strategies, which then allow congestion to be computed for the following demand matrix (\rllitreward).
+Policy approximation is provided by a fully connected \gls{acr:nn}, trained using the TRPO algorithm~\parencite{DBLP:conf/icml/SchulmanLAJM15}.
+This is striking work because it presents an environment where RL categorically beats supervised learning---where predicting a set of actions to take is more effective than predicting the next state and then computing an optimal assignment---and is able to outperform the non-ML \emph{oblivious routing}~\parencite{DBLP:conf/stoc/AzarCFKR03} for some problem models.
+There are several key takeaways from this work: their exploratory designs showed that system performance and learning rate rely heavily upon output model size, emphasising the need for a minimal representation of actions/predictions made\sidenote{Even though a smaller model size is arguably less expressive, the fact that there are fewer parameters to learn can be instrumental in converging to a more effective solution more quickly.}; policy execution occurs outside the packet path, and so learns feasibly online; and that using \gls{acr:ddn} outputs as the input for a well-defined algorithm can offer more interpretability and trust in an optimised system.
+A drawback worth discussion is their \gls{acr:nn} architecture's input and output dimensions depend on the network under control ($k\cdot\left|V\right|^2\rightarrow\left|E\right|$), and so learned policies are not portable even under simple alterations like runtime switch/link additions.
+Memory cost, compute time, and parameter count would equally scale poorly in larger networks.
+
+\emph{AuTO}~\parencite{DBLP:conf/sigcomm/ChenL0L18} examines the task of flow scheduling, employing \gls{acr:drl} to perform traffic optimisation, using the DDPG algorithm~\parencite{DBLP:journals/corr/LillicrapHPHETS15} to update a \gls{acr:dnn} policy.
+Crucially, they find that the vast majority of flows are short-lived, requiring effective decisions in less than a millisecond.
+To overcome the high latency of action computation via \gls{acr:nn}, two agents are trained, handling aspects of short and long flows respectively.
+The first learns to optimise the flow size thresholds which define priority allocation at each switch (and accordingly learn how best to demarcate long and short flows); these short flows are routed by \gls{acr:ecmp}.
+The second agent makes bespoke decisions about routing, prioritisation etc.\ for each of the remaining long flows, who are likely to live long enough that any actions will have a significant impact.
+
+?? Useful things about above: refer back to long tail of network traffic, $\sim$\qty{100}{\milli\second} \qty{10}{\micro\second}. $100, 200, 300, \dots, 900$
+
+(\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).
+
+\parencite{DBLP:conf/sigcomm/00010YC20}
+
+$3 \sin x \alpha$
+
+\begin{displaymath}
+	\int_0^{+\infty} \left(\frac{\alpha}{\sqrt{\Omega_\Lambda - 1}}\right)^{\frac{1}{x}}
+	\mathrm{d}x
+\end{displaymath}
+
+Routing
+* https://dl.acm.org/doi/10.1145/3405671.3405809 -- SmartEntry: Mitigating Routing Update Overhead with Reinforcement Learning for Traffic Engineering
+* https://dl.acm.org/doi/10.1145/3386367.3433030 -- MPCC: online learning multipath transport (IMPORTANT)
+
+?? Note: make sure that intra/inter-AS routing are explained elsewhere.
+
+?? Although BGP and inter-domain routing work by fixed rules,
+* https://dl.acm.org/doi/10.1145/3405671.3405816 -- DeepBGP: A Machine Learning Approach for BGP Configuration Synthesis
+
+\paragraph{Packet Classification}
+Packet classification
+* That main good paper -- Neural Packet Classification~\parencite{DBLP:conf/sigcomm/LiangZJS19}
+* https://dl.acm.org/doi/10.1145/3387514.3405886 -- A Computational Approach to Packet Classification
+* https://dl.acm.org/doi/10.1145/3405671.3405811 -- SAM: Self-Attention based Deep Learning Method for Online Traffic Classification
+* https://dl.acm.org/doi/10.1145/3341216.3342211 -- DeePCCI: Deep Learning-based Passive Congestion Control Identification
+
+* https://dl.acm.org/doi/10.1145/3341216.3342207 -- NetBOA: Self-Driving Network Benchmarking
+
+\subsection{Protocol Optimisation and Design}
+
+CCAs
+* MVFST-RL~\parencite{DBLP:journals/corr/abs-1910-04054}
+* https://dl.acm.org/doi/10.1145/3387514.3405892 -- Classic Meets Modern: a Pragmatic Learning-Based Congestion Control for the Internet
+
+* https://dl.acm.org/doi/10.1145/3405671.3405817 -- An Adaptive Tree Algorithm to Approach Collision-Free Transmission in Slotted ALOHA
+
+* https://www.usenix.org/conference/nsdi21/presentation/jog -- One Protocol to Rule Them All: Wireless Network-on-Chip using Deep Reinforcement Learning
+
+\subsection{Security, Defence, and Verification}
+
+* https://dl.acm.org/doi/10.1145/3341216.3342206 -- Runtime Verification of P4 Switches with Reinforcement Learning
+
+\subsection{Multimedia}
+
+HTTP/2 push
+* https://www.usenix.org/conference/nsdi21/presentation/kansal
+
+ABR stuff
+* Pensieve~\parencite{DBLP:conf/sigcomm/MaoNA17}
+* https://ieeexplore.ieee.org/document/9155411 -- Stick: A Harmonious Fusion of Buffer-based and Learning-based Approach for Adaptive Streaming
+* https://ieeexplore.ieee.org/document/9155492 -- PERM: Neural Adaptive Video Streaming with Multi-path Transmission
+* https://dl.acm.org/doi/10.1145/3387514.3405856 -- Neural-Enhanced Live Streaming: Improving Live Video Ingest via Online Learning
+
+* https://dl.acm.org/doi/10.1145/3386367.3431294 -- Drop the packets: using coarse-grained data to detect video performance issues
+
+\subsection{Resource Placement and Management}
+
+* Can't remember what they were actually optimising here~\parencite{DBLP:conf/hotnets/MaoAMK16}
+* https://ieeexplore.ieee.org/document/9155521 -- ReLoca: Optimize Resource Allocation for Data-parallel Jobs using Deep Learning
+
+* https://dl.acm.org/doi/10.1145/3341302.3342080 -- Learning scheduling algorithms for data processing clusters
+* https://dl.acm.org/doi/10.1145/3386367.3432588 -- Job scheduling for large-scale machine learning clusters
+* https://dl.acm.org/doi/10.1145/3342195.3387524 -- Autopilot: workload autoscaling at Google
+
+* https://dl.acm.org/doi/10.1145/3341216.3342214 -- RL-Cache: Learning-Based Cache Admission for Content Delivery
+* https://ieeexplore.ieee.org/document/9155373/ -- Intelligent Video Caching at Network Edge: A Multi-Agent Deep Reinforcement Learning Approach
+
+?? Other domains: processor design (which can be viewed as a placement/routing problem)~\parencite{Mirhoseini2021}
+
+\subsection{Takeaways for effective data-driven networking}
+
+?? NN exec time is huge, due to GPU offload (cite sources for this)
+?? Use the worked example from the OPaL paper to illustrate why this is bad (or worse) the closer you go to the metal?
+
+?? Keep huge exec times out of the packet path
+
+?? Input, output and model shape should ideally be kept at a fixed size irrespective of the target deployment, to allow not just deploying in these other environments but also training from as many separate systems as possible! (and enable model combination/sharing)
+
+?? Model architecture should be kept to as small/compact a representation as possible; not only fewer params to learn, but also fewer operations in inference --- runtime perf!
 
 \section{Function approximation}\label{sec:function-approximation}
 
@@ -70,34 +187,15 @@ Sadly, full examination and further development lies beyond the scope of this th
 
 ?? The standard. Probably space here to reference a good many techniques.
 
-\subsection{Federated Learning}
-
-?? Describe it here
-
-?? Issue? Only works on certain problems (explicitly unsupervised, or easy to acquire local supervised measurements).
-
-?? Core concept: push out most of the work involved in training the network to users/edge node learners, and then combine their models to train a new centralised model (rather than sending all data points over the network (bandwidth and privacy concerns))
-
-Okay, what conditions does it impose on the type of data we want to use for training (right now, at least)?
-?? Need trivially (user-)labelled data, to get the high volume we need. (label-able at the edge nodes? is unsupervised remotely worthwhile?)
-?? Ex: predictive text works (data is word the user had typed, label is what they picked from the dict OR what they typed by the end.)
-
-Invented by \textcite{DBLP:journals/corr/KonecnyMRR16}.
-?? (Probably look at the lead author's shiny new PhD Thesis \cite{DBLP:journals/corr/Konecny17}? Look for more of his stuff?)
-?? IDEA -- train a high-quality centralised model when data are divided unevenly over a large number of nodes (read: non-IID).
-?? Main problem is that the best-performing algorithms are very much sequential in nature. Even then, many make assumption that all learners see a representative sample.
-?? Each node solves a subproblem subject to some quadratic perturbation (as in DANE \cite{DBLP:conf/icml/ShamirS014} (not read!)) but for Stochastic Variance Reduced Gradient (SVRG).
-?? Much of the algorithm is correcting for potential sources of bias from the edge-node results before they are combined (averaged very carefully).
-
-\textcite{DBLP:conf/aistats/McMahanMRHA17} examine:
-?? Federated Learning to train deep neural nets.
-?? More broadly, this looks at non-convex loss functions in general.
-?? New Algo---FedAVG seems to outperform FedSVG despite having fewer terms to correct for bias. I've written that it's analogous to dropout (which itself can offer behaviour close to a Bayesian net), check again to see what exactly this refers to.
-?? Core idea---still essentially just taking (weighted) average of the policies from edge learners. Pretty important that they're all initialised from the same seed, at least then. Better convexity behaviour than expected.
-
 \subsection{Reinforcement Learning}
 
 ?? 2021 --- need to emphasise that we're using a goodness metric to learn a state-action map without an explicit model of the system we're learning to control.
+
+DDPG~\parencite{DBLP:journals/corr/LillicrapHPHETS15}, DPG~\parencite{DBLP:conf/icml/SilverLHDWR14}
+
+Note -- are actor-critic methods needed for continuous action spaces? Might be worth mentioning whjat it takes to learn both discrete and continuous.
+
+?? Also want to spend some time discussing various action-selection strategies, that the output can be
 
 ?? RL works in tandem with other mathematical training approaches: the key insight is that the structure of an MDP allows external information and model(-free) observation to strengthen or weaken different function responses.
 
@@ -199,6 +297,40 @@ In networks, actions are most likely to be installed on backbone switches, bump-
 Ideally, these functions which comprise an RL agent would all be collocated on the same chip or device, but this is easier said than done. 
 Both programmable devices and the network environment make this more difficult, as we'll examine in the sequel.
 
+\section{Collaborative training}
+As something of a counterpoint to the main focus of this thesis, much community interest has been given to how networks can improve, accelerate, or innovate in \gls{acr:ml} model training.
+
+?? This is how the network can, in turn, benefit the development of ML/RL appls.
+
+\subsection{Multiagent methods}
+
+\subsection{Distributed training}
+
+\subsection{Federated Learning}
+
+?? Describe it here
+
+?? Issue? Only works on certain problems (explicitly unsupervised, or easy to acquire local supervised measurements).
+
+?? Core concept: push out most of the work involved in training the network to users/edge node learners, and then combine their models to train a new centralised model (rather than sending all data points over the network (bandwidth and privacy concerns))
+
+Okay, what conditions does it impose on the type of data we want to use for training (right now, at least)?
+?? Need trivially (user-)labelled data, to get the high volume we need. (label-able at the edge nodes? is unsupervised remotely worthwhile?)
+?? Ex: predictive text works (data is word the user had typed, label is what they picked from the dict OR what they typed by the end.)
+
+Invented by \textcite{DBLP:journals/corr/KonecnyMRR16}.
+?? (Probably look at the lead author's shiny new PhD Thesis \cite{DBLP:journals/corr/Konecny17}? Look for more of his stuff?)
+?? IDEA -- train a high-quality centralised model when data are divided unevenly over a large number of nodes (read: non-IID).
+?? Main problem is that the best-performing algorithms are very much sequential in nature. Even then, many make assumption that all learners see a representative sample.
+?? Each node solves a subproblem subject to some quadratic perturbation (as in DANE \cite{DBLP:conf/icml/ShamirS014} (not read!)) but for Stochastic Variance Reduced Gradient (SVRG).
+?? Much of the algorithm is correcting for potential sources of bias from the edge-node results before they are combined (averaged very carefully).
+
+\textcite{DBLP:conf/aistats/McMahanMRHA17} examine:
+?? Federated Learning to train deep neural nets.
+?? More broadly, this looks at non-convex loss functions in general.
+?? New Algo---FedAVG seems to outperform FedSVG despite having fewer terms to correct for bias. I've written that it's analogous to dropout (which itself can offer behaviour close to a Bayesian net), check again to see what exactly this refers to.
+?? Core idea---still essentially just taking (weighted) average of the policies from edge learners. Pretty important that they're all initialised from the same seed, at least then. Better convexity behaviour than expected.
+
 \section{Numerical representations for embedded ML}\label{sec:numerical-representations-for-embedded-ml}
 A key feature universally lacking from the target environments is floating-point arithmetic support.
 Luckily, the task of bringing machine learning models to resource-constrained environments without these capabilities is well-studied.
@@ -215,6 +347,20 @@ When combined with the above P4-driven techniques for in-network flow/device mea
 Moreover, the base P4 dataplane can be used to simplify parsing logic and offer runtime control over which flows/packets are monitored, alongside other packet actions.
 This again fits our goals of integrating RL techniques directly within bump-in-the-wire installations and at end-hosts.
 
+\section{Challenges}
+
+?? Include some good, high-level discussion of sensitivity to training environment (i.e., many authors willing to use traces) \textcite{DBLP:conf/hotnets/BartulovicJBSS17}, yet there's still interesting use-cases in being able to do so \textcite{DBLP:conf/hotnets/LecuyerLNSSS17}.
+
+?? Seems to always require dedicated co-design? (https://www.usenix.org/conference/nsdi21/presentation/fu)
+
+?? Interpretability (https://dl.acm.org/doi/10.1145/3387514.3405859),
+* https://dl.acm.org/doi/10.1145/3341216.3342218 -- Verifying Deep-RL-Driven Systems
+* https://dl.acm.org/doi/10.1145/3341216.3342210 -- Cracking Open the Black Box: What Observations Can Tell Us About Reinforcement Learning Agents
+
+?? Point to security as a big challenge.
+
+?? Relate these to the security \emph{problem domain}? I.e., as seen by \citeauthor{DBLP:conf/sp/SommerP10}.
+
 \section{Security}\label{sec:ddn-security}
 
 ?? Discuss attacks on ML models, techniques, paradigms here.
@@ -222,6 +368,8 @@ This again fits our goals of integrating RL techniques directly within bump-in-t
 ?? Very respectable source \cite{DBLP:conf/eurosp/PapernotMJFCS16} that they're bad I guess? (Not Read)
 
 ?? The full summary paper \cite{DBLP:conf/eurosp/PapernotMSW18}.
+
+?? Put this somewhere: can extract portions of training data w/ carefully crafted inputs~\parencite{DBLP:journals/corr/abs-2012-07805}. Not read, though maybe relate to privacy in general? I.e., differentially private methods.
 
 \subsection{Attacks on Data-Driven Techniques}
 

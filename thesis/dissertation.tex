@@ -33,12 +33,13 @@
 \newcommand{\myname}{Kyle A. Simpson}
 
 \hypersetup{
-%	colorlinks,
+	colorlinks,
 	%draft,
-%	citecolor=black,
-%	filecolor=black,
-%	linkcolor=black,
-%	urlcolor=black,
+	citecolor=uofgrust,
+	filecolor=black,
+	linkcolor=darkslate,
+	urlcolor=uofgthistle,
+	linktoc=all,
 	pdftitle={\mytitle{}},
 	pdfauthor={\myname{}}
 }
@@ -122,10 +123,12 @@
 % -----------------------------------------------------------------------------
 %\newpage
 %\thispagestyle{empty}
+\microtypesetup{protrusion=false}
 \pdfbookmark[chapter]{\contentsname}{toc}
-{\sffamily\tableofcontents}
+{\hypersetup{hidelinks}\sffamily\tableofcontents}
 \listoftables
 \listoffigures
+\microtypesetup{protrusion=true}
 
 \printglossary
 \printglossary[type=\acronymtype]
@@ -230,8 +233,12 @@
 %\makeatletter
 %\let\ps@plain=\ps@fancy
 %\makeatother
+
+
 % Bibliography
 \addcontentsline{toc}{part}{References}
+\renewcommand*{\mkbibnamefamily}[1]{\textsc{#1}}
+\renewcommand*{\mkbibnameprefix}[1]{\textsc{#1}}
 \printbibliography[title={References}]
 
 \end{document}
