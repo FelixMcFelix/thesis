@@ -12,7 +12,7 @@ A natural question to ask, then, is whether we can use this data to enhance and 
 Thinking further still, we might wonder whether we can outperform the general (yet useful) heuristics which are widely deployed and researched, tailoring network behaviour according to its environment and traffic patterns.
 These questions are the founding principles of \gls{acr:ddn}\sidenote{Alternatively titled \emph{self-driving networks}.}, a recent field of research focussed on the automatic control and optimisation of network systems, which has sprung forth due to recent advances in \gls{acr:ml} and \gls{acr:rl}.
 
-The ideas and goals of automated network control have existed and evolved in one form or another, particularly as computational inference and learning have grown more powerful.
+The ideas and goals of automated network control have always existed and evolved in one form or another, particularly as computational inference and learning have grown more powerful.
 Primarily these ideas have propagated via position papers offering a `vision of things to come'.
 This was first famously formalised as the \emph{knowledge plane}~\parencite{DBLP:conf/sigcomm/ClarkPRW03}, in contrast to the \emph{data} and \emph{control} planes.
 This proposal captures not only the above concepts of automation as a means for network control, but also for collaborative or commercial sharing of information between end-hosts, transit \glspl{acr:as}, and organisations to build up a global picture of the needs of the network.
@@ -28,31 +28,23 @@ Sadly, full examination and further development lies beyond the scope of this th
 \section{Use Cases}\label{sec:use-cases}
 To give a clear (if somewhat informal) introduction to what different processing techniques can offer, I present a selection of \gls{acr:ddn} use cases.
 The aims of this section are threefold: to offer a rough intuition of the capabilities of state-of-the-art \gls{acr:ml}/\gls{acr:rl} techniques, to present the breadth of optimisation and control problems in \gls{acr:ddn}, and to describe the sorts of interaction model and co-design required to meet performance guarantees.
-In the case of \gls{acr:rl}-based works, I highlight the state space (\rllitstate), action space (\rllitact{} if discrete, \rllitactreal{} if real-valued), and reward source (\rllitreward).
+In the case of \gls{acr:rl}-based works, I highlight the state space (\rllitstate), action space (\rllitact{} if discrete, \rllitactreal{} if continuous), and reward source (\rllitreward).
+If works are evaluated using network traces instead of a live environment or suitable simulation, I mark them with a `$\dagger$'---this does not invalidate those authors' findings, but should invite a hint of scepticism based on the discussions of \cref{sec:ddn-challenges}.
+Readers anxious to see the common threads between these very separate applications might skip to \cref{sec:ddn-use-takeaways}.
+%
+%?? Optimisation
+%
+%?? Design
+%
+%?? Detection / telemetry / inference
+%
+%?? Refer back to the computer networks chapter: topologies, routing, defence, ... all present problems who are often served and solved by the use of heuristics.
+%
+%?? \gls{acr:ddn} risks~\parencite{DBLP:conf/hotnets/BartulovicJBSS17}.
+%
+%led the charge in data-driven networking, enhancing automatic traffic optimisation~\parencite{DBLP:conf/sigcomm/ChenL0L18,DBLP:conf/sigcomm/MaoNA17}, congestion control~\parencite{DBLP:journals/corr/abs-1910-04054}, adaptive routing~\parencite{DBLP:conf/hotnets/ValadarskySST17,DBLP:conf/conext/GiladSGRS20}, resource management~\parencite{DBLP:conf/hotnets/MaoAMK16}, and packet classification~\parencite{DBLP:conf/sigcomm/LiangZJS19}.
 
-?? Optimisation
-
-?? Design
-
-?? Detection / telemetry / inference
-
-?? Refer back to the computer networks chapter: topologies, routing, defence, ... all present problems who are often served and solved by the use of heuristics.
-
-?? Also heuristics to generate fast approaches? LUTs etc.
-
-?? \gls{acr:ddn} risks~\parencite{DBLP:conf/hotnets/BartulovicJBSS17}.
-
-led the charge in data-driven networking, enhancing automatic traffic optimisation~\parencite{DBLP:conf/sigcomm/ChenL0L18,DBLP:conf/sigcomm/MaoNA17}, congestion control~\parencite{DBLP:journals/corr/abs-1910-04054}, adaptive routing~\parencite{DBLP:conf/hotnets/ValadarskySST17,DBLP:conf/conext/GiladSGRS20}, resource management~\parencite{DBLP:conf/hotnets/MaoAMK16}, and packet classification~\parencite{DBLP:conf/sigcomm/LiangZJS19}.
-
-?? Can I please dig up some CNN/LSTM/non-RL-based variants so that this isn't the RL show?
-
-Hopefully, it should be apparent that a consistent feature ...
-?? Decisions taken with reduced frequency, out of the critical data path
-?? Per-packet/flow are mostly restricted to end-hosts.
-
-?? Common drawback here is that inference, while quite fast, is too slow 
-
-?? Any general points on training duration I can/should make?
+%?? Can I please dig up some CNN/LSTM/non-RL-based variants so that this isn't the RL show?
 
 \subsection{Network Management}
 
@@ -62,39 +54,40 @@ We can look at this as how to move a packet towards the \gls{acr:as} where the d
 As inter-\gls{acr:as} routing requires consistent protocols and negotiation between organisations, intra-\gls{acr:as} routing offers more scope for optimisation and innovation.
 The usual term for such processes is \gls{acr:to}/\gls{acr:te}, aiming to minimise congestion and increase client \gls{acr:qos}~\parencite{rfc3272}.
 
-\textcite{DBLP:conf/hotnets/ValadarskySST17} show how \gls{acr:rl} can be used to map the last $k$ demand matrices (\rllitstate) into a set of edge weights (\rllitactreal).
-The calculated weights are used as the input to compute probabilistic forwarding strategies based on classical hop-by-hop routing strategies, which then allow congestion to be computed for the following demand matrix (\rllitreward).
+\textcite{DBLP:conf/hotnets/ValadarskySST17} show how \gls{acr:rl} can be used to route traffic by mapping the last $k$ demand matrices (\rllitstate) into a set of edge weights (\rllitactreal).
+The calculated weights are used as the input to compute probabilistic forwarding strategies based on classical hop-by-hop routing, which then allow congestion to be computed for the following demand matrix (\rllitreward).
 Policy approximation is provided by a fully connected \gls{acr:nn}, trained using the TRPO algorithm~\parencite{DBLP:conf/icml/SchulmanLAJM15}.
 This is striking work because it presents an environment where RL categorically beats supervised learning---where predicting a set of actions to take is more effective than predicting the next state and then computing an optimal assignment---and is able to outperform the non-ML \emph{oblivious routing}~\parencite{DBLP:conf/stoc/AzarCFKR03} for some problem models.
 There are several key takeaways from this work: their exploratory designs showed that system performance and learning rate rely heavily upon output model size, emphasising the need for a minimal representation of actions/predictions made\sidenote{Even though a smaller model size is arguably less expressive, the fact that there are fewer parameters to learn can be instrumental in converging to a more effective solution more quickly.}; policy execution occurs outside the packet path, and so learns feasibly online; and that using \gls{acr:ddn} outputs as the input for a well-defined algorithm can offer more interpretability and trust in an optimised system.
 A drawback worth discussion is their \gls{acr:nn} architecture's input and output dimensions depend on the network under control ($k\cdot\left|V\right|^2\rightarrow\left|E\right|$), and so learned policies are not portable even under simple alterations like runtime switch/link additions.
 Memory cost, compute time, and parameter count would equally scale poorly in larger networks.
 
-\emph{AuTO}~\parencite{DBLP:conf/sigcomm/ChenL0L18} examines the task of flow scheduling, employing \gls{acr:drl} to perform traffic optimisation, using the DDPG algorithm~\parencite{DBLP:journals/corr/LillicrapHPHETS15} to update a \gls{acr:dnn} policy.
-Crucially, they find that the vast majority of flows are short-lived, requiring effective decisions in less than a millisecond.
-To overcome the high latency of action computation via \gls{acr:nn}, two agents are trained, handling aspects of short and long flows respectively.
-The first learns to optimise the flow size thresholds which define priority allocation at each switch (and accordingly learn how best to demarcate long and short flows); these short flows are routed by \gls{acr:ecmp}.
-The second agent makes bespoke decisions about routing, prioritisation etc.\ for each of the remaining long flows, who are likely to live long enough that any actions will have a significant impact.
+\emph{AuTO}~\parencite{DBLP:conf/sigcomm/ChenL0L18} examines several \gls{acr:to} problems in greater depth, explicitly aiming to optimise datacentres of $>$\num{10000} servers via \gls{acr:drl}.
+This presents a key problem: inference using their architecture has a $\sim$\qty{100}{\milli\second} latency, which is rather at odds with the long-tailed distribution of datacentre traffic (namely, that shorter \emph{mice} flows greatly outnumber longer \emph{elephant} flows).
+The primary consequence is that trying to take per-flow actions in such low-\gls{acr:rtt} environments causes decisions to either apply late into the flow lifecycle or miss their target entirely, unless they can be reliably taken sub-millisecond.
+The posed solution uses two agents concurrently, for mice and elephant flows respectively.
+\emph{sRLA} produces a set of flow size thresholds for simple queue priority assignment\sidenote{Smaller flows are prioritised, as they are assumed to be more deadline sensitive or to suffer higher relative \glspl{acr:fct} in the event of losses.} (\rllitactreal), using the 5-tuple, \gls{acr:fct}, and size of each completed flow (\rllitstate) to optimise the ratio of average per-packet queue times with regard to the last timestep (\rllitreward).
+Flows in all but the last priority class are routed using \gls{acr:ecmp}.
+\emph{lRLA} then makes bespoke decisions for the remaining flows which---with high probability---will continue long enough to be meaningfully benefited.
+For all live and completed flows, it uses the 5-tuple with the current priority (if live) or the \gls{acr:fct} and size (if complete) (\rllitstate) to choose the flow's priority, rate, and route as an XPath ID~\parencite{DBLP:journals/ton/Hu0W0L0ZG16} ($\rllitact\times\rllitactreal\times\rllitact$).
+This is conditioned on the ratio of average throughputs between two timesteps (\rllitreward).
+AuTO uses a \gls{acr:dnn} for policy approximation in both agents, trained using the DDPG algorithm~\parencite{DBLP:journals/corr/LillicrapHPHETS15}, offering an average \qty{8.71}{\percent} improvement over heuristics in evolving traffic after \qty{8}{\hour} of online training.
+The main design feature of interest to us is this agent separation; that an RL agent can be used to control a time-sensitive system by generating a compact set of parameters for another, more efficient algorithm.
+However, the reliance on XPath route numbers as an action ties the lRLA policy to the network it was learned in, preventing shared training in spite of the fixed-size architecture.
 
-?? Useful things about above: refer back to long tail of network traffic, $\sim$\qty{100}{\milli\second} \qty{10}{\micro\second}. $100, 200, 300, \dots, 900$
+SmartEntry\littrace~\parencite{DBLP:conf/sigcomm/00010YC20} uses an alternate formulation of \gls{acr:te} to selectively route traffic at key switches based on the destination.
+This differs from \citeauthor{DBLP:conf/hotnets/ValadarskySST17} by using the REINFORCE~\parencite{DBLP:journals/ml/Williams92} \gls{acr:rl} algorithm with \glspl{acr:cnn} to choose a set of \emph{location-destination pairs} to install route changes (\rllitact) from the \emph{current} traffic matrix (\rllitstate).
+For these nodes, an \gls{acr:ilp} model calculates an optimal probabilistic forwarding policy among their neighbours, whose maximum utilisation is used as a loss function (\rllitreward).
+Although this outperforms (weighted) \gls{acr:ecmp}, this has much the same scale and transfer issues as \citeauthor{DBLP:conf/hotnets/ValadarskySST17} ($|V|^2\rightarrow|V||V-1|$)---in \gls{acr:isp} networks this is to some extent acceptable given that $|V|\leq49$ in representative trace data.
+The key concern is that the runtime cost of the ILP formulation isn't documented, which can have a severe impact on stability if traffic matrices change quickly.\sidenote{\gls{acr:cnn} execution is performed \emph{only once} irrespective of how many reroutes are inserted, so this cost is likely dominated by the \textsf{NP}-hard \gls{acr:ilp}.}
 
-(\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).
+?? MPCC~\parencite{DBLP:conf/conext/GiladSGRS20}
 
-\parencite{DBLP:conf/sigcomm/00010YC20}
+(\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).$\dagger$
 
-$3 \sin x \alpha$
 
-\begin{displaymath}
-	\int_0^{+\infty} \left(\frac{\alpha}{\sqrt{\Omega_\Lambda - 1}}\right)^{\frac{1}{x}}
-	\mathrm{d}x
-\end{displaymath}
 
 Routing
-* https://dl.acm.org/doi/10.1145/3405671.3405809 -- SmartEntry: Mitigating Routing Update Overhead with Reinforcement Learning for Traffic Engineering
-* https://dl.acm.org/doi/10.1145/3386367.3433030 -- MPCC: online learning multipath transport (IMPORTANT)
-
-?? Note: make sure that intra/inter-AS routing are explained elsewhere.
-
 ?? Although BGP and inter-domain routing work by fixed rules,
 * https://dl.acm.org/doi/10.1145/3405671.3405816 -- DeepBGP: A Machine Learning Approach for BGP Configuration Synthesis
 
@@ -120,6 +113,8 @@ CCAs
 \subsection{Security, Defence, and Verification}
 
 * https://dl.acm.org/doi/10.1145/3341216.3342206 -- Runtime Verification of P4 Switches with Reinforcement Learning
+
+* https://ieeexplore.ieee.org/document/9142704 -- Line-Speed and Scalable Intrusion Detection at the Network Edge via Federated Learning
 
 \subsection{Multimedia}
 
@@ -148,7 +143,15 @@ ABR stuff
 
 ?? Other domains: processor design (which can be viewed as a placement/routing problem)~\parencite{Mirhoseini2021}
 
-\subsection{Takeaways for effective data-driven networking}
+\subsection{Takeaways for effective data-driven networking}\label{sec:ddn-use-takeaways}
+
+Hopefully, it should be apparent that a consistent feature ...
+?? Decisions taken with reduced frequency, out of the critical data path
+?? Per-packet/flow are mostly restricted to end-hosts.
+
+?? Common drawback here is that inference, while quite fast, is too slow 
+
+?? Any general points on training duration I can/should make?
 
 ?? NN exec time is huge, due to GPU offload (cite sources for this)
 ?? Use the worked example from the OPaL paper to illustrate why this is bad (or worse) the closer you go to the metal?
@@ -347,9 +350,10 @@ When combined with the above P4-driven techniques for in-network flow/device mea
 Moreover, the base P4 dataplane can be used to simplify parsing logic and offer runtime control over which flows/packets are monitored, alongside other packet actions.
 This again fits our goals of integrating RL techniques directly within bump-in-the-wire installations and at end-hosts.
 
-\section{Challenges}
+\section{Challenges}\label{sec:ddn-challenges}
 
 ?? Include some good, high-level discussion of sensitivity to training environment (i.e., many authors willing to use traces) \textcite{DBLP:conf/hotnets/BartulovicJBSS17}, yet there's still interesting use-cases in being able to do so \textcite{DBLP:conf/hotnets/LecuyerLNSSS17}.
+?? Main problem with traces: not modelling/learning how the controlled system acts in response to change.
 
 ?? Seems to always require dedicated co-design? (https://www.usenix.org/conference/nsdi21/presentation/fu)
 

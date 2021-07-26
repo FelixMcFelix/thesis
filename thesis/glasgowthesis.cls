@@ -60,7 +60,7 @@
 % Set paragraph layout.
 \setlength{\parindent}{0pt}
 % \setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
-\setlength{\parskip}{11pt plus 1pt minus 1pt}
+\setlength{\parskip}{9pt plus 1pt minus 1pt}
 
 % Set line spacing to one-and-a-half.
 \usepackage{setspace}
