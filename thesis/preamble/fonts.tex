@@ -1,8 +1,8 @@
-\usepackage[no-math]{fontspec}
+% \usepackage[no-math]{fontspec}
 
-\renewcommand{\rmdefault}{minlibertine}
-\usepackage[libertine,upint]{newtxmath}
-\usepackage[scr=rsfso]{mathalfa}% helps with loading of math alphabets
+% \renewcommand{\rmdefault}{minlibertine}
+% \usepackage[libertine,upint]{newtxmath}
+% \usepackage[scr=rsfso]{mathalfa}% helps with loading of math alphabets
 
 %\usepackage{Alegreya}
 \usepackage[oldstyle]{AlegreyaSans}
@@ -10,11 +10,14 @@
 
 %\usepackage{tgpagella}
 % \usepackage[oldstyle]{libertine}
-\usepackage[oldstyle]{libertine}
+% \usepackage[oldstyle]{libertine}
+\usepackage[oldstyle]{libertinus}
 % \usepackage{libertinust1math}
 %\usepackage{newpxtext}
 %\usepackage{newpxmath}
 %\usepackage{FiraSans}
+
+\setmathfont{Libertinus Math}
 
 %\usepackage[
 %    math-style=ISO,
@@ -43,17 +46,20 @@
 %\DeclareMathSymbol{8}{\mathalpha}{liningdigits}{`8}
 %\DeclareMathSymbol{9}{\mathalpha}{liningdigits}{`0}
 
-\AtBeginDocument{%
-  \Umathcode`0="7 "0 `0
-  \Umathcode`1="7 "0 `1
-  \Umathcode`2="7 "0 `2
-  \Umathcode`3="7 "0 `3
-  \Umathcode`4="7 "0 `4
-  \Umathcode`5="7 "0 `5
-  \Umathcode`6="7 "0 `6
-  \Umathcode`7="7 "0 `7
-  \Umathcode`8="7 "0 `8
-  \Umathcode`9="7 "0 `9
-}
+% \AtBeginDocument{%
+%   \Umathcode`0="7 "0 `0
+%   \Umathcode`1="7 "0 `1
+%   \Umathcode`2="7 "0 `2
+%   \Umathcode`3="7 "0 `3
+%   \Umathcode`4="7 "0 `4
+%   \Umathcode`5="7 "0 `5
+%   \Umathcode`6="7 "0 `6
+%   \Umathcode`7="7 "0 `7
+%   \Umathcode`8="7 "0 `8
+%   \Umathcode`9="7 "0 `9
+% }
 
 % \SetTracking{encoding={*}, shape=sc}{40}
+
+% must be loaded after ams math...
+\usepackage[nameinlink]{cleveref}

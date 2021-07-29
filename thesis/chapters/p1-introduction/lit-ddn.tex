@@ -26,141 +26,7 @@ Although this context and its challenges are rapidly evolving, an understanding 
 Sadly, full examination and further development lies beyond the scope of this thesis---it is, in fact, a thesis-worthy topic in its own right~\parencite{papernot-thesis}.
 
 \section{Use Cases}\label{sec:use-cases}
-To give a clear (if somewhat informal) introduction to what different processing techniques can offer, I present a selection of \gls{acr:ddn} use cases.
-The aims of this section are threefold: to offer a rough intuition of the capabilities of state-of-the-art \gls{acr:ml}/\gls{acr:rl} techniques, to present the breadth of optimisation and control problems in \gls{acr:ddn}, and to describe the sorts of interaction model and co-design required to meet performance guarantees.
-In the case of \gls{acr:rl}-based works, I highlight the state space (\rllitstate), action space (\rllitact{} if discrete, \rllitactreal{} if continuous), and reward source (\rllitreward).
-If works are evaluated using network traces instead of a live environment or suitable simulation, I mark them with a `$\dagger$'---this does not invalidate those authors' findings, but should invite a hint of scepticism based on the discussions of \cref{sec:ddn-challenges}.
-Readers anxious to see the common threads between these very separate applications might skip to \cref{sec:ddn-use-takeaways}.
-%
-%?? Optimisation
-%
-%?? Design
-%
-%?? Detection / telemetry / inference
-%
-%?? Refer back to the computer networks chapter: topologies, routing, defence, ... all present problems who are often served and solved by the use of heuristics.
-%
-%?? \gls{acr:ddn} risks~\parencite{DBLP:conf/hotnets/BartulovicJBSS17}.
-%
-%led the charge in data-driven networking, enhancing automatic traffic optimisation~\parencite{DBLP:conf/sigcomm/ChenL0L18,DBLP:conf/sigcomm/MaoNA17}, congestion control~\parencite{DBLP:journals/corr/abs-1910-04054}, adaptive routing~\parencite{DBLP:conf/hotnets/ValadarskySST17,DBLP:conf/conext/GiladSGRS20}, resource management~\parencite{DBLP:conf/hotnets/MaoAMK16}, and packet classification~\parencite{DBLP:conf/sigcomm/LiangZJS19}.
-
-%?? Can I please dig up some CNN/LSTM/non-RL-based variants so that this isn't the RL show?
-
-\subsection{Network Management}
-
-\paragraph{Routing and Traffic Optimisation}
-As discussed earlier, routing is the task of moving packets of network data from their source to their destination, ideally without losing any in transit and as quickly as possible.
-We can look at this as how to move a packet towards the \gls{acr:as} where the destination is located using logical boundary information (\emph{inter-\gls{acr:as} routing}), and how to move packets over the physical infrastructure within an \gls{acr:as} (\emph{intra-\gls{acr:as} routing}).
-As inter-\gls{acr:as} routing requires consistent protocols and negotiation between organisations, intra-\gls{acr:as} routing offers more scope for optimisation and innovation.
-The usual term for such processes is \gls{acr:to}/\gls{acr:te}, aiming to minimise congestion and increase client \gls{acr:qos}~\parencite{rfc3272}.
-
-\textcite{DBLP:conf/hotnets/ValadarskySST17} show how \gls{acr:rl} can be used to route traffic by mapping the last $k$ demand matrices (\rllitstate) into a set of edge weights (\rllitactreal).
-The calculated weights are used as the input to compute probabilistic forwarding strategies based on classical hop-by-hop routing, which then allow congestion to be computed for the following demand matrix (\rllitreward).
-Policy approximation is provided by a fully connected \gls{acr:nn}, trained using the TRPO algorithm~\parencite{DBLP:conf/icml/SchulmanLAJM15}.
-This is striking work because it presents an environment where RL categorically beats supervised learning---where predicting a set of actions to take is more effective than predicting the next state and then computing an optimal assignment---and is able to outperform the non-ML \emph{oblivious routing}~\parencite{DBLP:conf/stoc/AzarCFKR03} for some problem models.
-There are several key takeaways from this work: their exploratory designs showed that system performance and learning rate rely heavily upon output model size, emphasising the need for a minimal representation of actions/predictions made\sidenote{Even though a smaller model size is arguably less expressive, the fact that there are fewer parameters to learn can be instrumental in converging to a more effective solution more quickly.}; policy execution occurs outside the packet path, and so learns feasibly online; and that using \gls{acr:ddn} outputs as the input for a well-defined algorithm can offer more interpretability and trust in an optimised system.
-A drawback worth discussion is their \gls{acr:nn} architecture's input and output dimensions depend on the network under control ($k\cdot\left|V\right|^2\rightarrow\left|E\right|$), and so learned policies are not portable even under simple alterations like runtime switch/link additions.
-Memory cost, compute time, and parameter count would equally scale poorly in larger networks.
-
-\emph{AuTO}~\parencite{DBLP:conf/sigcomm/ChenL0L18} examines several \gls{acr:to} problems in greater depth, explicitly aiming to optimise datacentres of $>$\num{10000} servers via \gls{acr:drl}.
-This presents a key problem: inference using their architecture has a $\sim$\qty{100}{\milli\second} latency, which is rather at odds with the long-tailed distribution of datacentre traffic (namely, that shorter \emph{mice} flows greatly outnumber longer \emph{elephant} flows).
-The primary consequence is that trying to take per-flow actions in such low-\gls{acr:rtt} environments causes decisions to either apply late into the flow lifecycle or miss their target entirely, unless they can be reliably taken sub-millisecond.
-The posed solution uses two agents concurrently, for mice and elephant flows respectively.
-\emph{sRLA} produces a set of flow size thresholds for simple queue priority assignment\sidenote{Smaller flows are prioritised, as they are assumed to be more deadline sensitive or to suffer higher relative \glspl{acr:fct} in the event of losses.} (\rllitactreal), using the 5-tuple, \gls{acr:fct}, and size of each completed flow (\rllitstate) to optimise the ratio of average per-packet queue times with regard to the last timestep (\rllitreward).
-Flows in all but the last priority class are routed using \gls{acr:ecmp}.
-\emph{lRLA} then makes bespoke decisions for the remaining flows which---with high probability---will continue long enough to be meaningfully benefited.
-For all live and completed flows, it uses the 5-tuple with the current priority (if live) or the \gls{acr:fct} and size (if complete) (\rllitstate) to choose the flow's priority, rate, and route as an XPath ID~\parencite{DBLP:journals/ton/Hu0W0L0ZG16} ($\rllitact\times\rllitactreal\times\rllitact$).
-This is conditioned on the ratio of average throughputs between two timesteps (\rllitreward).
-AuTO uses a \gls{acr:dnn} for policy approximation in both agents, trained using the DDPG algorithm~\parencite{DBLP:journals/corr/LillicrapHPHETS15}, offering an average \qty{8.71}{\percent} improvement over heuristics in evolving traffic after \qty{8}{\hour} of online training.
-The main design feature of interest to us is this agent separation; that an RL agent can be used to control a time-sensitive system by generating a compact set of parameters for another, more efficient algorithm.
-However, the reliance on XPath route numbers as an action ties the lRLA policy to the network it was learned in, preventing shared training in spite of the fixed-size architecture.
-
-SmartEntry\littrace~\parencite{DBLP:conf/sigcomm/00010YC20} uses an alternate formulation of \gls{acr:te} to selectively route traffic at key switches based on the destination.
-This differs from \citeauthor{DBLP:conf/hotnets/ValadarskySST17} by using the REINFORCE~\parencite{DBLP:journals/ml/Williams92} \gls{acr:rl} algorithm with \glspl{acr:cnn} to choose a set of \emph{location-destination pairs} to install route changes (\rllitact) from the \emph{current} traffic matrix (\rllitstate).
-For these nodes, an \gls{acr:ilp} model calculates an optimal probabilistic forwarding policy among their neighbours, whose maximum utilisation is used as a loss function (\rllitreward).
-Although this outperforms (weighted) \gls{acr:ecmp}, this has much the same scale and transfer issues as \citeauthor{DBLP:conf/hotnets/ValadarskySST17} ($|V|^2\rightarrow|V||V-1|$)---in \gls{acr:isp} networks this is to some extent acceptable given that $|V|\leq49$ in representative trace data.
-The key concern is that the runtime cost of the ILP formulation isn't documented, which can have a severe impact on stability if traffic matrices change quickly.\sidenote{\gls{acr:cnn} execution is performed \emph{only once} irrespective of how many reroutes are inserted, so this cost is likely dominated by the \textsf{NP}-hard \gls{acr:ilp}.}
-
-?? MPCC~\parencite{DBLP:conf/conext/GiladSGRS20}
-
-(\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).$\dagger$
-
-
-
-Routing
-?? Although BGP and inter-domain routing work by fixed rules,
-* https://dl.acm.org/doi/10.1145/3405671.3405816 -- DeepBGP: A Machine Learning Approach for BGP Configuration Synthesis
-
-\paragraph{Packet Classification}
-Packet classification
-* That main good paper -- Neural Packet Classification~\parencite{DBLP:conf/sigcomm/LiangZJS19}
-* https://dl.acm.org/doi/10.1145/3387514.3405886 -- A Computational Approach to Packet Classification
-* https://dl.acm.org/doi/10.1145/3405671.3405811 -- SAM: Self-Attention based Deep Learning Method for Online Traffic Classification
-* https://dl.acm.org/doi/10.1145/3341216.3342211 -- DeePCCI: Deep Learning-based Passive Congestion Control Identification
-
-* https://dl.acm.org/doi/10.1145/3341216.3342207 -- NetBOA: Self-Driving Network Benchmarking
-
-\subsection{Protocol Optimisation and Design}
-
-CCAs
-* MVFST-RL~\parencite{DBLP:journals/corr/abs-1910-04054}
-* https://dl.acm.org/doi/10.1145/3387514.3405892 -- Classic Meets Modern: a Pragmatic Learning-Based Congestion Control for the Internet
-
-* https://dl.acm.org/doi/10.1145/3405671.3405817 -- An Adaptive Tree Algorithm to Approach Collision-Free Transmission in Slotted ALOHA
-
-* https://www.usenix.org/conference/nsdi21/presentation/jog -- One Protocol to Rule Them All: Wireless Network-on-Chip using Deep Reinforcement Learning
-
-\subsection{Security, Defence, and Verification}
-
-* https://dl.acm.org/doi/10.1145/3341216.3342206 -- Runtime Verification of P4 Switches with Reinforcement Learning
-
-* https://ieeexplore.ieee.org/document/9142704 -- Line-Speed and Scalable Intrusion Detection at the Network Edge via Federated Learning
-
-\subsection{Multimedia}
-
-HTTP/2 push
-* https://www.usenix.org/conference/nsdi21/presentation/kansal
-
-ABR stuff
-* Pensieve~\parencite{DBLP:conf/sigcomm/MaoNA17}
-* https://ieeexplore.ieee.org/document/9155411 -- Stick: A Harmonious Fusion of Buffer-based and Learning-based Approach for Adaptive Streaming
-* https://ieeexplore.ieee.org/document/9155492 -- PERM: Neural Adaptive Video Streaming with Multi-path Transmission
-* https://dl.acm.org/doi/10.1145/3387514.3405856 -- Neural-Enhanced Live Streaming: Improving Live Video Ingest via Online Learning
-
-* https://dl.acm.org/doi/10.1145/3386367.3431294 -- Drop the packets: using coarse-grained data to detect video performance issues
-
-\subsection{Resource Placement and Management}
-
-* Can't remember what they were actually optimising here~\parencite{DBLP:conf/hotnets/MaoAMK16}
-* https://ieeexplore.ieee.org/document/9155521 -- ReLoca: Optimize Resource Allocation for Data-parallel Jobs using Deep Learning
-
-* https://dl.acm.org/doi/10.1145/3341302.3342080 -- Learning scheduling algorithms for data processing clusters
-* https://dl.acm.org/doi/10.1145/3386367.3432588 -- Job scheduling for large-scale machine learning clusters
-* https://dl.acm.org/doi/10.1145/3342195.3387524 -- Autopilot: workload autoscaling at Google
-
-* https://dl.acm.org/doi/10.1145/3341216.3342214 -- RL-Cache: Learning-Based Cache Admission for Content Delivery
-* https://ieeexplore.ieee.org/document/9155373/ -- Intelligent Video Caching at Network Edge: A Multi-Agent Deep Reinforcement Learning Approach
-
-?? Other domains: processor design (which can be viewed as a placement/routing problem)~\parencite{Mirhoseini2021}
-
-\subsection{Takeaways for effective data-driven networking}\label{sec:ddn-use-takeaways}
-
-Hopefully, it should be apparent that a consistent feature ...
-?? Decisions taken with reduced frequency, out of the critical data path
-?? Per-packet/flow are mostly restricted to end-hosts.
-
-?? Common drawback here is that inference, while quite fast, is too slow 
-
-?? Any general points on training duration I can/should make?
-
-?? NN exec time is huge, due to GPU offload (cite sources for this)
-?? Use the worked example from the OPaL paper to illustrate why this is bad (or worse) the closer you go to the metal?
-
-?? Keep huge exec times out of the packet path
-
-?? Input, output and model shape should ideally be kept at a fixed size irrespective of the target deployment, to allow not just deploying in these other environments but also training from as many separate systems as possible! (and enable model combination/sharing)
-
-?? Model architecture should be kept to as small/compact a representation as possible; not only fewer params to learn, but also fewer operations in inference --- runtime perf!
+\input{chapters/p1-introduction/ch2-ddn/use-cases.tex}
 
 \section{Function approximation}\label{sec:function-approximation}
 
@@ -194,6 +60,8 @@ Hopefully, it should be apparent that a consistent feature ...
 
 ?? 2021 --- need to emphasise that we're using a goodness metric to learn a state-action map without an explicit model of the system we're learning to control.
 
+?? Core use-cases -- sparity and delayedness of rewards.
+
 DDPG~\parencite{DBLP:journals/corr/LillicrapHPHETS15}, DPG~\parencite{DBLP:conf/icml/SilverLHDWR14}
 
 Note -- are actor-critic methods needed for continuous action spaces? Might be worth mentioning whjat it takes to learn both discrete and continuous.
@@ -222,14 +90,14 @@ The main differences lie in how this gradient information is used, and combined 
 Rather than adapting the learned parameters along the gradient using an error value from a target value, because the optimal actions aren't known they adjust values using a \emph{Markov Decision Process} (MDP)---capturing state trajectories to adjust value based on past and future decisions.
 
 Consider the single-step, semi-gradient Sarsa algorithm~\cite[pp. \numrange{217}{221}]{RL2E}:
-\begin{subequations}
-	\begin{gather}
-		\delta_t = R_{t+1} + \gamma \acval{S_{t+1}}{A_{t+1}}{\wvec{t}} - \acval{S_t}{A_t}{\wvec{t}},\\
-		\bm{w}_{t+1} = \bm{w}_{t} + \alpha \delta_t \nabla{\acval{S_t}{A_t}{\wvec{t}}},
-	\end{gather}%
-	\label{eqn:sg-sarsa}%
-	where $\delta_t$ is known as the \emph{temporal-difference} (TD) error, $\acval{S}{A}{\wvec{}}$ denotes the \emph{value} of an action $A$ taken in state $S$ according to the policy $\wvec{}$, and the vector gradient $\nabla$ is taken with respect to $\wvec{}$. $\gamma,\alpha\in[0,1]$ are the discount factor and learning rate (governing the degree of forward planning and policy stability, respectively).
-\end{subequations}
+% \begin{subequations}
+% 	\begin{gather}
+% 		\delta_t = R_{t+1} + \gamma \acval{S_{t+1}}{A_{t+1}}{\wvec{t}} - \acval{S_t}{A_t}{\wvec{t}},\\
+% 		\bm{w}_{t+1} = \bm{w}_{t} + \alpha \delta_t \nabla{\acval{S_t}{A_t}{\wvec{t}}},
+% 	\end{gather}%
+% 	\label{eqn:sg-sarsa}%
+% 	where $\delta_t$ is known as the \emph{temporal-difference} (TD) error, $\acval{S}{A}{\wvec{}}$ denotes the \emph{value} of an action $A$ taken in state $S$ according to the policy $\wvec{}$, and the vector gradient $\nabla$ is taken with respect to $\wvec{}$. $\gamma,\alpha\in[0,1]$ are the discount factor and learning rate (governing the degree of forward planning and policy stability, respectively).
+% \end{subequations}
 In essence, at each timestep the policy parameters ($\wvec{}$) are increased along the gradient ($\nabla{\acvalblank}$) using a fixed learning rate ($\alpha$) and a computed adjustment ($\delta_t$).
 This adjustment is equal to the difference between the chosen action $A$'s value in state $S$ and the reward received ($R_{t+1} - \acval{S_t}{A_t}{\wvec{}}$), \emph{plus} some part of the \emph{next} action's value ($\gamma\acval{S_{t+1}}{A_{t+1}}{\wvec{}}$).
 To give some context on the design space here, other algorithms may employ separate state value approximations, use the entirety of an agent's trace, or be tailored to characteristics of the policy approximator (e.g., how neural networks benefit from batching).
