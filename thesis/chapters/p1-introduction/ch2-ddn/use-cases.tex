@@ -87,36 +87,45 @@ This is no longer the case in the wild; a key issue nowadays is that encryption 
 Using headers alone, there have been successes on common datasets using Na\"{i}ve Bayes~\parencite{DBLP:conf/sigmetrics/MooreZ05}, Bayesian \glspl{acr:nn}~\parencite{DBLP:journals/tnn/AuldMG07}, \glspl{acr:cnn}~\parencite{DBLP:journals/soco/LotfollahiSZS20}, and self-attention mechanisms~\parencite{DBLP:conf/sigcomm/Xie0JDSLSX20} which have enjoyed success in natural language processing~\parencite{DBLP:conf/nips/VaswaniSPUJGKP17}.
 What is often not masked, however, are application-level timing characteristics of this traffic such as patterns of up/down rates, interarrival times, and statistics gathered over traffic bursts.
 This additional information makes the task tractable on e.g., \gls{acr:knn} and decision tree classifiers~\parencite{DBLP:conf/icissp/Draper-GilLMG16}, or \glspl{acr:lstm} and \glspl{acr:cnn}~\parencite{DBLP:journals/tnsm/AcetoCMP19}.
-This extends towards passive \gls{acr:cca} identification: for window-based algorithms \glspl{acr:cnn} have been used to estimate the \emph{cwnd} parameter and observe its reaction to loss events~\parencite{DBLP:conf/icccn/HagosEYK18}, and modern \glspl{acr:cca} are handled using both \glspl{acr:cnn} and \glspl{acr:lstm} in DeePCCI~\parencite{DBLP:conf/sigcomm/SanderRHW19}.\sidenote{It's worth noting that this approach in particular is strikingly similar to my own Sei\dh{}r histograms and associated use case in spite of their parallel development---I contrast the differences in input data, processing, and systems engineering in considerable detail in ??.}
+This extends towards passive \gls{acr:cca} identification: for window-based algorithms \glspl{acr:cnn} have been used to estimate the \emph{cwnd} parameter and observe its reaction to loss events~\parencite{DBLP:conf/icccn/HagosEYK18}, and modern \glspl{acr:cca} are handled using both \glspl{acr:cnn} and \glspl{acr:lstm} in DeePCCI~\parencite{DBLP:conf/sigcomm/SanderRHW19}.\sidenote{It's worth noting that this approach in particular is strikingly similar to my own \seidr{} histograms and associated use case in spite of their parallel development---I contrast the differences in input data, processing, and systems engineering in considerable detail in ??.}
 There are significant issues with these approaches in practice, in spite of their impressive performance.
-Inference times on one state-of-the-art design here~\parencite{DBLP:conf/sigcomm/Xie0JDSLSX20}  are \qty{180}{\micro\second} when accelerating using \gls{acr:gpu} offload, suggesting that throughput and latency guarantees of modern \glspl{acr:as} can't be met without aggressive sampling.
+Inference times on one state-of-the-art design~\parencite{DBLP:conf/sigcomm/Xie0JDSLSX20} are \qty{180}{\micro\second} when accelerated using \gls{acr:gpu} offload, suggesting that throughput and latency guarantees of modern \glspl{acr:as} can't be met without aggressive sampling.
 Some of these input features are also difficult to collect in-network without traffic mirroring and analysis at hosts---which already handle packets at a rate far lower than line-rate network hardware~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18}---particularly relevant for encrypted traffic.
 
-* https://dl.acm.org/doi/10.1145/3341216.3342207 -- NetBOA: Self-Driving Network Benchmarking
-
-(\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).$\dagger$
+\paragraph{Performance analysis}
+Bayesian optimisation using Gaussian processes has seen some degree of success in identifying unexpected performance ``hotspots'' in Open vSwitch~\parencite{DBLP:conf/nsdi/PfaffPKJZRGWSSA15} through \emph{NetBOA}~\parencite{DBLP:conf/sigcomm/ZerwasKHRKB019}, and cloud instance configuration via \emph{CherryPick}~\parencite{DBLP:conf/nsdi/AlipourfardLCVY17}.
+This mirrors its successes in \gls{acr:ml} hyperparameter optimisation~\parencite{DBLP:conf/lion/HutterHL11,DBLP:conf/aaai/FeurerSH15}, as this family of techniques is effective at optimising input parameter distributions towards a cost/reward function using limited data (i.e., when there's a high monetary or compute cost to acquire each sample).
+For optimisation tasks their use is straightforward, but it must be noted that hotspot identification still requires high-level operator knowledge.\sidenote{In particular, human knowledge is currently needed to show that a so-called adversarial scenario is more than just an expected scaling characteristic; not to mention the subsequent root-cause analysis.}
 
 \subsection{Protocol Optimisation and Design}
+\paragraph{Congestion control}
+As discussed and introduced earlier in ??, the design of effective \glspl{acr:cca} very much remains an open topic.
+The degree of diversity in networks, from long-fat Internet-style networks to dense low-\gls{acr:rtt} data centres, in buffering and forwarding behaviours of different path segments, \emph{and} the unforeseen interactions between disparate \glspl{acr:cca} mechanisms presents a huge problem space to work in.
+Incorrect assumptions can have knock-on effects in not just overall performance, but in fairness of longer-lived flows to other traffic, or in catastrophic increases to the \glspl{acr:fct} of short flows.
+As a result, automated \gls{acr:cca} learning is a particularly attractive prospect; more so when we recall the dominance of congestion-aware traffic (section ??).
 
-\paragraph{Congestion Control}
-MVFST-RL~\cite{DBLP:journals/corr/abs-1910-04054} uses RL to manage congestion control in QUIC~\cite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}.
-For context, a congestion-aware flow's \emph{cwnd} determines how much traffic may be ``on the wire'' at any point in time, where a higher cwnd implies higher bandwidth consumption.
-Typically, the cwnd value oscillates to prevent congestion and packet loss while maximising throughput.
-Observing that actions are sparsely taken compared to the number of state observations, they coalesce state updates over time, and define their action space so that it can add/subtract/multiply/divide/keep the cwnd which has been selected.
-Their RL agent takes actions asynchronously (i.e., the environment is not paused), which is how my work already behaves---they claim this as a novelty since it runs counter to the standard operation of the OpenAI Gym environment~\cite{DBLP:journals/corr/BrockmanCPSSTZ16}.
-These mechanisms have many similarities to the work I've produced to date (\cref{sec:work-undertaken}).
-However, they include not just one but \emph{several} of the last actions applied as part of the state vector, which they find has increasingly positive effects on agent performance.
-Interestingly, they employ recurrent neural networks (LSTM~\cite{DBLP:journals/neco/HochreiterS97}, after two fully-connected layers for feature extraction) as the basis for an agent's policy due to their particular suitability for identifying long-term relations in time-series data.
-Their work raises again one of the primary drawbacks of applying deep neural networks in latency sensitive applications (i.e., network management): they observe a \SI{30}{\milli\second} action computation time, and have only trained agents via parallel simulation, requiring vast amounts of data, and were unable to generate policies which are simultaneously applicable to different delay/bandwidth characteristics.
+\emph{MVFST-RL}~\parencite{DBLP:journals/corr/abs-1910-04054} uses \gls{acr:rl} to manage window-based congestion control in QUIC~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}.
+%For context, a congestion-aware flow's \emph{cwnd} determines how much traffic may be ``on the wire'' at any point in time, where a higher cwnd implies higher bandwidth consumption.
+%Typically, the cwnd value oscillates to prevent congestion and packet loss while maximising throughput.
+An agent then controls the \emph{cwnd} parameter; incrementing, decrementing, halving, doubling, or keeping its value \prllitact{} to optimise throughput and latency \prllitreward.
+In contrast with many prior \gls{acr:rl} works built on the OpenAI Gym~\parencite{DBLP:journals/corr/BrockmanCPSSTZ16}, their RL agent takes actions asynchronously by coalescing state updates over time, between action choices.\sidenote{The \gls{acr:ddos} mitigation use case I develop and describe later uses a similar trick, though this arises due to delayed \emph{reaction} times in the environment rather than inference cost. See section ??.}
+Input states are comprised of \gls{acr:rtt} statistics, byte transmission and receive counts and loss information, combined with the last \num{5} actions \prllitstate.
+By applying fully-connected \glspl{acr:nn} followed by an \gls{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97} for policy approximation, this work is competitive with the state-of-the-art due to \glspl{acr:lstm}' particular suitability for identifying long-term relations in time-series data.
+Their work raises again the primary drawback of applying \glspl{acr:dnn} in latency sensitive applications like \gls{acr:cca} design: they observe up to \qty{30}{\milli\second} action computation time, and have only trained agents via parallel simulation, requiring vast amounts of training data.
+Moreover, \emph{MVFST-RL} was unable to generate policies which are simultaneously applicable to different environmental delay and bandwidth characteristics.
 
-* MVFST-RL~\parencite{DBLP:journals/corr/abs-1910-04054}
 * DrlCC~\parencite{DBLP:journals/jsac/XuTYWX19} (multipath TCP again)
+
 * MPCC~\parencite{DBLP:conf/conext/GiladSGRS20} (see also, PCC Vivace~\parencite{DBLP:conf/nsdi/DongLZGS15,DBLP:conf/nsdi/DongMZAGGS18})
+
 * https://dl.acm.org/doi/10.1145/3387514.3405892 -- Classic Meets Modern: a Pragmatic Learning-Based Congestion Control for the Internet
 
+\paragraph{Physical-layer protocols}
 * https://dl.acm.org/doi/10.1145/3405671.3405817 -- An Adaptive Tree Algorithm to Approach Collision-Free Transmission in Slotted ALOHA
 
 * https://www.usenix.org/conference/nsdi21/presentation/jog -- One Protocol to Rule Them All: Wireless Network-on-Chip using Deep Reinforcement Learning
+
+(\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).$\dagger$
 
 \subsection{Security, Defence, and Verification}
 \textcite{DBLP:journals/eaai/MalialisK15} propose \emph{Marl} as an examination of the automated detection and mitigation of DDoS attacks using RL, showing the viability of live, adaptive, feedback-loop-like control of the network to detect and prevent DDoS attacks.
@@ -192,6 +201,8 @@ Hopefully, it should be apparent that a consistent feature ...
 
 ?? Keep huge exec times out of the packet path
 ?? Powerful to produce the structure/params for a more efficient algorithm to use.
+
+?? Necessary in many domains to act asynchronously as a result; combine and coalesce state data as it comes in, and then have action computation act upon a view of this data (still gather stats in the interim, however).
 
 ?? Input, output and model shape should ideally be kept at a fixed size irrespective of the target deployment, to allow not just deploying in these other environments but also training from as many separate systems as possible! (and enable model combination/sharing)
 ?? When is it fine to do otherwise? Attempting to solve a CSP (i.e., similar to genetic algos, ).
