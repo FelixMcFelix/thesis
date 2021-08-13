@@ -104,6 +104,10 @@ The degree of diversity in networks, from long-fat Internet-style networks to de
 Incorrect assumptions can have knock-on effects in not just overall performance, but in fairness of longer-lived flows to other traffic, or in catastrophic increases to the \glspl{acr:fct} of short flows.
 As a result, automated \gls{acr:cca} learning is a particularly attractive prospect; more so when we recall the dominance of congestion-aware traffic (section ??).
 
+The \emph{PCC} family of \glspl{acr:cca}~\parencite{DBLP:conf/nsdi/DongLZGS15,DBLP:conf/nsdi/DongMZAGGS18}, Copa~\parencite{DBLP:conf/nsdi/ArunB18}, and the multipath \emph{MPCC}~\parencite{DBLP:conf/conext/GiladSGRS20} offer a control-theoretic perspective on effective congestion control, improving on heuristic methods.
+These approaches combine flow throughput, loss, latency and goodput for each (sub)flow into a single utility score, choosing target rates which maximise this score via simple gradient ascent.
+Although this branch of research doesn't \emph{learn} any function approximation, the fact that operational modes and behaviours are all well-defined allows for convergence to be proven under typical network conditions.
+
 \emph{MVFST-RL}~\parencite{DBLP:journals/corr/abs-1910-04054} uses \gls{acr:rl} to manage window-based congestion control in QUIC~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}.
 %For context, a congestion-aware flow's \emph{cwnd} determines how much traffic may be ``on the wire'' at any point in time, where a higher cwnd implies higher bandwidth consumption.
 %Typically, the cwnd value oscillates to prevent congestion and packet loss while maximising throughput.
@@ -112,13 +116,29 @@ In contrast with many prior \gls{acr:rl} works built on the OpenAI Gym~\parencit
 Input states are comprised of \gls{acr:rtt} statistics, byte transmission and receive counts and loss information, combined with the last \num{5} actions \prllitstate.
 By applying fully-connected \glspl{acr:nn} followed by an \gls{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97} for policy approximation, this work is competitive with the state-of-the-art due to \glspl{acr:lstm}' particular suitability for identifying long-term relations in time-series data.
 Their work raises again the primary drawback of applying \glspl{acr:dnn} in latency sensitive applications like \gls{acr:cca} design: they observe up to \qty{30}{\milli\second} action computation time, and have only trained agents via parallel simulation, requiring vast amounts of training data.
-Moreover, \emph{MVFST-RL} was unable to generate policies which are simultaneously applicable to different environmental delay and bandwidth characteristics.
+Moreover, MVFST-RL was unable to generate policies which are simultaneously applicable to different environmental delay and bandwidth characteristics.
 
-* DrlCC~\parencite{DBLP:journals/jsac/XuTYWX19} (multipath TCP again)
+\emph{Aurora}~\parencite{DBLP:conf/icml/JayRGST19} then modifies rate selection in the PCC framework to use a simple fully-connected \gls{acr:nn}, trained using the PPO~\parencite{DBLP:journals/corr/SchulmanWDRK17} algorithm.
+It computes multiplicative increases/decreases to a flow's send rate \prllitactreal{} given an $m$-long history of latency stats and loss rates \prllitstate.
+The agent then acts to maximise a simple function of packet-per-second rate, penalising latency and loss \prllitreward.
+By keeping the core operational modes, the policies it learns from offline training \emph{do} effectively generalise to unseen network characteristics and designs.
+However, this formulation was later shown to be unfair to other \glspl{acr:cca}~\parencite{DBLP:conf/sigcomm/AbbaslooYC20}.
 
-* MPCC~\parencite{DBLP:conf/conext/GiladSGRS20} (see also, PCC Vivace~\parencite{DBLP:conf/nsdi/DongLZGS15,DBLP:conf/nsdi/DongMZAGGS18})
+\emph{DRL-CC}~\parencite{DBLP:journals/jsac/XuTYWX19} examines how one \gls{acr:rl} agent can jointly optimise \gls{acr:mptcp} subflows and \gls{acr:tcp} flows.
+\gls{acr:mptcp} differs from traditional transports by allowing data segments in a single logical connection to be sent over several interfaces, who naturally then have their own per-subflow congestion control in addition to shared co-ordination.
+The state of any (sub)flow is its rate, goodput, \gls{acr:rtt} stats, and congestion window size.
+DRL-CC passes all current states into an \gls{acr:lstm} to obtain a fixed-size representation for all flows, which is then combined with the overall state for a target flow \prllitstate.\sidenote{This \gls{acr:nn} architecture is often known as a \emph{two-headed network}. This allows end-to-end training of a feature extraction network and downstream \glspl{acr:nn} (in this case, the actor and critic networks). Training of the actor and critic component networks jointly improves the base feature extractor.}
+Using actor-critic methods, an \gls{acr:nn} produces a vector of congestion window deltas for all the target flow's subflows \prllitactreal, conditioned on the sum of log-goodputs of live flows \prllitreward.
+Inference latency is kept to a moderate \qty{0.5}{\milli\second} using the \gls{acr:cpu}, and performance is comparable to classical \gls{acr:mptcp} \glspl{acr:cca} on lossy networks---where a high packet loss of \qtyrange{0.5}{4}{\percent} can be justified by the focus of \gls{acr:mptcp} on cellular networks.
+While it is shown to be fair to itself, it's unclear how DRL-CC multiplexes with other \glspl{acr:cca}.
 
-* https://dl.acm.org/doi/10.1145/3387514.3405892 -- Classic Meets Modern: a Pragmatic Learning-Based Congestion Control for the Internet
+\emph{Orca}~\parencite{DBLP:conf/sigcomm/AbbaslooYC20} eschews the ``clean-slate'' approach shown thus far, using a classical \gls{acr:cca} (\gls{acr:tcp} Cubic) as its basis.
+This decision is empirically and strongly motivated; doing so greatly simplifies the learning task for an \gls{acr:rl} agent (improving the learned policy) \emph{and} reducing \gls{acr:cpu} and \gls{acr:gpu} utilisation in deployment.\sidenote{Recall that \glspl{acr:cca} almost always control how data is \emph{sent} across the network, and that clients typically send small requests for servers to transmit larger content. This leaves the burden of performing expensive per-packet and per-flow operations with the server, which by this same assumption has to handle many such flows!}
+Orca tracks $m$-long histories of a flow's current (and best) throughput and \gls{acr:rtt} information alongside its loss rate and congestion window \prllitstate.
+Using the TD3 actor-critic algorithm~\parencite{DBLP:conf/icml/FujimotoHM18}, Orca chooses some $\alpha\in\left(-2, 2\right)$ every \qty{20}{\milli\second}, multiplying the congestion window by $2^\alpha$ \prllitactreal, and allows the baseline classical \gls{acr:cca} to otherwise act as normal.
+Each flow acts to improve the current ratio between its current \emph{power} and the best estimate of the Gail-Kleinrock optimal operating point~\parencite{KleinrockPoint1,KleinrockPoint2}---with some tradeoffs to minimise loss and allow small \gls{acr:rtt} variance \prllitreward.
+While this naturally requires higher resource use than a heuristic method such as Cubic or BBRv2, this strategy reduces resource costs beyond even the control-theoretic PCC family of \glspl{acr:cca} (with better, fairer operation).
+Reducing the length of time between DRL actions predictably increases resource demands, but leads to better flow performance.
 
 \paragraph{Physical-layer protocols}
 * https://dl.acm.org/doi/10.1145/3405671.3405817 -- An Adaptive Tree Algorithm to Approach Collision-Free Transmission in Slotted ALOHA
@@ -198,6 +218,9 @@ Hopefully, it should be apparent that a consistent feature ...
 
 ?? NN exec time is huge, due to GPU offload (cite sources for this)
 ?? Use the worked example from the OPaL paper to illustrate why this is bad (or worse) the closer you go to the metal?
+
+?? Using existing heuristics/algorithm as a basis or teacher can be a free win
+?? Not doing inference all the time in the name of not killing your servers.
 
 ?? Keep huge exec times out of the packet path
 ?? Powerful to produce the structure/params for a more efficient algorithm to use.

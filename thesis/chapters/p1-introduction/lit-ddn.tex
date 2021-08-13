@@ -64,7 +64,7 @@ Sadly, full examination and further development lies beyond the scope of this th
 
 DDPG~\parencite{DBLP:journals/corr/LillicrapHPHETS15}, DPG~\parencite{DBLP:conf/icml/SilverLHDWR14}
 
-Note -- are actor-critic methods needed for continuous action spaces? Might be worth mentioning whjat it takes to learn both discrete and continuous.
+Note -- are actor-critic methods needed for continuous action spaces? Might be worth mentioning whjat it takes to learn both discrete and continuous. Need to use different methods to explore, i.e. Ornstein-Uhlenbeck process.
 
 ?? Also want to spend some time discussing various action-selection strategies, that the output can be
 
@@ -222,6 +222,8 @@ This again fits our goals of integrating RL techniques directly within bump-in-t
 
 ?? Include some good, high-level discussion of sensitivity to training environment (i.e., many authors willing to use traces) \textcite{DBLP:conf/hotnets/BartulovicJBSS17}, yet there's still interesting use-cases in being able to do so \textcite{DBLP:conf/hotnets/LecuyerLNSSS17}.
 ?? Main problem with traces: not modelling/learning how the controlled system acts in response to change.
+?? Opinion: this is a holdover from the initial wave of people throwing ML algos at datasets and getting papers out. Even the correct handling of this (i.e., using RL to solve static problem instances derived like NP-optimisation problems) limits the field in my opinion.
+?? "includes the tacit assumption that the model will not change in response to the input", which is as true in science as it is in Human systems (a view I am not alone in sharing (cite Hamming book))
 
 ?? Seems to always require dedicated co-design? (https://www.usenix.org/conference/nsdi21/presentation/fu)
 
@@ -232,6 +234,8 @@ This again fits our goals of integrating RL techniques directly within bump-in-t
 ?? Point to security as a big challenge.
 
 ?? Relate these to the security \emph{problem domain}? I.e., as seen by \citeauthor{DBLP:conf/sp/SommerP10}.
+
+?? Can exhibit issues with unseen data or operation modes, inability to converge, or insane resource use as seen in \gls{acr:cca} design~\parencite{DBLP:conf/sigcomm/AbbaslooYC20}.
 
 \section{Security}\label{sec:ddn-security}
 
