@@ -66,7 +66,7 @@
 \usepackage{setspace}
 % \onehalfspacing
 % \setstretch{0.95}
-\setstretch{1.0}
+\setstretch{1.10} % This is actually 1.37x linespacing
 
 % Page margins. The University requires A4 (210 × 297 mm), with the following
 % spacings:

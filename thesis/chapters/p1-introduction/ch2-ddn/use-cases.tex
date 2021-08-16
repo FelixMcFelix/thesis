@@ -94,7 +94,7 @@ Some of these input features are also difficult to collect in-network without tr
 
 \paragraph{Performance analysis}
 Bayesian optimisation using Gaussian processes has seen some degree of success in identifying unexpected performance ``hotspots'' in Open vSwitch~\parencite{DBLP:conf/nsdi/PfaffPKJZRGWSSA15} through \emph{NetBOA}~\parencite{DBLP:conf/sigcomm/ZerwasKHRKB019}, and cloud instance configuration via \emph{CherryPick}~\parencite{DBLP:conf/nsdi/AlipourfardLCVY17}.
-This mirrors its successes in \gls{acr:ml} hyperparameter optimisation~\parencite{DBLP:conf/lion/HutterHL11,DBLP:conf/aaai/FeurerSH15}, as this family of techniques is effective at optimising input parameter distributions towards a cost/reward function using limited data (i.e., when there's a high monetary or compute cost to acquire each sample).
+This mirrors its successes in \gls{acr:ml} hyperparameter optimisation~\parencite{DBLP:conf/lion/HutterHL11,DBLP:conf/aaai/FeurerSH15}, as this family of techniques is effective at optimising input parameter distributions towards minimising a cost function using limited data (i.e., when there's a high monetary or compute cost to acquire each sample).
 For optimisation tasks their use is straightforward, but it must be noted that hotspot identification still requires high-level operator knowledge.\sidenote{In particular, human knowledge is currently needed to show that a so-called adversarial scenario is more than just an expected scaling characteristic; not to mention the subsequent root-cause analysis.}
 
 \subsection{Protocol Optimisation and Design}
@@ -104,35 +104,35 @@ The degree of diversity in networks, from long-fat Internet-style networks to de
 Incorrect assumptions can have knock-on effects in not just overall performance, but in fairness of longer-lived flows to other traffic, or in catastrophic increases to the \glspl{acr:fct} of short flows.
 As a result, automated \gls{acr:cca} learning is a particularly attractive prospect; more so when we recall the dominance of congestion-aware traffic (section ??).
 
-The \emph{PCC} family of \glspl{acr:cca}~\parencite{DBLP:conf/nsdi/DongLZGS15,DBLP:conf/nsdi/DongMZAGGS18}, Copa~\parencite{DBLP:conf/nsdi/ArunB18}, and the multipath \emph{MPCC}~\parencite{DBLP:conf/conext/GiladSGRS20} offer a control-theoretic perspective on effective congestion control, improving on heuristic methods.
-These approaches combine flow throughput, loss, latency and goodput for each (sub)flow into a single utility score, choosing target rates which maximise this score via simple gradient ascent.
-Although this branch of research doesn't \emph{learn} any function approximation, the fact that operational modes and behaviours are all well-defined allows for convergence to be proven under typical network conditions.
-
-\emph{MVFST-RL}~\parencite{DBLP:journals/corr/abs-1910-04054} uses \gls{acr:rl} to manage window-based congestion control in QUIC~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}.
+\emph{MVFST-RL}~\parencite{DBLP:journals/corr/abs-1910-04054} uses \gls{acr:drl} to manage window-based congestion control in QUIC~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}.
 %For context, a congestion-aware flow's \emph{cwnd} determines how much traffic may be ``on the wire'' at any point in time, where a higher cwnd implies higher bandwidth consumption.
 %Typically, the cwnd value oscillates to prevent congestion and packet loss while maximising throughput.
-An agent then controls the \emph{cwnd} parameter; incrementing, decrementing, halving, doubling, or keeping its value \prllitact{} to optimise throughput and latency \prllitreward.
+An agent then controls the congestion window size; incrementing, decrementing, halving, doubling, or keeping its value \prllitact{} to optimise throughput and latency \prllitreward.
 In contrast with many prior \gls{acr:rl} works built on the OpenAI Gym~\parencite{DBLP:journals/corr/BrockmanCPSSTZ16}, their RL agent takes actions asynchronously by coalescing state updates over time, between action choices.\sidenote{The \gls{acr:ddos} mitigation use case I develop and describe later uses a similar trick, though this arises due to delayed \emph{reaction} times in the environment rather than inference cost. See section ??.}
 Input states are comprised of \gls{acr:rtt} statistics, byte transmission and receive counts and loss information, combined with the last \num{5} actions \prllitstate.
 By applying fully-connected \glspl{acr:nn} followed by an \gls{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97} for policy approximation, this work is competitive with the state-of-the-art due to \glspl{acr:lstm}' particular suitability for identifying long-term relations in time-series data.
 Their work raises again the primary drawback of applying \glspl{acr:dnn} in latency sensitive applications like \gls{acr:cca} design: they observe up to \qty{30}{\milli\second} action computation time, and have only trained agents via parallel simulation, requiring vast amounts of training data.
 Moreover, MVFST-RL was unable to generate policies which are simultaneously applicable to different environmental delay and bandwidth characteristics.
 
-\emph{Aurora}~\parencite{DBLP:conf/icml/JayRGST19} then modifies rate selection in the PCC framework to use a simple fully-connected \gls{acr:nn}, trained using the PPO~\parencite{DBLP:journals/corr/SchulmanWDRK17} algorithm.
-It computes multiplicative increases/decreases to a flow's send rate \prllitactreal{} given an $m$-long history of latency stats and loss rates \prllitstate.
-The agent then acts to maximise a simple function of packet-per-second rate, penalising latency and loss \prllitreward.
-By keeping the core operational modes, the policies it learns from offline training \emph{do} effectively generalise to unseen network characteristics and designs.
-However, this formulation was later shown to be unfair to other \glspl{acr:cca}~\parencite{DBLP:conf/sigcomm/AbbaslooYC20}.
-
 \emph{DRL-CC}~\parencite{DBLP:journals/jsac/XuTYWX19} examines how one \gls{acr:rl} agent can jointly optimise \gls{acr:mptcp} subflows and \gls{acr:tcp} flows.
 \gls{acr:mptcp} differs from traditional transports by allowing data segments in a single logical connection to be sent over several interfaces, who naturally then have their own per-subflow congestion control in addition to shared co-ordination.
-The state of any (sub)flow is its rate, goodput, \gls{acr:rtt} stats, and congestion window size.
+The state of any (sub)flow is its rate, goodput, \gls{acr:rtt} statistics, and congestion window size.
 DRL-CC passes all current states into an \gls{acr:lstm} to obtain a fixed-size representation for all flows, which is then combined with the overall state for a target flow \prllitstate.\sidenote{This \gls{acr:nn} architecture is often known as a \emph{two-headed network}. This allows end-to-end training of a feature extraction network and downstream \glspl{acr:nn} (in this case, the actor and critic networks). Training of the actor and critic component networks jointly improves the base feature extractor.}
 Using actor-critic methods, an \gls{acr:nn} produces a vector of congestion window deltas for all the target flow's subflows \prllitactreal, conditioned on the sum of log-goodputs of live flows \prllitreward.
 Inference latency is kept to a moderate \qty{0.5}{\milli\second} using the \gls{acr:cpu}, and performance is comparable to classical \gls{acr:mptcp} \glspl{acr:cca} on lossy networks---where a high packet loss of \qtyrange{0.5}{4}{\percent} can be justified by the focus of \gls{acr:mptcp} on cellular networks.
 While it is shown to be fair to itself, it's unclear how DRL-CC multiplexes with other \glspl{acr:cca}.
 
-\emph{Orca}~\parencite{DBLP:conf/sigcomm/AbbaslooYC20} eschews the ``clean-slate'' approach shown thus far, using a classical \gls{acr:cca} (\gls{acr:tcp} Cubic) as its basis.
+The \emph{PCC} family of \glspl{acr:cca}~\parencite{DBLP:conf/nsdi/DongLZGS15,DBLP:conf/nsdi/DongMZAGGS18}, Copa~\parencite{DBLP:conf/nsdi/ArunB18}, and their \gls{acr:mptcp} variant \emph{MPCC}~\parencite{DBLP:conf/conext/GiladSGRS20} offer a control-theoretic perspective on effective congestion control, improving on heuristic methods.
+These approaches combine flow throughput, loss, latency and goodput for each (sub)flow into a single utility score, choosing target rates which maximise this score via simple gradient ascent.
+Although this branch of research doesn't \emph{learn} any function approximation, the fact that operational modes and behaviours are all well-defined allows for convergence to be proven under typical network conditions.
+
+\emph{Aurora}~\parencite{DBLP:conf/icml/JayRGST19} then modifies rate selection in the PCC framework to use a simple fully-connected \gls{acr:nn}, trained using the PPO~\parencite{DBLP:journals/corr/SchulmanWDRK17} algorithm.
+It computes multiplicative increases or decreases to a flow's send rate \prllitactreal{} given an $m$-long history of latency statistics and loss rates \prllitstate.
+The agent then acts to maximise packet-per-second rate, penalising latency and loss \prllitreward.
+By keeping the explicit operational modes of the PCC family, the policies it learns from offline training \emph{do} effectively generalise to unseen network characteristics and designs.
+However, this formulation was later shown to be unfair to other \glspl{acr:cca}~\parencite{DBLP:conf/sigcomm/AbbaslooYC20}.
+
+\emph{Orca}~\parencite{DBLP:conf/sigcomm/AbbaslooYC20} eschews the ``clean-slate'' approach common thus far, using a classical \gls{acr:cca} (\gls{acr:tcp} Cubic) as its basis.
 This decision is empirically and strongly motivated; doing so greatly simplifies the learning task for an \gls{acr:rl} agent (improving the learned policy) \emph{and} reducing \gls{acr:cpu} and \gls{acr:gpu} utilisation in deployment.\sidenote{Recall that \glspl{acr:cca} almost always control how data is \emph{sent} across the network, and that clients typically send small requests for servers to transmit larger content. This leaves the burden of performing expensive per-packet and per-flow operations with the server, which by this same assumption has to handle many such flows!}
 Orca tracks $m$-long histories of a flow's current (and best) throughput and \gls{acr:rtt} information alongside its loss rate and congestion window \prllitstate.
 Using the TD3 actor-critic algorithm~\parencite{DBLP:conf/icml/FujimotoHM18}, Orca chooses some $\alpha\in\left(-2, 2\right)$ every \qty{20}{\milli\second}, multiplying the congestion window by $2^\alpha$ \prllitactreal, and allows the baseline classical \gls{acr:cca} to otherwise act as normal.
@@ -140,10 +140,19 @@ Each flow acts to improve the current ratio between its current \emph{power} and
 While this naturally requires higher resource use than a heuristic method such as Cubic or BBRv2, this strategy reduces resource costs beyond even the control-theoretic PCC family of \glspl{acr:cca} (with better, fairer operation).
 Reducing the length of time between DRL actions predictably increases resource demands, but leads to better flow performance.
 
-\paragraph{Physical-layer protocols}
-* https://dl.acm.org/doi/10.1145/3405671.3405817 -- An Adaptive Tree Algorithm to Approach Collision-Free Transmission in Slotted ALOHA
+\paragraph{Media access control}
+An exciting, perhaps unexpected, network environment is within \glspl{acr:cpu} themselves---a \emph{network on a chip}---for coordination in multi-threaded programs and ensuring cache coherency in many-core architectures.
+This design class is necessitated by the limitations of a shared bus at high core counts.
+Core-to-core communication is either packet-switched using local routers (incurring latency costs) or wireless (potentially leading to collisions).
+\emph{NeuMAC}~\parencite{DBLP:conf/nsdi/JogLFFATH21} approaches optimal wireless transmission via \gls{acr:drl}.
+Training of a small fully-connected \gls{acr:nn} occurs offline from simulation, using the REINFORCE algorithm as a Monte Carlo method with complete execution traces.
+In deployment, an agent is quantised to \qty{8}{\bit} fixed-precision values on low-latency \gls{acr:sram}\sidenote{See \cref{sec:numerical-representations-for-embedded-ml} for an in-depth discussion around the topic of embedded \gls{acr:ml} design decisions such as this.}
+Each core has a dedicated transmission timeslot, while the agent chooses a list of per-core probabilities every \qty{10}{\micro\second} to allow transmissions outside this window \prllitactreal{}, which are halved on a collision.
+An agent passively listens to broadcast signals for the successful transmissions per core and total number of collisions observed \prllitstate{}, minimising the cycles spent running a program to completion \prllitreward{}.
+%?? Quantises the final policy, shows that small NNs can be encoded in hardware with small latency (\qty{512}{\nano\second}), small power draw (\qty{1}{\milli\watt}) (parallel multiply-accumulate units, low-latency sram, dedicated circuit for small FCNN)
+Interestingly, this shows that small, pre-trained, quantised \glspl{acr:nn} can be placed into core hardware control loops at low latency (\qty{512}{\nano\second}) and low power draw with \emph{bespoke} designs.
 
-* https://www.usenix.org/conference/nsdi21/presentation/jog -- One Protocol to Rule Them All: Wireless Network-on-Chip using Deep Reinforcement Learning
+%* https://dl.acm.org/doi/10.1145/3405671.3405817 -- An Adaptive Tree Algorithm to Approach Collision-Free Transmission in Slotted ALOHA
 
 (\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).$\dagger$
 
