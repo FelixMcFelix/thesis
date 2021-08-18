@@ -150,6 +150,14 @@
     \restorebibmacro{textcite}%
     \usebibmacro{textcite}}}
 
+% Resets sidenote numbering per-chapter.
+\let\oldchapter\chapter
+\def\chapter{%
+  \setcounter{footnote}{1}%
+  \setcounter{sidenote}{1}%
+  \oldchapter
+}
+
 %
 % Below here are some default additions from Stephen Strowes's template.
 %

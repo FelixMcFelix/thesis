@@ -16,8 +16,14 @@
 %\usepackage{newpxtext}
 %\usepackage{newpxmath}
 %\usepackage{FiraSans}
+\usepackage{unicode-math}
 
-\setmathfont{Libertinus Math}
+% Hack to get sqrts etc. behaving properly.
+% \setmathfont[]{Libertinus Math}
+% \setmathfont[range={cal}]{Latin Modern Math}
+\setmathfont[range=]{Libertinus Math}
+\setmathfont[range={\sqrt}]{texgyrepagella-math.otf}
+\setmathfont[range={}]{Libertinus Math}
 
 %\usepackage[
 %    math-style=ISO,

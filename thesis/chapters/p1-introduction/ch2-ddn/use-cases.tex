@@ -154,39 +154,47 @@ Interestingly, this shows that small, pre-trained, quantised \glspl{acr:nn} can 
 
 %* https://dl.acm.org/doi/10.1145/3405671.3405817 -- An Adaptive Tree Algorithm to Approach Collision-Free Transmission in Slotted ALOHA
 
-(\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).$\dagger$
-
 \subsection{Security, Defence, and Verification}
-\textcite{DBLP:journals/eaai/MalialisK15} propose \emph{Marl} as an examination of the automated detection and mitigation of DDoS attacks using RL, showing the viability of live, adaptive, feedback-loop-like control of the network to detect and prevent DDoS attacks.
-As a multiagent system, RL agents are distributed at the edges of a network and adaptively learn a policy to control traffic \emph{without} explicit communication or sharing of policy updates.
-They create a tree overlay topology (subdivided into teams), where each agent applies packet drop to \emph{all} flows inbound to a protected server.
-Teams each receive a separate reward measurement, to aid credit assignment by not punishing teams which contribute little to the total incoming bandwidth.
+\paragraph{Network and Computer Defence}
+\emph{Marl}~\parencite{DBLP:conf/iaai/MalialisK13,DBLP:journals/eaai/MalialisK15} examines the automated detection and mitigation of \gls{acr:ddos} attacks using the Sarsa \gls{acr:rl} algorithm.
+As a multiagent system, Marl agents are distributed at the edges of a network and adaptively learn a policy to control traffic \emph{without} explicit communication or sharing of policy updates.
+Agents reside at the \gls{acr:as}'s ingress points, and choose a packet drop probability for \emph{all inbound flows} from the discrete choices $a\in\left\{0.0,0.1,...,0.9\right\}$ \prllitact{} according to load measurements along their route to the protected server \prllitstate.
+They create a tree overlay topology, subdivided into teams which each receive a separate reward measurement.
+This aids credit assignment by not punishing teams which contribute little to the total incoming bandwidth.
+Agents are punished when the network is overloaded \emph{and} their team contributes more than its fair share of traffic, otherwise receiving the proportion of legitimate traffic observed at the team leader \prllitreward.
 %?? Recap their flaws, since they've been cut form every other aspect.
 %Our results show that their technique underperforms at high host density and when congestion-aware traffic dominates---that their results do not demonstrate this suggests an evaluation driven purely by traces (rather than live application dynamics).
 %?? Mention why congestion-aware traffic gets screwed.
-However, applying a packet drop action in this way effectively imposes the same proportion of \emph{pushback}~\cite{DBLP:journals/ccr/MahajanBFIPS02a} on all flows seen by an agent, introducing significant damage.
-For congestion-aware traffic, this is non-negligible; when packet loss occurs with probability $p\ne0$, the Mathis equation~\cite{DBLP:journals/ccr/MathisSMO97} states that TCP bandwidth is proportional to $1/\sqrt{p}$ (while modern TCP Cubic is proportional to $1/p^{0.75}$~\cite{rfc8312}).
-Constant bitrate, congestion unaware traffic then has bandwidth proportional to $1 - p$---when we consider that analysis of CAIDA datasets~\cite{caida-2018-passive} shows that congestion-aware traffic makes up at least \SIrange{73}{82}{\percent} of packets\footnote{\url{https://github.com/FelixMcFelix/caida-stats}}, it is clear that collateral damage applied by Marl is greatly worsened.
+Although their results appear competitive, their simulation environment uses only congestion-unaware \gls{acr:udp} traffic, in opposition to the realities of Internet traffic as discussed in ??.
+Congestion-aware protocols dominate in many networks; incorrectly applying a packet drop action imposes greater \emph{pushback}~\parencite{DBLP:journals/ccr/MahajanBFIPS02a} on these legitimate flows than it would on attack traffic.
+For congestion-aware traffic, this is non-negligible; when packet loss occurs with probability $p\ne0$, the Mathis equation~\parencite{DBLP:journals/ccr/MathisSMO97} states that TCP bandwidth is proportional to $1/\sqrt{p}$ (while modern TCP Cubic is proportional to $1/p^{0.75}$~\parencite{rfc8312}).
+Congestion-unaware, \gls{acr:cbr} traffic then occupies bandwidth proportional to $1 - p$, and recalling section ?? we understand from the literature that volumetric \gls{acr:ddos} attack traffic mainly falls into this category.
+%Congestion-unaware, \gls{acr:cbr} traffic then occupies bandwidth proportional to $1 - p$---when we consider that analysis of CAIDA datasets~\parencite{caida-2018-passive} shows that congestion-aware traffic makes up at least \SIrange{73}{82}{\percent} of packets\footnote{\url{https://github.com/FelixMcFelix/caida-stats}}, it is clear that collateral damage applied by Marl is greatly worsened.
 %?? Reward measurement relies on perfect a-priori knowledge.
-Furthermore, the static overlay topology does not account for the defence of load-balanced or multipath networks.
+Furthermore, the static overlay topology does not account for the defence of load-balanced or multipath networks, and the reward function relies on \emph{a priori} knowledge of traffic (or an accurate heuristic---an open challenge).
+These weaknesses are shown more concretely throughout section ??, and motivate the design of \{name\} throughout Chapter ??.
+%?? I investigate this much further in-depth in section ??.
+%?? Sim issue: All UDP
 
+Other \gls{acr:ml} techniques have been applied to \gls{acr:ddos} detection in the context of \glspl{acr:sdn}.
+\textcite{DBLP:conf/lcn/BragaMP10} have shown that \emph{self-organising maps} (an unsupervised, \gls{acr:nn}-based approach) can act as effective classifiers from flow statistics given ample captures of both normal and attack behaviour.
+\emph{Athena}~\parencite{DBLP:conf/dsn/LeeKSPY17} improves on this through a more generalised (albeit heavyweight) \gls{acr:sdn} framework for intrusion detection, showing the use of \emph{k-means clustering} to detect individual attack flows.
+However, their comparison against modern \emph{algorithmic} \gls{acr:ddos} defence techniques such as SPIFFY~\parencite{DBLP:conf/ndss/KangGS16} lacks any quantitative evidence.
+
+Most modern malware makes use of evasion techniques or alters its behaviour to appear more benign in the presence of dynamic analysis, such that understanding the behaviour of malware (particularly those with self-modifying code) becomes more difficult for security analysts.\sidenote{This problem long predates the class of evasion attacks on \gls{acr:ml} models mostly considered throughout \cref{sec:attacks-on-data-driven-techniques}. Evasive malware relies more on introducing \emph{semantic} or \emph{behavioural} differences rather than abuse of decision boundaries in high-dimensional spaces.}
+\emph{TAMALES} makes use of this principle to great effect~\parencite{DBLP:conf/acsac/CoptyDEEMZ18}; where most analysis tools aim to mimic a real OS as closely as possible, their ``extreme abstraction'' relies upon deviating from specifications and expected behaviour to induce anomalous behaviours.
+Using \emph{random forest classifiers}~\parencite{DBLP:journals/ml/Breiman01}, they combine static program features with dynamic behaviours observed from buggy \gls{acr:os} emulation.
+The most interesting (and general) feature of this design is that more expensive features and analyses are added to the classifier over time while the output classification remains ambiguous.
+However, their solution regularly marked benign programs which had went through an executable packer as being malicious.
+
+?? Line-Speed and Scalable Intrusion Detection at the Network Edge via Federated Learning~\parencite{DBLP:conf/networking/QinPLT20}
+
+\paragraph{Verification}
 * https://dl.acm.org/doi/10.1145/3341216.3342206 -- Runtime Verification of P4 Switches with Reinforcement Learning
-
-* https://ieeexplore.ieee.org/document/9142704 -- Line-Speed and Scalable Intrusion Detection at the Network Edge via Federated Learning
 
 Routing verification -- ?? DeepMPLS~\parencite{DBLP:conf/networking/Geyer019}
 
-\emph{Athena} \cite{DBLP:conf/dsn/LeeKSPY17} is a more generalised SDN framework for intrusion detection, but has shown the use of a \emph{k-nearest neighbours} classifier to detect individual attack flows.
-Although heavyweight (and proven to be effective compared with \textcite{DBLP:conf/lcn/BragaMP10}), their comparison against SPIFFY lacks the quantitative evidence required to understand how the system compares.
-
-Most modern malware makes use of evasion techniques or alters its behaviour to appear more benign in the presence of dynamic analysis, such that understanding the behaviour of malware (particularly those with self-modifying code) becomes more difficult for security analysts.
-\Textcite{DBLP:conf/acsac/CoptyDEEMZ18} make use of this principle to great effect; where most analysis tools aim to mimic a real OS as closely as possible, their ``extreme abstraction'' relies upon deviating from specifications and expected behaviour to induce anomalous behaviours.
-Their solution is to run a target program in an unrealistic environment multiple times, convert their findings into a single feature vector and then funnel down from simple to complex analyses (like my ``drill-down classification'' idea).
-To make analyses more complex, they train individual classifiers (random forest) on the features observed from following different emulated path lengths.
-Their feature space contains around 100 static features (code entropy, data entropy, checksum mismatches, $\#$imported functions, ...) alongside around 300 dynamic features observed during emulation (exception counts, obfuscation attempts, DLL replacements, $n$-gram models of instructions/API calls, path comparisons, ...).
-They make use of symbolic execution as their final means of complex analysis (follow multiple paths of execution within a program according to a set of potential inputs).
-While very effective in practice ($\sim$\SI{0.1}{\percent} FPR, shorter runtime than state-of-the-art) their solution regularly marked benign programs which had went through a PE packer as being malicious.
-Sanity checks designed for some of their features confirmed the importance of following multiple paths---while this made no difference for many samples (legit and malicious), for some malware samples this feature was key to detection.
+(\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).$\dagger$
 
 \subsection{Multimedia}
 
@@ -245,3 +253,5 @@ Hopefully, it should be apparent that a consistent feature ...
 ?? N-square scaling okay in some environments: take care based on the problem!
 
 ?? Nature of classifiers/fn approxs used can limit where an agent/accelerator can be deployed.
+
+?? Cheap initial analyses can be used to drive more expensive analyses when the extra data is needed to make effective decisions (but too expensive to collect in general).
