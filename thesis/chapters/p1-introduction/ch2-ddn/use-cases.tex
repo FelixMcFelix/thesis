@@ -185,26 +185,42 @@ Most modern malware makes use of evasion techniques or alters its behaviour to a
 \emph{TAMALES} makes use of this principle to great effect~\parencite{DBLP:conf/acsac/CoptyDEEMZ18}; where most analysis tools aim to mimic a real OS as closely as possible, their ``extreme abstraction'' relies upon deviating from specifications and expected behaviour to induce anomalous behaviours.
 Using \emph{random forest classifiers}~\parencite{DBLP:journals/ml/Breiman01}, they combine static program features with dynamic behaviours observed from buggy \gls{acr:os} emulation.
 The most interesting (and general) feature of this design is that more expensive features and analyses are added to the classifier over time while the output classification remains ambiguous.
-However, their solution regularly marked benign programs which had went through an executable packer as being malicious.
+However, this solution regularly marked benign programs which had been processed by an executable packer as though they were malicious.
 
-?? Line-Speed and Scalable Intrusion Detection at the Network Edge via Federated Learning~\parencite{DBLP:conf/networking/QinPLT20}
+\Textcite{DBLP:conf/networking/QinPLT20} attempt to combine the distributed training offered by \gls{acr:fl} with the recent advances in \gls{acr:bnn} use in the dataplane (\cref{sec:numerical-representations-for-embedded-ml}) for attack traffic detection.
+P4-capable edge switches or \glspl{acr:nic} host a \gls{acr:bnn} computed from a local (full-precision) model trained on a co-hosted machine, which communicates model updates to and from a central parameter server as is common in \gls{acr:fl}.
+Their work supports the hypotheses that \glspl{acr:bnn} achieve sufficient accuracy on existing \gls{acr:ids} datasets and that overall model convergence makes \gls{acr:fl} suitable for this type of data.
+However, this work neither mentions nor considers the central limitation of \gls{acr:fl}; that edge models need some local means of generating labels for new data.\sidenote{\gls{acr:fl} can still be used to train \emph{unsupervised methods} without a local oracle, but clustering and forecasting have limited application for this class of flow filtering.}
+As a result, it's not clear whether \gls{acr:fl} is even a suitable choice for this task, and so this remains far from a feasible system.
+A core element of the design---that the P4-enabled device can add rules to its own tables from inside the RMT pipeline---is in fact impossible on reasonable hardware implementations as I discuss in section ??.
+Even the claim of line-rate operation is unsubstantiated, given that the evaluation focusses only on a software-based BMv2 implementation (costing a heavy \qtyrange{10}{25}{\milli\second} per-packet classification latency) and fails to quantify the costs of flow state extraction.
 
 \paragraph{Verification}
-* https://dl.acm.org/doi/10.1145/3341216.3342206 -- Runtime Verification of P4 Switches with Reinforcement Learning
+\emph{\textsc{P4rl}}~\parencite{DBLP:conf/sigcomm/ShuklaHH019} applies \gls{acr:drl} (DDQN) towards guided fuzzing of complete P4 dataplanes.
+Fuzzing (as opposed to static analysis) allows for the detection of bugs that lie outside of the P4 language itself, e.g., through interactions with the control plane, or in hardware-specific behaviour.
+The key drawback of fuzzing without some manner of guidance, however, is the colossal size of the input value state space.
+Beginning with a set of invariants extracted from their \emph{p4q} \gls{acr:dsl}, \textsc{P4rl} iteratively modifies the header bytes of an output packet, starting from an initially valid state \prllitstate{}.
+The \gls{acr:rl} agent then chooses a field and value pair (choosing either random values or boundary values known from \emph{p4q}) \prllitact{}, conditioned on whether that packet violated any given invariant \prllitreward{}.
+This notably improves on the number of packets needed to trigger any bugs versus a random baseline, but it remains unclear whether this reduces the wall-clock time needed to output such a packet.
 
-Routing verification -- ?? DeepMPLS~\parencite{DBLP:conf/networking/Geyer019}
-
-(\rllitstate), (\rllitact/\rllitactreal), (\rllitreward).$\dagger$
+\emph{DeepMPLS}~\parencite{DBLP:conf/networking/Geyer019} applies \glspl{acr:gnn} towards network verification in the face of link failures for \gls{acr:mpls} routed networks.
+\gls{acr:mpls} is commonly used in \gls{acr:isp} networks~\parencite{DBLP:conf/imc/VanaubelMPD15}, and has comprehensive (though slow) tools for discovering routing violations given complex predicates~\parencite{DBLP:conf/conext/JensenKM0ST18}.
+Given that \glspl{acr:gnn} can be applied to variable-size input graphs\sidenote{Note that the vertex attributes remain fixed-size vectors in the inout graph.}, this allows for a useful model to be trained over many instances.
+This offers both a 2 order-of-magnitude speedup over conventional solvers, \emph{and} enables the new use case of suggesting additional links and actions to meet the constraint.
+The main caveat is that outputs are only \qtyrange{80}{90}{\percent} likely to be valid, while an algorithmic solution is correct by construction.
 
 \subsection{Multimedia}
 
-HTTP/2 push
+\paragraph{HTTP/2 push}
 * https://www.usenix.org/conference/nsdi21/presentation/kansal
 
-ABR stuff
+\paragraph{ABR stuff}
 * Pensieve~\parencite{DBLP:conf/sigcomm/MaoNA17}
+
 * https://ieeexplore.ieee.org/document/9155411 -- Stick: A Harmonious Fusion of Buffer-based and Learning-based Approach for Adaptive Streaming
+
 * https://ieeexplore.ieee.org/document/9155492 -- PERM: Neural Adaptive Video Streaming with Multi-path Transmission
+
 * https://dl.acm.org/doi/10.1145/3387514.3405856 -- Neural-Enhanced Live Streaming: Improving Live Video Ingest via Online Learning
 
 * https://dl.acm.org/doi/10.1145/3386367.3431294 -- Drop the packets: using coarse-grained data to detect video performance issues
