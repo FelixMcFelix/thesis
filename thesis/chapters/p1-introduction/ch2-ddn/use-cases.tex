@@ -193,6 +193,7 @@ Their work supports the hypotheses that \glspl{acr:bnn} achieve sufficient accur
 However, this work neither mentions nor considers the central limitation of \gls{acr:fl}; that edge models need some local means of generating labels for new data.\sidenote{\gls{acr:fl} can still be used to train \emph{unsupervised methods} without a local oracle, but clustering and forecasting have limited application for this class of flow filtering.}
 As a result, it's not clear whether \gls{acr:fl} is even a suitable choice for this task, and so this remains far from a feasible system.
 A core element of the design---that the P4-enabled device can add rules to its own tables from inside the RMT pipeline---is in fact impossible on reasonable hardware implementations as I discuss in section ??.
+This is approximated using a \num{65535}-entry register file and primitive flow-key reduction into this space.
 Even the claim of line-rate operation is unsubstantiated, given that the evaluation focusses only on a software-based BMv2 implementation (costing a heavy \qtyrange{10}{25}{\milli\second} per-packet classification latency) and fails to quantify the costs of flow state extraction.
 
 \paragraph{Verification}
@@ -211,19 +212,49 @@ The main caveat is that outputs are only \qtyrange{80}{90}{\percent} likely to b
 
 \subsection{Multimedia}
 
-\paragraph{HTTP/2 push}
-* https://www.usenix.org/conference/nsdi21/presentation/kansal
+\paragraph{ABR Video Selection}
+Streaming video is a common use case in the modern Internet.
+Here, users typically want to receive the highest quality video they can, while minimising any noticeable quality changes and the amount of time spent \emph{rebuffering}, which are their core \gls{acr:qoe} metrics.
+Servers allow clients to control this via \gls{acr:abr} selection, splitting videos into many fixed-length chunks (of \qtyrange{4}{10}{\second}) served via \gls{acr:hls}~\parencite{rfc8216} or \gls{acr:dash}~\parencite{mpeg-dash}.
+However, chunk selection is delegated to the client using heuristic approaches such as MPC~\parencite{DBLP:conf/sigcomm/YinJSS15}. 
+An exciting question to consider is whether data-driven metrics can do better still.
 
-\paragraph{ABR stuff}
-* Pensieve~\parencite{DBLP:conf/sigcomm/MaoNA17}
+\emph{Pensieve}~\parencite{DBLP:conf/sigcomm/MaoNA17} applies \gls{acr:drl} to client-side observations of network state and video performance metrics as a state space for effective optimisation of bitrate selection in multimedia streaming.
+Using the A3C algorithm with \glspl{acr:cnn}, throughputs and download times for the last $k$ chunks are combined with current chunk and buffer length statistics \prllitstate{} to choose the next chunk's quality from the standard list (masking any illegal choices) \prllitact{}.
+Pensieve acts to maximise an aggregate \gls{acr:qoe} score, maximising quality\sidenote{This can be a linear or log-linear function of actual bitrate, or can explicitly penalise non-HD choices.}, while penalising bitrate changes and the time spent rebuffering \prllitreward{}.
+To reconcile the costs of \gls{acr:drl} inference with mobile devices, Pensieve is server-hosted and periodically queried by clients (though it remains effective even under $\sim$\qty{100}{\milli\second} \gls{acr:rtt}).
 
-* https://ieeexplore.ieee.org/document/9155411 -- Stick: A Harmonious Fusion of Buffer-based and Learning-based Approach for Adaptive Streaming
+\emph{Stick}~\parencite{DBLP:conf/infocom/HuangZZW0S20} uses the DDPG \gls{acr:drl} algorithm to train a smaller \gls{acr:cnn} to provide the target buffer occupancy used by heuristic, buffer-based chunk selection methods \prllitactreal{}.
+The main rationale for doing this is to reduce runtime execution costs and retain the interpretable behaviour of traditional \gls{acr:abr} strategies.
+Stick uses the same input as Pensieve, adding in the current reward \prllitstate{}, optimising the (linear) \gls{acr:qoe} score discussed above \prllitreward{}.
+To further reduce inference costs, a very small \gls{acr:cnn} is used to estimate whether the current state is likely to cause a large change in the buffer's target occupancy.
+Overall, this leads to slightly better client \gls{acr:qoe}, and offers far lower execution costs: completely removing the impact of server \gls{acr:rtt} as all rate selection can be managed on-device.
 
-* https://ieeexplore.ieee.org/document/9155492 -- PERM: Neural Adaptive Video Streaming with Multi-path Transmission
+\emph{PERM}~\parencite{DBLP:conf/infocom/GuanZWBXS20} considers this problem over \gls{acr:mptcp} connections, via \gls{acr:drl} on standard feed-forward \glspl{acr:nn}.
+Modifying Pensieve's state to use per-\emph{port} throughputs over $k$ timesteps \prllitstate, PERM
+chooses both the next chunk's bitrate and traffic splitting proportions over registered links \parenglance{$\rllitactraw\times\rllitactrealraw$}.
+By optimising the linear \gls{acr:qoe} score with added per-link cost penalities \prllitreward{},
+they reduce the use of high-cost links (e.g., 4G).
+However, their evaluation is unclear in how \emph{only} the underlying video \gls{acr:qoe} is affected when link costs are disregarded.
 
-* https://dl.acm.org/doi/10.1145/3387514.3405856 -- Neural-Enhanced Live Streaming: Improving Live Video Ingest via Online Learning
+\paragraph{Server- and network-driven QoE enhancements}
+\emph{LiveNAS}~\parencite{DBLP:conf/sigcomm/KimJYYH20} extends recent work on offline \gls{acr:ml}-driven video upscaling towards live content.\sidenote{Optimal upscaling relies on having a content-specific \gls{acr:dnn}, as generic models can still generate noticeable errors compared to the input stream. Successful online training of such a model from incomplete data is an exciting challenge.}
+The main value in doing so is that \gls{acr:ml} can be applied to both increase user \gls{acr:qoe} and reduce upstream bandwidth requirements in livestreaming (i.e., in the event that a popular content provider is limited by their own network).
+Server-side upscaling is provided when high-quality video is needed but the sender cannot offer, training a per-stream \gls{acr:dnn} model.
+LiveNAS solves the local training problem (i.e., of acquiring ground-truth data) by having each sender also encode their stream to a higher quality level than their connection can support.
+Small high-quality patches with maximal error versus a bilinear upscale are included alongside the lower-quality stream, acting as valuable ground truth for the model to learn from at moderate bandwidth cost.
+This offers strong \gls{acr:qoe} improvements, low deviation from the true input video, and can in principle cut the bandwidth requirements for high-profile streamers.
 
-* https://dl.acm.org/doi/10.1145/3386367.3431294 -- Drop the packets: using coarse-grained data to detect video performance issues
+\Textcite{DBLP:conf/conext/ManglaHZA20} use several \gls{acr:ml} techniques to investigate whether \gls{acr:isp} or other transit networks are able to estimate video session \gls{acr:qoe} using cheaper input state such as \gls{acr:tls} session lifetimes and flow-level measurements.
+The detection of \emph{low} \gls{acr:qoe} scores would allow e.g., cellular networks, to provision greater bandwidth or prioritisation to multimedia flows which require it.
+These methods are most effective at splitting low- and high-\gls{acr:qoe} flows (with a high degree of confusion in middling flows), suggesting that these could be a stage-1 metric to enable more expensive per-packet analysis.
+
+\emph{Alohamora}~\parencite{DBLP:conf/nsdi/KansalRN21} uses \gls{acr:drl} to generate \gls{acr:http}/2\sidenote{?? make sure I use HTTP somewhere sooner to contract this...} asset push and preload policies to reduce page load times over limited networks or on constrained devices.
+The approach trains offline using \glspl{acr:lstm} with A3C by grouping page families into clusters, and inferring policies at runtime as needed.
+Link capacity and \gls{acr:rtt} statistics, client \gls{acr:cpu} capacity, and the target page's resource dependency graph \prllitstate{} are used to output a sequence of push/preload item and prerequisite pairs until an end-token or illegal state is output \prllitact{}.
+Alohamora optimises the relative \gls{acr:qoe} change according to cheap and accurate simulations, with explicit bonuses added whenever a better incumbent policy is produced \prllitreward{}.
+While considerably more effective than past works on policy generation, the ablation studies shown by the authors indicate a strong dependency on device-specific state (especially the \gls{acr:cpu} speed of each client).
+Inference is cheap compared to page load times, around \qtyrange{11}{40}{\milli\second}, offering strong \gls{acr:qoe} improvements when all input data are known.
 
 \subsection{Resource Placement and Management}
 
