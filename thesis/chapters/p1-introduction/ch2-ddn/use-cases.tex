@@ -249,7 +249,7 @@ This offers strong \gls{acr:qoe} improvements, low deviation from the true input
 The detection of \emph{low} \gls{acr:qoe} scores would allow e.g., cellular networks, to provision greater bandwidth or prioritisation to multimedia flows which require it.
 These methods are most effective at splitting low- and high-\gls{acr:qoe} flows (with a high degree of confusion in middling flows), suggesting that these could be a stage-1 metric to enable more expensive per-packet analysis.
 
-\emph{Alohamora}~\parencite{DBLP:conf/nsdi/KansalRN21} uses \gls{acr:drl} to generate \gls{acr:http}/2\sidenote{?? make sure I use HTTP somewhere sooner to contract this...} asset push and preload policies to reduce page load times over limited networks or on constrained devices.
+\emph{Alohamora}~\parencite{DBLP:conf/nsdi/KansalRN21} uses \gls{acr:drl} to generate \gls{acr:http}/2 asset push and preload policies to reduce page load times over limited networks or on constrained devices.
 The approach trains offline using \glspl{acr:lstm} with A3C by grouping page families into clusters, and inferring policies at runtime as needed.
 Link capacity and \gls{acr:rtt} statistics, client \gls{acr:cpu} capacity, and the target page's resource dependency graph \prllitstate{} are used to output a sequence of push/preload item and prerequisite pairs until an end-token or illegal state is output \prllitact{}.
 Alohamora optimises the relative \gls{acr:qoe} change according to cheap and accurate simulations, with explicit bonuses added whenever a better incumbent policy is produced \prllitreward{}.
@@ -258,17 +258,61 @@ Inference is cheap compared to page load times, around \qtyrange{11}{40}{\milli\
 
 \subsection{Resource Placement and Management}
 
-* Can't remember what they were actually optimising here~\parencite{DBLP:conf/hotnets/MaoAMK16}
-* https://ieeexplore.ieee.org/document/9155521 -- ReLoca: Optimize Resource Allocation for Data-parallel Jobs using Deep Learning
+\paragraph{Job Scheduling}
+\emph{DeepRM}~\parencite{DBLP:conf/hotnets/MaoAMK16} is one of the first works on simple \gls{acr:drl}-based job scheduling among a finite number of resource-constrained \glspl{acr:cpu}, aiming to minimise the average job slowdown.
+What is particularly notable about this work is that it employs intelligent sampling and monitoring while taking multiple actions per timestep.
+In particular, it maps pixel images of current resource use and the costs of the next $k$ jobs \prllitstate{} into a discrete set of job choices to schedule and a null action \prllitact.
+The timestep is advanced on either an illegal or null action, giving an agent a negative reward for all incomplete (arrived) tasks \prllitreward.
 
-* https://dl.acm.org/doi/10.1145/3341302.3342080 -- Learning scheduling algorithms for data processing clusters
-* https://dl.acm.org/doi/10.1145/3386367.3432588 -- Job scheduling for large-scale machine learning clusters
-* https://dl.acm.org/doi/10.1145/3342195.3387524 -- Autopilot: workload autoscaling at Google
+In reality, scheduling of (data-parallel) jobs is far harder; these are often expressed as a \gls{acr:dag} of sub-tasks with inter-connected data dependencies.
+\emph{Decima}~\parencite{DBLP:conf/sigcomm/MaoSVMA19} applies \glspl{acr:gnn}-based \gls{acr:drl} to completely control job scheduling as part of Apache Spark.
+To minimise the average \gls{acr:jct} \prllitreward, Decima chooses the next job stage to schedule and the number of workers to be spawned \prllitact{} in response to any scheduler events, until all jobs are assigned or executors are busy.
+Agents use the output embeddings of nested \glspl{acr:gnn}, processing per-task and executor statistics into job- and system-level summaries \prllitstate.
+To make training feasible\sidenote{The Monte Carlo REINFORCE algorithm needs complete execution traces to update an \gls{acr:rl} policy, but excessively poor policies could take far longer than realistic runs to terminate.}, episodes are modified to end early in initial training phases.
+Equally, in any scenario job arrival times are perturbed (maintaining arrival \emph{order}) to prevent excessive punishment due to bursty arrivals.
+By using smaller \glspl{acr:nn} at each stage, each decision can be made in around \qty{15}{\milli\second}.
 
-* https://dl.acm.org/doi/10.1145/3341216.3342214 -- RL-Cache: Learning-Based Cache Admission for Content Delivery
-* https://ieeexplore.ieee.org/document/9155373/ -- Intelligent Video Caching at Network Edge: A Multi-Agent Deep Reinforcement Learning Approach
+Distributed \gls{acr:ml} model training is a variation on this problem, typically having high bandwidth costs and \glspl{acr:jct} which exist in a trade-off with final model accuracy.
+\emph{MLFS}~\parencite{DBLP:conf/conext/0002LS20} cleverly operates by starting with a heuristic approach to gather samples for \gls{acr:drl} training---initially prioritising jobs with faster \glspl{acr:jct} or expected accuracy improvements (i.e., fresh training jobs).
+The agent chooses a set of task-to-executor pairs \prllitact{} from the full set of task resource demands and parameters alongside executor utilisation \prllitstate.
+Agents act to optimise a weighted combination of minimised average \glspl{acr:jct} and bandwidth, and maximising average (and sufficient) accuracy and jobs completed before their deadline \prllitreward.
+The \gls{acr:rl} model is used in place of the heuristic after it successfully converges, and simple statistical methods are used to terminate jobs whenever overfitting appears to begin.
+However, MLFS's execution costs aren't specified, and it remains unclear how it handles (what appear to be) variable-size inputs and outputs.
 
-?? Other domains: processor design (which can be viewed as a placement/routing problem)~\parencite{Mirhoseini2021}
+Some works choose to focus on the simpler (though important) task of parameter optimisation for existing schedulers.
+The degree of parallelism offers one such `knob' to tweak in data-parallel job allocation, however it is not one which universally leads to performance gains when increased.
+In partition-aggregate workloads, coordination overheads dominate if a task is divided between too many workers---\emph{ReLoca}~\parencite{DBLP:conf/infocom/HuLZC20} successfully trains \glspl{acr:dnn} to predict job completion from a given worker count and \gls{acr:dag} statistics, using a novel sampling method to concentrate training around optimal choices.
+In the case of independent jobs (e.g., replicated services), \emph{Autopilot}~\parencite{DBLP:conf/eurosys/RzadcaFSZBKNSWH20} optimises vertical scaling (the \gls{acr:cpu} and \gls{acr:ram} limits allocated for a task) and the number of workers to minimise user spend below heuristics.
+In the former case, an ensemble of simple optimisers (differing by cost model) is used to provide an interpretable suggestion, in the latter case a user-specified strategy is applied to minimise resource use.
+
+\paragraph{Cache Management}
+Resource caching of Internet resources (e.g., webpages or video) is commonly employed by \glspl{acr:cdn} to serve content to users in a way which minimises latency as well as offering load-balancing for content providers.
+\emph{RL-Cache}~\parencite{DBLP:journals/jsac/KirilinSGS20} offers a cache admission policy learned through \gls{acr:drl} such that the hit rate is maximised.
+When a resource is requested, RL-Cache chooses to admit or remove that item from the cache \prllitact{} based on that objects's size, recency and frequency statistics \prllitstate.\sidenote{Somewhat curiously, the authors choose to quantise these measures into fixed bins; effectively using a one-hot encoding of bin hits for each statistic as the input.}
+The reward is simply 1 or 0 (hit or miss) per-object in the next batch, divided amongst the previous $k$ decisions \prllitreward.
+Although it is effective after the authors reduce the runtime cost by performing inference only on cache misses, batching is required to meet any reasonable level of throughput.
+This comes at a cost of latency; a totalled \qty{65}{\milli\second} for a batch of size \num{1024}, comparable to \glspl{acr:rtt} in the best case (and with tail latencies left unspecified).
+
+\emph{MacoCache}~\parencite{DBLP:conf/infocom/Wang0LSS20} examines a more targeted form of resource caching at telephone base stations via multi-agent \gls{acr:drl} to minimise latency and bandwidth demands in mobile edge networks \prllitreward.
+Agents estimate a cache probability for every video file, choosing the top $k$ entries \prllitactreal{} based on per-item demand rates and cache status \prllitstate.
+Agents don't share information directly, but do receive a portion of their neighbours' rewards and use neighbours' policies and cache state as further inputs to account for their impact on the overall system.
+Although \glspl{acr:lstm} are used to allow variable-size processing of local and neighbour state vectors, one element which remains suspect is that each node's state (and the model's output) contain a value \emph{for each cacheable item}.
+Given that the total number of cached video files is never specified, this does not suggest great scalability; this is only worsened when we consider that such resource is explicitly said to be a \gls{acr:dash} chunk (thus, hundreds per video).
+
+\paragraph{System and Network Planning}
+In network planning, \glspl{acr:ilp} are often employed for short- and long-term planning of fibre placements and \gls{acr:ip} route provisioning.
+\emph{NeuroPlan}~\parencite{DBLP:conf/sigcomm/ZhuGATZJ21} uses \gls{acr:drl} to suggest a better starting point and prune the \gls{acr:ilp} search space for this problem, greatly reducing runtimes from \qtyrange{3}{4}{\day} in hypergiant networks.
+The variable-size and structure of networks make graph convolution~\parencite{DBLP:conf/iclr/KipfW17} a natural fit, learning to optimise the normalised cost of any new bandwidth provisioned \prllitreward{} through actor-critic methods.
+Given the line graph transformation~\parencite{Harary1960} of the network with \gls{acr:ip} route capacities as edge labels \prllitstate, the agent chooses both a link and the number of discrete capacity units to add \prllitact.\sidenote{Agents are prohibited from removing capacity, aiding learning by making it impossible to regress into an illegal state.}
+Training is accelerated by stopping each episode once either the constraints are met or too many steps have elapsed, and the final link weights are used as new maxima for each \gls{acr:ilp} variable---this state-space pruning accelerates the \gls{acr:ilp} by \qtyrange{7}{14}{\times} while achieving similar total costs.
+
+Chip floorplanning, the process of placing and interconnecting \glspl{acr:fu} for fabrication, can equally be considered as a resource placement, routing, and networking problem.
+\Textcite{Mirhoseini2021} show that \gls{acr:drl} can successfully learn to output compliant designs in around \qty{6}{\hour} of datacentre training, compared to months of human iteration.
+Using Edge-\glspl{acr:gnn} and PPO~\parencite{DBLP:journals/corr/SchulmanWDRK17} to process hypergraphs of macros, standard cells, and their interconnections, an \gls{acr:rl} agent places macros onto a masked \numproduct{128 x 128} grid \prllitact, from large to small.
+The feature extraction part of the network processes the complete hypergraph, the dimensions of  each macro node, required connections, and associated metadata as inputs for the policy network and value network \prllitstate.
+An agent receives a single reward at the end of an episode: a negative weighted sum of wirelength, congestion and density \prllitreward.
+Effective and fast, this technique has been put into action in the design of forthcoming tensor accelerator hardware---interestingly, it appears to learn more `radial' macro placements than humans often consider.
+A more generally useful insight of their work is that completed placements are easy to estimate a reward for; as such, it is possible to bootstrap the learning of a feature extraction network as a supervised, offline problem.
 
 \subsection{Takeaways for effective data-driven networking}\label{sec:ddn-use-takeaways}
 
@@ -289,12 +333,17 @@ Hopefully, it should be apparent that a consistent feature ...
 ?? Keep huge exec times out of the packet path
 ?? Powerful to produce the structure/params for a more efficient algorithm to use.
 
+?? Feature extraction layers can be trained ahead-of-time if they are separable from policy (i.e., entry point to an actor-critic) and enough samples exisdt w/ easy reward estimation.
+
+?? Common need to diverge from ``standard'' RL formulation to aid learning according to characteristics of environment. Though rarely justified in an analytic way, but can overcome roadblocks like reward arrival patterns etc.
 ?? Necessary in many domains to act asynchronously as a result; combine and coalesce state data as it comes in, and then have action computation act upon a view of this data (still gather stats in the interim, however).
 
 ?? Input, output and model shape should ideally be kept at a fixed size irrespective of the target deployment, to allow not just deploying in these other environments but also training from as many separate systems as possible! (and enable model combination/sharing)
 ?? When is it fine to do otherwise? Attempting to solve a CSP (i.e., similar to genetic algos, ).
 ?? trade-offs.
 ?? break var-width problems into fixed-size chunks if possible.
+?? Note: GNNs are great here! This is a novel and surprising development I failed to keep an eye on.
+?? LSTMs useful too, but more suited for sequences (so sensitive to/can learn form order of input samples).
 
 ?? Model architecture should be kept to as small/compact a representation as possible; not only fewer params to learn, but also fewer operations in inference --- runtime perf!
 ?? N-square scaling okay in some environments: take care based on the problem!

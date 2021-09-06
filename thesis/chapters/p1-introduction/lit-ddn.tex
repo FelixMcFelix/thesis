@@ -48,6 +48,8 @@ Sadly, full examination and further development lies beyond the scope of this th
 
 ?? Neural networks
 
+?? GNNs -- GCN, Edge-GNNs from Mirhoseini
+
 \section{Learning an approximation}\label{sec:learning-an-approximation}
 
 ?? How do we learn a nice policy?
@@ -61,6 +63,14 @@ Sadly, full examination and further development lies beyond the scope of this th
 ?? 2021 --- need to emphasise that we're using a goodness metric to learn a state-action map without an explicit model of the system we're learning to control.
 
 ?? Core use-cases -- sparity and delayedness of rewards.
+
+?? Need for high training of DRL is known as \emph{sample complexity}.
+
+?? Should explain the theoretical basis in MDPs, including the Bellman Eqns (which go to values through dynamic programming). Explain that RL is learning w/o knowledge of a state-transition function.
+
+?? Space from direct policy search (ES, Policy gradients) towards value-based \url{https://icml.cc/2015/tutorials/PolicySearch.pdf}
+
+?? Beware: asynchronous in A3C sense means in terms of training from indep traces; not in the sense of ``the world keeps ticking''.
 
 DDPG~\parencite{DBLP:journals/corr/LillicrapHPHETS15}, DPG~\parencite{DBLP:conf/icml/SilverLHDWR14}
 
@@ -224,12 +234,14 @@ This again fits our goals of integrating RL techniques directly within bump-in-t
 ?? Main problem with traces: not modelling/learning how the controlled system acts in response to change.
 ?? Opinion: this is a holdover from the initial wave of people throwing ML algos at datasets and getting papers out. Even the correct handling of this (i.e., using RL to solve static problem instances derived like NP-optimisation problems) limits the field in my opinion.
 ?? "includes the tacit assumption that the model will not change in response to the input", which is as true in science as it is in Human systems (a view I am not alone in sharing (cite Hamming book))
+?? although it can be difficult to know ahead of time, it's worth considering whether the problem ``bites back'' or is adversarial in some way; an ongoing control problem is altogether different from an offline optimisation task. It's unlikely that in an optimised chip allocation, programs will immediately start acting differently (as compared to a network where our actions induce various modes in \glspl{acr:cca})
 
 ?? Seems to always require dedicated co-design? (https://www.usenix.org/conference/nsdi21/presentation/fu)
 
 ?? Interpretability (https://dl.acm.org/doi/10.1145/3387514.3405859),
 * https://dl.acm.org/doi/10.1145/3341216.3342218 -- Verifying Deep-RL-Driven Systems
 * https://dl.acm.org/doi/10.1145/3341216.3342210 -- Cracking Open the Black Box: What Observations Can Tell Us About Reinforcement Learning Agents
+* Verification nowadays~\parencite{DBLP:conf/sigcomm/EliyahuKKS21,drl-verification-2}
 
 ?? Point to security as a big challenge.
 
