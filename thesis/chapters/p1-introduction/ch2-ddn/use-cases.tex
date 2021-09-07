@@ -259,13 +259,13 @@ Inference is cheap compared to page load times, around \qtyrange{11}{40}{\milli\
 \subsection{Resource Placement and Management}
 
 \paragraph{Job Scheduling}
-\emph{DeepRM}~\parencite{DBLP:conf/hotnets/MaoAMK16} is one of the first works on simple \gls{acr:drl}-based job scheduling among a finite number of resource-constrained \glspl{acr:cpu}, aiming to minimise the average job slowdown.
+\emph{DeepRM}~\parencite{DBLP:conf/hotnets/MaoAMK16} is one of the first works on simple \gls{acr:drl}-based job scheduling among resource-constrained \glspl{acr:cpu}, aiming to minimise the average job slowdown.
 What is particularly notable about this work is that it employs intelligent sampling and monitoring while taking multiple actions per timestep.
 In particular, it maps pixel images of current resource use and the costs of the next $k$ jobs \prllitstate{} into a discrete set of job choices to schedule and a null action \prllitact.
 The timestep is advanced on either an illegal or null action, giving an agent a negative reward for all incomplete (arrived) tasks \prllitreward.
 
-In reality, scheduling of (data-parallel) jobs is far harder; these are often expressed as a \gls{acr:dag} of sub-tasks with inter-connected data dependencies.
-\emph{Decima}~\parencite{DBLP:conf/sigcomm/MaoSVMA19} applies \glspl{acr:gnn}-based \gls{acr:drl} to completely control job scheduling as part of Apache Spark.
+In reality, scheduling of (data-parallel) jobs is far harder; these are often expressed as a \gls{acr:dag} of subtasks with interconnected data dependencies.
+\emph{Decima}~\parencite{DBLP:conf/sigcomm/MaoSVMA19} applies \gls{acr:gnn}-based \gls{acr:drl} to completely control job scheduling as part of Apache Spark.
 To minimise the average \gls{acr:jct} \prllitreward, Decima chooses the next job stage to schedule and the number of workers to be spawned \prllitact{} in response to any scheduler events, until all jobs are assigned or executors are busy.
 Agents use the output embeddings of nested \glspl{acr:gnn}, processing per-task and executor statistics into job- and system-level summaries \prllitstate.
 To make training feasible\sidenote{The Monte Carlo REINFORCE algorithm needs complete execution traces to update an \gls{acr:rl} policy, but excessively poor policies could take far longer than realistic runs to terminate.}, episodes are modified to end early in initial training phases.
@@ -275,14 +275,14 @@ By using smaller \glspl{acr:nn} at each stage, each decision can be made in arou
 Distributed \gls{acr:ml} model training is a variation on this problem, typically having high bandwidth costs and \glspl{acr:jct} which exist in a trade-off with final model accuracy.
 \emph{MLFS}~\parencite{DBLP:conf/conext/0002LS20} cleverly operates by starting with a heuristic approach to gather samples for \gls{acr:drl} training---initially prioritising jobs with faster \glspl{acr:jct} or expected accuracy improvements (i.e., fresh training jobs).
 The agent chooses a set of task-to-executor pairs \prllitact{} from the full set of task resource demands and parameters alongside executor utilisation \prllitstate.
-Agents act to optimise a weighted combination of minimised average \glspl{acr:jct} and bandwidth, and maximising average (and sufficient) accuracy and jobs completed before their deadline \prllitreward.
+Agents act to minimise average \glspl{acr:jct} and bandwidth, and maximise average accuracy, accuracy goals met, and the number of jobs completed before their deadline \prllitreward.
 The \gls{acr:rl} model is used in place of the heuristic after it successfully converges, and simple statistical methods are used to terminate jobs whenever overfitting appears to begin.
 However, MLFS's execution costs aren't specified, and it remains unclear how it handles (what appear to be) variable-size inputs and outputs.
 
 Some works choose to focus on the simpler (though important) task of parameter optimisation for existing schedulers.
 The degree of parallelism offers one such `knob' to tweak in data-parallel job allocation, however it is not one which universally leads to performance gains when increased.
 In partition-aggregate workloads, coordination overheads dominate if a task is divided between too many workers---\emph{ReLoca}~\parencite{DBLP:conf/infocom/HuLZC20} successfully trains \glspl{acr:dnn} to predict job completion from a given worker count and \gls{acr:dag} statistics, using a novel sampling method to concentrate training around optimal choices.
-In the case of independent jobs (e.g., replicated services), \emph{Autopilot}~\parencite{DBLP:conf/eurosys/RzadcaFSZBKNSWH20} optimises vertical scaling (the \gls{acr:cpu} and \gls{acr:ram} limits allocated for a task) and the number of workers to minimise user spend below heuristics.
+In the case of independent jobs (e.g., replicated services), \emph{Autopilot}~\parencite{DBLP:conf/eurosys/RzadcaFSZBKNSWH20} optimises vertical scaling (the \gls{acr:cpu} and \gls{acr:ram} limits allocated for a task) and the number of workers to minimise user spend versus heuristics.
 In the former case, an ensemble of simple optimisers (differing by cost model) is used to provide an interpretable suggestion, in the latter case a user-specified strategy is applied to minimise resource use.
 
 \paragraph{Cache Management}
@@ -296,13 +296,13 @@ This comes at a cost of latency; a totalled \qty{65}{\milli\second} for a batch 
 \emph{MacoCache}~\parencite{DBLP:conf/infocom/Wang0LSS20} examines a more targeted form of resource caching at telephone base stations via multi-agent \gls{acr:drl} to minimise latency and bandwidth demands in mobile edge networks \prllitreward.
 Agents estimate a cache probability for every video file, choosing the top $k$ entries \prllitactreal{} based on per-item demand rates and cache status \prllitstate.
 Agents don't share information directly, but do receive a portion of their neighbours' rewards and use neighbours' policies and cache state as further inputs to account for their impact on the overall system.
-Although \glspl{acr:lstm} are used to allow variable-size processing of local and neighbour state vectors, one element which remains suspect is that each node's state (and the model's output) contain a value \emph{for each cacheable item}.
+Although \glspl{acr:lstm} are used to allow variable-size processing of local and neighbour state vectors, one element which remains suspect is that each node's state (and the model's output) contains a value \emph{for each cacheable item}.
 Given that the total number of cached video files is never specified, this does not suggest great scalability; this is only worsened when we consider that such resource is explicitly said to be a \gls{acr:dash} chunk (thus, hundreds per video).
 
 \paragraph{System and Network Planning}
-In network planning, \glspl{acr:ilp} are often employed for short- and long-term planning of fibre placements and \gls{acr:ip} route provisioning.
+In network planning, \glspl{acr:ilp} are often used for short- and long-term bring-up of fibre placements and \gls{acr:ip} route provisioning.
 \emph{NeuroPlan}~\parencite{DBLP:conf/sigcomm/ZhuGATZJ21} uses \gls{acr:drl} to suggest a better starting point and prune the \gls{acr:ilp} search space for this problem, greatly reducing runtimes from \qtyrange{3}{4}{\day} in hypergiant networks.
-The variable-size and structure of networks make graph convolution~\parencite{DBLP:conf/iclr/KipfW17} a natural fit, learning to optimise the normalised cost of any new bandwidth provisioned \prllitreward{} through actor-critic methods.
+The variable size and structure of networks make graph convolution~\parencite{DBLP:conf/iclr/KipfW17} a natural fit, learning to optimise the normalised cost of any new bandwidth provisioned \prllitreward{} through actor-critic methods.
 Given the line graph transformation~\parencite{Harary1960} of the network with \gls{acr:ip} route capacities as edge labels \prllitstate, the agent chooses both a link and the number of discrete capacity units to add \prllitact.\sidenote{Agents are prohibited from removing capacity, aiding learning by making it impossible to regress into an illegal state.}
 Training is accelerated by stopping each episode once either the constraints are met or too many steps have elapsed, and the final link weights are used as new maxima for each \gls{acr:ilp} variable---this state-space pruning accelerates the \gls{acr:ilp} by \qtyrange{7}{14}{\times} while achieving similar total costs.
 
@@ -315,39 +315,87 @@ Effective and fast, this technique has been put into action in the design of for
 A more generally useful insight of their work is that completed placements are easy to estimate a reward for; as such, it is possible to bootstrap the learning of a feature extraction network as a supervised, offline problem.
 
 \subsection{Takeaways for effective data-driven networking}\label{sec:ddn-use-takeaways}
+Although we've covered a vast, varied collection of problem domains, this selection shows how the tools developed by the \gls{acr:ml} community can be of great use in the design, optimisation, and control of modern networks.
+A shared insight is that many of these tasks can be effectively represented (directly, or otherwise) as \glspl{acr:mdp}, making \gls{acr:rl} techniques an excellent addition to a network operator's toolkit.
+Similarly for \gls{acr:ml} methods, many tasks can be reduced to classification or regression to optimise over a set of parameters.
+Most importantly for our domain however, these tasks present a broad set of hard and soft deadline demands. 
+Each influences not only where our control logic can run in the network, but the forms of function approximation which are suitable.
+This is paramount as we move closer to per-packet or per-flow handling, directly shaping any agent's interaction model or control loop.
 
-Hopefully, it should be apparent that a consistent feature ...
-?? Decisions taken with reduced frequency, out of the critical data path
-?? Per-packet/flow are mostly restricted to end-hosts.
+While it's impossible to convey all of the specifics which are involved in casting a problem as an \gls{acr:mdp} which will behave effectively, the above use cases have given us insights into: (list paragraph names here.)
 
-?? Common drawback here is that inference, while quite fast, is too slow 
+\paragraph{Deadline sensitivity}
+A consistent feature of almost all online works presented here is that complex function approximators, particularly \glspl{acr:dnn}, have inference costs on the order of \qtyrange{1}{50}{\milli\second} based on model complexity.\sidenote{In many cases, it should be stated that batching does increase the throughput beyond the reciprocal of these times, at the cost of high latency and still higher tail latency.}
+This has knock-on implications not only on what processing can be performed, but in what parts of the problem space engineers are likely to consider---observe that many of the above use cases either respond to moderately infrequent events, optimise client-side behaviour, or perform high-level design tasks outside of the day-to-day operation of the network.
+To see why this is the case, consider that servers and datacentre infrastructure must forward and handle thousands of flows per second, and millions of packets per second.
+As a result, synchronous in-pipeline packet inference increases the risk of drops or stalled packet transmissions, or delayed response to changes in flow characteristics (possibly followed by reduced \gls{acr:qos} or \gls{acr:qoe}).
+
+We can make the relative impact of these costs more concrete through an example.
+Suppose that we wished to move inference further down the stack, either to reduce processing latencies, or to work with fine-grained state which is simply too numerous to export elsewhere.
+As Ethernet moves beyond \qtylist{40;100}{\giga\bit\per\second}, packet processing deadlines grow tighter in tandem; an input stream of \qty{64}{\byte} packets demands that a packet be output every \qty{12.8}{\nano\second} to maintain \qty{40}{\giga\bit\per\second} line-rate.
+On Netronome SmartNICs for instance, which have \num{312} P4 pipelines (each as a \gls{acr:npu} core), this gives a worst-case \qty{3.99}{\micro\second} processing deadline for each packet.
+Naturally this is simpler in reality, as real-world traffic patterns tend to comprise a mixture of packet sizes larger than this.
+And yet, architectures having fewer pipelines are more unforgiving in this sense---the P4$\rightarrow$NetFPGA framework~\parencite{DBLP:conf/fpga/IbanezBMZ19} has just a single processing pipeline, so timing violations have a higher impact than on an \gls{acr:npu}.\sidenote{This does not presuppose that all processing happens in a single stage, just that the timing of each stage meets this constraint. Recall that pipelined microprocessor architectures allow a designer to meet throughput demands in exchange for latency.}
+
+?? explain path-adjacent motivation later (in in-NIC RL chapter) wrt this. The main benefit of doing so is that core control logic can be moved as close to the device as possible \emph{without impacting packet processing rates}.
+
+The most clever strategies we've considered work around this limitation by using inference or learning methods to produce the structures, models, or parameters for a more efficient algorithm or heuristic to use.
+For instance, generating \gls{acr:tcam}-optimised matching structures, or outputting only a list of boundary points for degrading a flow's priority by simple comparison.
+This agent class still allows for adaptive or environment-specific training beyond what human optimisation can offer, while keeping such execution costs out of the packet path.
+As such, decisions taken with reduced frequency, out of the critical data path
+In contrast, per-packet or per-flow inference is almost entirely restricted to end-hosts, who by construction have lower flow counts than servers and reduced traffic for consideration ($\sim$\qtyrange{10}{300}{\mega\bit\per\second}).
+
+Alternatively, we can make tailored decisions for e.g., flows, more tractable by narrowing the set of items a system examines in the first instance.
+Cheap initial analyses (or even simple heuristics) can be used to filter down the set of inputs, identifying the flows, users, or subsystems needing fine-grained optimisation (such as flows which are likely to persist beyond \gls{acr:dnn} inference latency).
+On a similar note, this principle can be extended towards input data itself; data-driven methods can be used to go beyond cheaper statistics and trigger more expensive analyses in response to ambiguity.
+
+\paragraph{Choice of function approximation}
+?? While powerful, NNs are partly to blame for this.
+?? NN exec time is huge, due to GPU offload (cite sources for this)
+?? Still, smaller NNs are key to bring costs down.
+
+
+?? BNNs in network (as discussed in ??) can hit timing characteristics.~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16}, In-net~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353}
+
+As discussed earlier 
+?? loss of ability to train.
+
+?? Nature of classifiers/fn approxs used can limit where an agent/accelerator can be deployed.
+?? or train!
 
 ?? Any general points on training duration I can/should make?
 
-?? NN exec time is huge, due to GPU offload (cite sources for this)
-?? Use the worked example from the OPaL paper to illustrate why this is bad (or worse) the closer you go to the metal?
+\paragraph{Scalability and transferability}
+Most function approximators cannot trivially handle variable-size state, often requiring that such problems are broken down into fixed-size chunks.
+In the \gls{acr:rl} case, we've seen that this often involves selecting actions for subtasks within the same timestep---which, of course, introduces further design issues such as which ordering to use to act on subtasks and whether to split reward allocation between concurrent decisions.
+Tailoring an agent's architecture to a problem instance can sidestep these issues, and is arguably quite suitable in cases which are \gls{acr:csp}-like (i.e., iteratively acting to solve a single {\sffamily{}NP}-Hard task).
+This simplification comes at a cost; requiring full episodic training to arrive at a solution each time, and preventing generalised training between problem instances.
 
-?? Using existing heuristics/algorithm as a basis or teacher can be a free win
-?? Not doing inference all the time in the name of not killing your servers.
+There are substantial benefits to keeping a model's overall architecture (including input and output dimensions) at a fixed size which justify the additional iteration and design work.
+Using a consistent architecture allows for a model to be trained over many instances and shared between deployments.
+This is key in not only substantially reducing inference time (as training is no longer required per instance), but also typically improves model accuracy (by learning general features of the underlying problem itself) and allows distributed training in both the federated and parallel sense.
 
-?? Keep huge exec times out of the packet path
-?? Powerful to produce the structure/params for a more efficient algorithm to use.
+Recent approaches such as \glspl{acr:gnn} and \glspl{acr:lstm} can offer a solution, depending once again on the task of interest.
+Both allow for the handling of variable length collections of fixed-size elements; with \glspl{acr:gnn} excelling at capturing and modelling the \emph{relationships} between objects.
+\glspl{acr:lstm} are suited to \emph{sequences} with an explicit temporal component (i.e., they are sensitive to the input order of samples), making them more effective for mitigating \emph{partial observability} or a non-Markov problem using state histories as an input.
 
-?? Feature extraction layers can be trained ahead-of-time if they are separable from policy (i.e., entry point to an actor-critic) and enough samples exisdt w/ easy reward estimation.
+%?? Model architecture should be kept to as small/compact a representation as possible; not only fewer params to learn, but also fewer operations in inference --- runtime perf!
+%?? N-square scaling okay in some environments: take care based on the problem! (i.e., n-square input size if n happens to be small)
 
-?? Common need to diverge from ``standard'' RL formulation to aid learning according to characteristics of environment. Though rarely justified in an analytic way, but can overcome roadblocks like reward arrival patterns etc.
-?? Necessary in many domains to act asynchronously as a result; combine and coalesce state data as it comes in, and then have action computation act upon a view of this data (still gather stats in the interim, however).
+\paragraph{Training and reliability}
+Using a conventional heuristic or algorithm to augment \gls{acr:ddn} can benefit an agent in several ways:
+\begin{itemize}
+	\item relying on a heuristic method for steady-state operation whilst taking infrequent \gls{acr:rl} or \gls{acr:ml} actions can greatly cut runtime \gls{acr:cpu} and \gls{acr:gpu} costs, while also providing more reliable or interpretable behaviour,
+	\item if used as a complete replacement during the initial stages of training, then heuristics provide high-quality (and representative) execution traces compared to a random initial policy,
+	\item a heuristic replacement exactly matches `normal' behaviour until the policy stabilises, making such systems more suitable for from-scratch training in real networks.
+\end{itemize}
 
-?? Input, output and model shape should ideally be kept at a fixed size irrespective of the target deployment, to allow not just deploying in these other environments but also training from as many separate systems as possible! (and enable model combination/sharing)
-?? When is it fine to do otherwise? Attempting to solve a CSP (i.e., similar to genetic algos, ).
-?? trade-offs.
-?? break var-width problems into fixed-size chunks if possible.
-?? Note: GNNs are great here! This is a novel and surprising development I failed to keep an eye on.
-?? LSTMs useful too, but more suited for sequences (so sensitive to/can learn form order of input samples).
+Commonly, many of the approaches we've examined need to deviate from the typical \gls{acr:rl} formulation to make learning feasible in the face of more difficult environmental behaviour.
+Consider how many of the above domains must act asynchronously, replay existing traces under slightly varied conditions, take multiple logical actions per physical timestep, or combine and coalesce inbound state whilst policy computations are ongoing.
+While these changes are rarely justified in the analytical sense, in practice they tend to hold empirical benefit (bearing the caveat that such task-specific modifications may impede learning in another task).
 
-?? Model architecture should be kept to as small/compact a representation as possible; not only fewer params to learn, but also fewer operations in inference --- runtime perf!
-?? N-square scaling okay in some environments: take care based on the problem!
+%?? Common need to diverge from ``standard'' RL formulation to aid learning according to characteristics of environment. Though rarely justified in an analytic way, but can overcome roadblocks like reward arrival patterns etc.
+%?? Necessary in many domains to act asynchronously as a result; combine and coalesce state data as it comes in, and then have action computation act upon a view of this data (still gather stats in the interim, however).
 
-?? Nature of classifiers/fn approxs used can limit where an agent/accelerator can be deployed.
-
-?? Cheap initial analyses can be used to drive more expensive analyses when the extra data is needed to make effective decisions (but too expensive to collect in general).
+\glspl{acr:dnn}, particularly as used by actor-critic \gls{acr:drl} algorithms, often employ two-headed networks---having a shared feature extraction component between the policy and value networks.
+Training of these shared layers can be quite effectively bootstrapped offline if, for instance, it is easy to both generate representative state vectors and estimate the reward value (or some other metric) that can be derived.
