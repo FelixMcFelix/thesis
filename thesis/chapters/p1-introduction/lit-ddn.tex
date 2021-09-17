@@ -51,132 +51,176 @@ Sadly, full examination and further development lies beyond the scope of this th
 ?? GNNs -- GCN, Edge-GNNs from Mirhoseini
 
 \section{Learning an approximation}\label{sec:learning-an-approximation}
+Having introduced function approximation schemes of relevance to this thesis (and the most prominent in \gls{acr:ddn} at present), we now turn our attention to how these approximators are trained in practice.
+Due to its relevance in \gls{acr:dnn} and \gls{acr:drl}, this comprises a brief overview of gradient descent techniques and stochastic optimisers, followed by a more in-depth introduction to and overview of the field of \gls{acr:rl}.
 
-?? How do we learn a nice policy?
-
-\subsection{Gradient Descent}
+\subsection{Gradient descent}
 
 ?? The standard. Probably space here to reference a good many techniques.
 
-\subsection{Reinforcement Learning}
+\subsection{Reinforcement learning}
+Supervised and unsupervised methods alike typically offer clear ways to map from the model parameters we have at this moment, and our performance on a training dataset, into a \emph{loss function}.
+Naturally, when we're trying to optimise for decisions and estimations in classification, clustering, and regression, it suffices to apply gradient descent and similar optimisations to minimise this loss function alone.
+How might things differ when we want to design some \emph{agent}---an actor who sees and acts on a system for many timesteps---to interact with the world?
+Consider a toy example in \cref{fig:toy-rl-motiv}: an oracle with global knowledge knows that a hypothetical traveller would best be served by going through the swamp, even if it appears the worse of two choices.
+Yet if we applied simple input classification to choose our path at each turn, we would always act poorly without some way of propagating knowledge of later choices!
+It becomes more complex to collect training data once we realise that our actions move the world forward and change it (thus we may not be able to rewind a simulation to explore alternative choices), and that we might need to explore apparently suboptimal choices for some time to be better off.
 
-?? 2021 --- need to emphasise that we're using a goodness metric to learn a state-action map without an explicit model of the system we're learning to control.
+\gls{acr:rl} algorithms are methods of training such an agent to choose an optimal sequence of actions in pursuit of a given task~\parencite{RL2E}, and neatly encode these training- and run-time notions of \emph{exploration} and \emph{exploitation}.
+An agent is typically defined by its \emph{policy} $\pi$, which chooses an action in response to an input state.
+These powerful techniques effectively use a \emph{reward} metric to learn this state-action mapping without any explicit model of the system they're learning to control---even when reward signals are sparse or come with some delay after an initial choice.
 
-?? Core use-cases -- sparity and delayedness of rewards.
+\begin{marginfigure}
+	Test..
+	\caption[A motivating example for MDPs.]{A toy example showing...}\label{fig:toy-rl-motiv}
+\end{marginfigure}
+
+To achieve the goals described above, we first make the assumption that the task we're attempting to solve is structured as an \gls{acr:mdp}.
+In an \gls{acr:mdp}, we break the world or target problem down into a set of \emph{states} ($\mathcal{S}$), \emph{actions} ($\mathcal{A}$), and \emph{reward measurements} ($\mathbb{R}$).
+To relate this to computer networks, an example state space would be a vector of buffer occupancies in a switch, an action space would be the priority to assign some new flow which has arrived, and the reward might be the proportion of finished flows which achieved comfortably low \glspl{acr:fct}.
+We then consider our sequence of interactions in discrete \emph{timesteps}---at the present time $t$, an agent observes $s_t \in \mathcal{S}$, chooses some $a_t \in \mathcal{A}$, and then observes their change in the world as a new state $s_{t+1} \in \mathcal{S}$ and a reward measure $r_{t+1} \in \mathbb{R}$.
+As required, we can qualify these further, i.e. the set of actions we can take from a state $s$ may be limited to $A_s \subseteq \mathcal{A}$.
+Acting optimally then consists of maximising the sum of rewards over some time horizon.
+This is captured up to an infinite horizon by the concept of the \emph{expected discounted reward}:
+\begin{equation}
+	\mathbb{E}\left[\sum_{t=0}^{\infty}\gamma^{t}R_t\right]
+\end{equation}
+where the \emph{discount} $\gamma \in \left[0,1\right]$ controls how ``forward-planning'' an agent may be\sidenote{Setting $\gamma=0$ defines a `myopic' agent, where no intermediate loss of reward is allowed (equivalent to a multi-armed bandit problem) (??). Choosing $\gamma=1$ will prioritise future rewards, with no concern over how long it may take to \emph{achieve} those rewards. This hyperparameter features in many \gls{acr:rl} algorithms; in practice, we choose values closer to \num{1}.}, always choosing $a_t \sim \pi\left(\cdot | s_t\right)$.
+While dense, this formalism essentially captures and describes the performance of our agent over all possible run-lengths from all starting states (i.e,, over all \emph{episodes}), and in general this is what \gls{acr:rl} algorithms are designed to maximise.
+
+\glspl{acr:mdp} assume that there are stationary, well-defined (though stochastic) transitions between these states.
+For any $s, s' \in \mathcal{S}, a \in A_s$, an \gls{acr:mdp} is defined by a state transition function, $\operatorname{P_a}\left(s,s'\right)$ which returns the probability that we will land in $s'$ after taking action $a$ in state $s$, and a function returning the \emph{expected reward} $\operatorname{R_a}\left(s,s'\right)$ for each valid transition.
+If we have all this information, then we can simply apply the Bellman equations (??), a dynamic programming algorithm, to solve for an optimal policy.
+In real-world scenarios however, we usually lack this knowledge; this either requires involved modelling, or is rendered intractable by a continuous or combinatorially large state space.
+
+Like most \gls{acr:ml} methods, modern \gls{acr:rl} algorithms use gradient information to update the parameters used to approximate a function.
+How \gls{acr:rl} differs is that it aims to learn an optimal policy without any knowledge of the \gls{acr:mdp} apart from its state and action space---\emph{model-free}.
+Knowledge of the \emph{trajectories} followed by agents (i.e., state-action-reward tuples at all timesteps) is then used to compute target values and adjustments for the parameter set $\wvec{}$ for any function approximator.
+By requiring that our policy approximation, i.e. $\pi\left(a | s, \wvec{} \right)$, is differentiable \gls{acr:rl} works in tandem with the other mathematical training approaches described earlier.\sidenote{Note the policy $\pi$ does not require any knowledge of rewards, except when training. This allows for \gls{acr:rl} agents to be trained using simulated systems or data, and then deployed in an environment where they cannot access this knowledge due to sampling cost. If these measures are present in deployment, then \gls{acr:rl} can learn online.}
+
+%\gls{acr:rl} works in tandem with other mathematical training approaches: the key insight is that the structure of an MDP allows external information and model(-free) observation to strengthen or weaken different function responses.
+
+\paragraph{Demonstrating RL: Sarsa}
+While many \gls{acr:rl} algorithms have been developed (each of which making quite different choices on how to apply trajectory data), it is likely most helpful to start with a concrete point in the design space \emph{before} listing their full variety.
+Doubly so here, as this particular algorithm---single-step, semi-gradient Sarsa~\parencite[pp. \numrange{217}{221}]{RL2E}---underpins \cref{chap:ddos-rl,chap:in-net-rl}.
+The Sarsa algorithm considers only one transition at a time: a pair of states $s_t,s_{t+1}$, their accompanying actions $a_t,a_{t+1}$, and the reward $r_{t+1}$ accompanying $s_{t+1}$.
+This is why it is defined as \emph{single-step}, and as such it does not require a completed trajectory for learning.
+
+Assume first that $\wvec{}$ is a large block of real numbers residing in \gls{acr:ram}, and that we update this block through time.
+Next, as Sarsa is a \emph{value-based} method, an agent operates by defining an approximate \emph{value} function $\acval{s}{a}{\wvec{}}$ to each action $a$ it can take from $s$, typically choosing the highest-value.
+We can then update $\wvec{}$ over time as follows:
+\begin{subequations}
+	\begin{gather}
+		\delta_t = r_{t+1} + \gamma \acval{s_{t+1}}{a_{t+1}}{\wvec{t}} - \acval{s_t}{a_t}{\wvec{t}},\\
+		\wvec{t+1} = \wvec{t} + \alpha \delta_t \nabla{\acval{s_t}{a_t}{\wvec{t}}},
+	\end{gather}%
+	\label{eqn:sg-sarsa}%
+	where $\delta_t$ is known as the \gls{acr:td} error, and the vector gradient $\nabla$ is taken with respect to $\wvec{}$. $\alpha\in[0,1]$ defines the learning rate (governing the policy stability), with $\gamma$ defined as in the \gls{acr:mdp} formulation.
+\end{subequations}
+
+\begin{marginfigure}
+	Test
+	\caption[An illustration of how value adjustments in single-step RL propagate backwards through a state trajectory.]{Test.}\label{fig:sarsa-intuition}
+\end{marginfigure}
+
+\begin{figure}
+	Test.
+	\caption[A worked example showing how $\epsilon$-greedy Sarsa performs inference and learning with a tile coded function approximation.]{Put the worked example from TNSM paper here.}\label{fig:sarsa-end-to-end}
+\end{figure}
+
+In essence, at each timestep the policy parameters ($\wvec{}$) are increased along the gradient ($\nabla{\acvalblank}$) using a fixed learning rate ($\alpha$) and a computed adjustment ($\delta_t$).
+This adjustment is equal to the difference between the chosen action $a$'s value in state $s$ and the reward received ($r_{t+1} - \acval{s_t}{a_t}{\wvec{}}$), \emph{plus} some part of the \emph{next} action's value ($\gamma\acval{s_{t+1}}{a_{t+1}}{\wvec{}}$).
+Naturally, as state transitions are visited and revisited during training, the value of later choices can propagate down the tree of states, as shown by \cref{fig:sarsa-intuition}.
+To see how this combines with a simple linear function approximation, consider \cref{fig:sarsa-end-to-end}.
+
+\paragraph{The algorithm design space}
+To give some context on the design space here, other algorithms may employ separate state value approximations, use the entirety of an agent's trace, or be tailored to characteristics of the policy approximator (e.g., how neural networks benefit from batching).
+
+\begin{description}
+	\item[Trace Length] ?? Monte-Carlo -- eligibility traces -- single step
+	\item[Direct Policy vs Value-Based] ?? Hmm.
+\end{description}
 
 ?? Need for high training of DRL is known as \emph{sample complexity}.
-
-?? Should explain the theoretical basis in MDPs, including the Bellman Eqns (which go to values through dynamic programming). Explain that RL is learning w/o knowledge of a state-transition function.
 
 ?? Space from direct policy search (ES, Policy gradients) towards value-based \url{https://icml.cc/2015/tutorials/PolicySearch.pdf}
 
 ?? Beware: asynchronous in A3C sense means in terms of training from indep traces; not in the sense of ``the world keeps ticking''.
 
+Q-learning~\parencite{WatkinsThesisQLearning}, deep Q~\parencite{DBLP:journals/corr/MnihKSGAWR13}, DDQN~\parencite{DBLP:conf/aaai/HasseltGS16}
+
+A3C~\parencite{DBLP:conf/icml/MnihBMGLHSK16}
 DDPG~\parencite{DBLP:journals/corr/LillicrapHPHETS15}, DPG~\parencite{DBLP:conf/icml/SilverLHDWR14}
+PPO~\parencite{DBLP:journals/corr/SchulmanWDRK17}
+TRPO~\parencite{DBLP:conf/icml/SchulmanLAJM15}
+REINFORCE~\parencite{DBLP:journals/ml/Williams92}
+TD3~\parencite{DBLP:conf/icml/FujimotoHM18}
+D4PG~\parencite{DBLP:conf/iclr/Barth-MaronHBDH18}
+
+Hybrid w/ ES~\parencite{DBLP:journals/corr/SalimansHCS17}. 
+
+Canonical ES~\parencite{DBLP:journals/corr/abs-1802-08842}
 
 Note -- are actor-critic methods needed for continuous action spaces? Might be worth mentioning whjat it takes to learn both discrete and continuous. Need to use different methods to explore, i.e. Ornstein-Uhlenbeck process.
 
 ?? Also want to spend some time discussing various action-selection strategies, that the output can be
 
-?? RL works in tandem with other mathematical training approaches: the key insight is that the structure of an MDP allows external information and model(-free) observation to strengthen or weaken different function responses.
-
 ?? The reference~\parencite{RL2E}
 
-Automatic, adaptive network control and optimisation requires accurate, recent state to make optimal decisions and to act in a timely manner.
-Action execution, computation and training have real costs, which have been shown to negatively affect the performance of asynchronous RL systems~\cite{DBLP:journals/firai/TravnikMSP18}---hence, data-driven networking applications are profoundly affected.
-As it stands, state measurement and policy execution require additional hardware and infrastructure, increasing delays and costing rack-space.
-Placing learning algorithms, policy execution, and measurement into the network fabric will increase performance, the accuracy of system state and simplify network architectures which use data-driven concepts.
+%?? Can we relate this to the broader ML notion of concept drift?
 
-?? Can we relate this to the broader ML notion of concept drift?
+\paragraph{Exploration vs. exploitation in practice}
+Consider again the dilemma presented in \cref{fig:toy-rl-motiv}: discovery of an optimal policy relies on either global knowledge, or \emph{exploration} of a suboptimal portion of the state-space.
+\gls{acr:rl} agents are typically initialised with either zeroed or random policy parameters, but we cannot expect that for larger state spaces this produces \emph{meaningful} exploration.
+I.e., it may well be the case that following the current optimal policy up to some uncertain state and then exploring can provided targeted and useful samples, whereas randomised parameters are something more akin to a random walk for all timesteps spent in early episodes.
 
-\emph{Reinforcement learning} (RL) algorithms are methods of training an \emph{agent} to choose an optimal sequence of actions in pursuit of a given task \cite{RL2E}.
-Like most machine learning methods, an RL algorithm uses gradient information to update the parameters used to approximate a function.
-In RL contexts, this is a state$\rightarrow$action function known as a \emph{policy}.
-When training, agents are given \emph{reward measurements} and a learned policy acts to maximise the \emph{expected discounted reward} received.
-When a pre-trained policy is deployed, this signal is not required.
+To encourage exploration in discrete action spaces we typically introduce some randomness into action selection.
+$\epsilon$-greedy methods pick another action at random with probability $\epsilon$---typically annealing the value of $\epsilon$ towards 0 over some number of timesteps or training episodes, while the simplest way to achieve this in many \gls{acr:nn} is to use the outputs of a softmax~\parencite{luce-softmax} layer as a probability distribution over actions.
+Boltzmann and Max-Boltzmann action selection~\parencite[pp. 73]{WieringMThesisRLExploration} constitute variations of these schemes which control the concentration of action probabilities.
+Active estimation of the degree of exploration has also attracted healthy degrees of interest (particularly with regard to evolving or non-stationary problems): VDBE~\parencite{DBLP:conf/ki/Tokic10,DBLP:conf/ki/TokicP11} uses changes in the \gls{acr:td} error to control $\epsilon$ over time, while \textcite{DBLP:conf/annpr/TokicP12} train a continuous \gls{acr:nn}-backed agent to control exploration parameters.
 
-It's useful to consider how these algorithms differ from other ML use cases, such as classifiers.
-The main differences lie in how this gradient information is used, and combined with \emph{reward measurements} received from the environment.
-Rather than adapting the learned parameters along the gradient using an error value from a target value, because the optimal actions aren't known they adjust values using a \emph{Markov Decision Process} (MDP)---capturing state trajectories to adjust value based on past and future decisions.
+In the case of continuous \gls{acr:rl} action spaces, an initial consensus in the wake of the DDPG~\parencite{DBLP:journals/corr/LillicrapHPHETS15} was the use of Ornstein-Uhlenbeck processes~\parencite{PhysRev.36.823} to inject noise in the action space.
+However, more recent ablation studies have shown that this offers no tangible benefits over Gaussian noise~\parencite{DBLP:conf/icml/FujimotoHM18,DBLP:conf/iclr/Barth-MaronHBDH18}.
 
-Consider the single-step, semi-gradient Sarsa algorithm~\cite[pp. \numrange{217}{221}]{RL2E}:
-% \begin{subequations}
-% 	\begin{gather}
-% 		\delta_t = R_{t+1} + \gamma \acval{S_{t+1}}{A_{t+1}}{\wvec{t}} - \acval{S_t}{A_t}{\wvec{t}},\\
-% 		\bm{w}_{t+1} = \bm{w}_{t} + \alpha \delta_t \nabla{\acval{S_t}{A_t}{\wvec{t}}},
-% 	\end{gather}%
-% 	\label{eqn:sg-sarsa}%
-% 	where $\delta_t$ is known as the \emph{temporal-difference} (TD) error, $\acval{S}{A}{\wvec{}}$ denotes the \emph{value} of an action $A$ taken in state $S$ according to the policy $\wvec{}$, and the vector gradient $\nabla$ is taken with respect to $\wvec{}$. $\gamma,\alpha\in[0,1]$ are the discount factor and learning rate (governing the degree of forward planning and policy stability, respectively).
-% \end{subequations}
-In essence, at each timestep the policy parameters ($\wvec{}$) are increased along the gradient ($\nabla{\acvalblank}$) using a fixed learning rate ($\alpha$) and a computed adjustment ($\delta_t$).
-This adjustment is equal to the difference between the chosen action $A$'s value in state $S$ and the reward received ($R_{t+1} - \acval{S_t}{A_t}{\wvec{}}$), \emph{plus} some part of the \emph{next} action's value ($\gamma\acval{S_{t+1}}{A_{t+1}}{\wvec{}}$).
-To give some context on the design space here, other algorithms may employ separate state value approximations, use the entirety of an agent's trace, or be tailored to characteristics of the policy approximator (e.g., how neural networks benefit from batching).
+\paragraph{RL in asynchronous data-driven networking}
+Automatic, adaptive control requires accurate, recent state to make optimal decisions and to act in a timely manner.
+Action execution, computation and training have real costs, which have been shown to negatively affect the performance of asynchronous \gls{acr:rl} systems~\parencite{DBLP:journals/firai/TravnikMSP18}.
+Hence, \gls{acr:ddn} applications are profoundly affected, as they must often reckon with inference times which are significant compared to the systems they control.
+As it stands, state measurement and policy execution require additional hardware and infrastructure, increasing delays and costing rack-space in the datacentres or networks where we aim to deploy \gls{acr:ddn}.
+%Placing learning algorithms, policy execution, and measurement into the network fabric will increase performance, the accuracy of system state and simplify network architectures which use data-driven concepts.
 
-\fakepara{RL in asynchronous environments}
-There remains some degree of divergence between the theory and implementation of RL agents.
-Consider \cref{fig:state-slip}: the traditional formulation of a Markov decision process assumes that an agent receives a new view of the world's state at fixed time intervals, and then decides upon and executes an action instantly.
+There remains some degree of divergence between the theory and implementation of \gls{acr:rl} agents.
+Consider \cref{fig:state-slip}: the traditional formulation of an \gls{acr:mdp} assumes that an agent receives a new view of the world's state at fixed time intervals, and then decides upon and executes an action instantly.
 The reality is that state information takes time to traverse the network, service times are offset by how quickly hosts respond to interrupts and deserialise requests, and action preference lists are often computed via expensive policy approximations.
 Action installation also incurs costs in fields such as network administration, initially to contact the controller and then for those actions to be installed via the control plane.
 
 These delays (and variance thereof) add noise to the state-action mapping being learned, which has a potent reduction to learning rate and final accuracy, even for simple grid world tasks according to \textcite{DBLP:journals/firai/TravnikMSP18}.
-They in turn show that reordering algorithmic steps can reduce these costs for online 1-step algorithms, but that reducing this further requires detailed agent-environment co-design.
-This principle has influenced the design of real network use cases, such RL-based congestion-control algorithms~\parencite{DBLP:journals/corr/abs-1910-04054}, showing that asynchrony is necessary for high-speed applications.
+They in turn show that reordering algorithmic steps can reduce these costs for online single-step algorithms, but that reducing this further requires detailed agent-environment co-design.
+%This principle has influenced the design of real network use cases, such RL-based congestion-control algorithms~\parencite{DBLP:journals/corr/abs-1910-04054}, showing that asynchrony is necessary for high-speed applications.
 Achieving this often requires that state measurements are combined or coalesced~\parencite{DBLP:journals/corr/abs-1910-04054,DBLP:journals/tnsm/SimpsonRP20} while expensive computations are ongoing.
 `Stopping the world' in the algorithmic sense causes significant performance degradation, as inference takes up to \SI{30}{\milli\second} in the above work on congestion control, or any time-sensitive control problems.
 
 \begin{figure}
 	\begin{subfigure}{0.45\linewidth}
-		\resizebox{\linewidth}{!}{
-			\centering
-			\begin{tikzpicture}
-				\node[circle, draw] (state) {$S$};
-				\node[circle, draw] (state') at ($(state) + (0, -2)$) {$S'$};
-				
-				\node (agent) at ($(2, 0) + (state)$) {Agent};
-				\node[below of=agent] (action) {Action $A$};
-				
-				\node[right of=state'] {$+ R$};
-				
-				\draw[->] (state) -- (state') node[midway, right] {$A$};
-				
-				\draw[dotted, ->, bend left = 30] (state) -- (agent);
-				\draw[->] (agent) -- (action);
-				\draw[dotted, ->] (action) -- (state);
-		\end{tikzpicture}}
+		\centering
+		\resizebox{0.9\linewidth}{!}{\input{diagrams/rl/sa-slip1}}
 		\caption{Theory: state measurement, action computation, and learning are zero-cost.}
 	\end{subfigure}
 	\hspace{0.05\linewidth}
 	\begin{subfigure}{0.45\linewidth}
-		\resizebox{0.75\linewidth}{!}{
-			\centering
-			\begin{tikzpicture}
-				\node[circle, draw] (state) {$S$};
-				\node[circle, draw] (state') at ($(state) + (0, -1.5)$) {$S'$};
-				\node[circle, draw] (state'') at ($(state') + (0, -1.5)$) {$S''$};
-				
-				\node (agent) at ($(2, 0) + (state)$) {Agent};
-				\node[below of=agent] (action) {Action $A$};
-				
-				\node[right of=state''] {$+ R$};
-				
-				\draw[->] (state) -- (state') node[midway, right] {$\varnothing$};
-				\draw[->] (state') -- (state'') node[midway, right] {$A$};
-				
-				\draw[dotted, ->, bend left = 30] (state) -- (agent) node[midway, above] {$t_1$};
-				\draw[->] (agent) -- (action) node[midway, right] {$t_2$};
-				\draw[dotted, ->] (action) -- (state') node[midway, below] {$t_3$};
-		\end{tikzpicture}}
+		\centering
+		\resizebox{0.75\linewidth}{!}{\input{diagrams/rl/sa-slip2}}
 		\caption{Reality: costs of measurement and action lead to \emph{state drift}---over a time delay $t_1+t_2+t_3$, inaction transforms state $S$ into $S'$.}
 	\end{subfigure}
-	\caption{Asynchronous RL delays and state slippage (policy updates omitted).\label{fig:state-slip}}
+	\caption[State slippage in an asynchronous RL agent.]{Asynchronous RL delays and state slippage (policy updates omitted).\label{fig:state-slip}}
 \end{figure}
 
 %?? Find some cites citing the relevance of this problem wrt. self-driving cars, robotics, etc.
 
-The solution we propose is to make use of the recent wave of programmable network devices to \emph{bring reinforcement learning to the dataplane}---referring again to \cref{fig:state-slip}, we would place place state measurement ($t_1$), low-cost decision-making processes ($t_2$), and controlled systems ($t_3$) as close to one another as possible.
-In networks, actions are most likely to be installed on backbone switches, bump-in-the-wire NICs or middleboxes, and in the NICs of end-hosts.
-Ideally, these functions which comprise an RL agent would all be collocated on the same chip or device, but this is easier said than done. 
-Both programmable devices and the network environment make this more difficult, as we'll examine in the sequel.
+%The solution we propose is to make use of the recent wave of programmable network devices to \emph{bring reinforcement learning to the dataplane}---referring again to \cref{fig:state-slip}, we would place place state measurement ($t_1$), low-cost decision-making processes ($t_2$), and controlled systems ($t_3$) as close to one another as possible.
+%In networks, actions are most likely to be installed on backbone switches, bump-in-the-wire NICs or middleboxes, and in the NICs of end-hosts.
+%Ideally, these functions which comprise an RL agent would all be collocated on the same chip or device, but this is easier said than done. 
+%Both programmable devices and the network environment make this more difficult, as we'll examine in the sequel.
 
 \section{Collaborative training}
 As something of a counterpoint to the main focus of this thesis, much community interest has been given to how networks can improve, accelerate, or innovate in \gls{acr:ml} model training.

@@ -1,0 +1,16 @@
+\centering
+\begin{tikzpicture}
+	\node[circle, draw] (state) {$S$};
+	\node[circle, draw] (state') at ($(state) + (0, -2)$) {$S'$};
+	
+	\node (agent) at ($(2, 0) + (state)$) {Agent};
+	\node[below of=agent] (action) {Action $A$};
+	
+	\node[right of=state'] {$+ R$};
+	
+	\draw[->] (state) -- (state') node[midway, right] {$A$};
+	
+	\draw[dotted, ->, bend left = 30] (state) -- (agent);
+	\draw[->] (agent) -- (action);
+	\draw[dotted, ->] (action) -- (state);
+\end{tikzpicture}
