@@ -1,0 +1,35 @@
+\begin{tikzpicture}
+	\node at (0,0.3){$s = \begin{pmatrix}
+			0.7 \\
+			0.3
+		\end{pmatrix}$};
+	\node at (0,-1) {$\symbfit{x}(s,\cdot) = \begin{Bmatrix}
+			T_{1,9}, \\
+			T_{2,5}, \\
+			T_{\mathit{bias}}
+		\end{Bmatrix}$};
+	
+	\node at (2.5,-0.5) {
+		\begin{tikzpicture}
+			\draw[step=0.5cm,color=uofgcobalt,opacity=0.7,shift={(0,0)},label=above:{Tiling 0}] (-0.5,-0.5) grid (1,1);
+			\fill[uofgcobalt,opacity=0.5] (0.5,-0.5) rectangle (1,0);
+			\node[color=uofgcobalt] at (0,1.1) {\footnotesize Tiling 1};
+			
+			\draw[step=0.5cm,color=uofgpumpkin,opacity=0.9,shift={(0.25,-0.25)},label=above:{Tiling 1}] (-0.5,-0.5) grid (1,1);
+			\fill[uofgpumpkin,opacity=0.5,shift={(0.25,-0.25)}] (0,0) rectangle (0.5,0.5);
+			\node[color=uofgpumpkin!50!uofgrust] at (0.25,-0.95) {\footnotesize Tiling 2};
+			
+			\node[circle, black, draw,
+			fill, radius=0.5pt, inner sep=0pt,minimum size=1.5pt, label=above:{$s$}] at (0.625,-0.125) {};
+			%			\filldraw (0.625,-0.125) circle[radius=1.5pt,label=above:{$s$}];
+			
+			\draw[->] (-0.25,-0.5)--(-0.25,0.85);
+			\draw[->] (-0.25,-0.5)--(1.1,-0.5);
+			
+			\node at (1,-0.7) {\footnotesize 1};
+			\node at (-0.4,0.75) {\footnotesize 1};
+			\node at (-0.35,-0.6) {\footnotesize 0};
+		\end{tikzpicture}
+	};
+	
+\end{tikzpicture}

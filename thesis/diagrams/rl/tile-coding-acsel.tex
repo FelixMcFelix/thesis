@@ -1,0 +1,49 @@
+\begin{tikzpicture}
+	% Top half
+	\def\topacs{
+		{-0.3,-0.5,-0.1,0.8},
+		{0.1,0.1,-0.2,0.3},
+		{0.3,0.4,0.2,-0.4}%
+	}
+	
+	\foreach \line [count=\y] in \topacs {
+		\foreach \pix [count=\x] in \line {
+			\ifthenelse{\lengthtest{\pix pt < 0 pt}}{
+				\pgfmathtruncatemacro\lambda{(\pix+1)*100}
+				\draw[shift={(-0.7,0)},fill=midac!\lambda!lowac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+			}{
+				\pgfmathtruncatemacro\lambda{\pix*100}
+				\draw[shift={(-0.7,0)},fill=highac!\lambda!midac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+			}
+			\node[shift={(-0.35,0.175)}] at (0.7*\x,-0.35*\y) {\footnotesize \pix};
+		}
+	}
+	
+	\draw[xstep=0.7cm,ystep=0.35cm,shift={(0,0)}] (0,-1.06) grid (2.8,0);
+	\node[label=left:{$T_{1,9}$},shift={(0,-0.125)}] at (0,0) {}; 
+	\node[label=left:{$T_{2,5}$},shift={(0,-0.125)}] at (0,-0.375) {}; 
+	\node[label=left:{$T_{\mathit{bias}}$},shift={(0,-0.125)}] at (0,-0.75) {};
+	
+	% bottom half
+	\def\botacs{
+		{0.1,0.0,-0.1,0.7}%
+	}
+	
+	\foreach \line [count=\y] in \botacs {
+		\foreach \pix [count=\x] in \line {
+			\ifthenelse{\lengthtest{\pix pt < 0 pt}}{
+				\pgfmathtruncatemacro\lambda{(\pix+1)*100}
+				\draw[shift={(-0.7,-1.275)},fill=midac!\lambda!lowac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+			}{
+				\pgfmathtruncatemacro\lambda{\pix*100}
+				\draw[shift={(-0.7,-1.275)},fill=highac!\lambda!midac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+			}
+			\node[shift={(-0.35,-1.1)}] at (0.7*\x,-0.35*\y) {\footnotesize \pix};
+		}
+	}
+	
+	\draw[xstep=0.7cm,ystep=0.35cm,shift={(0,-1.275)}] (0,-0.35) grid (2.8,0);
+	\node[label=left:{$\mathit{Total}$},shift={(0,-0.175)}] at (0,-1.275) {};
+	
+	\draw [->] (2.45, -1.9) -- (2.45, -1.65);
+\end{tikzpicture}

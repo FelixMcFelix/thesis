@@ -1,0 +1,23 @@
+\centering
+\begin{tikzpicture}
+	\node[circle, draw] (state) {};
+
+	\node[circle, draw] (state') at ($(state) + (-0.5, -1)$) {};
+	\node[circle, draw, dashed] (stateg') at ($(state') + (0.5, 0)$) {};
+	\node[circle, draw, dashed] (stategg') at ($(stateg') + (0.5, 0)$) {};
+
+	\node[circle, draw, dashed] (state'') at ($(state') + (-0.5, -1)$) {};
+	\node[circle, draw, dashed] (stateg'') at ($(state'') + (0.5, 0)$) {};
+	\node[circle, draw] (stategg'') at ($(stateg'') + (0.5, 0)$) {};
+
+	\draw[->] (state) -- (state');
+	\draw[->, dashed] (state) -- (stateg');
+	\draw[->, dashed] (state) -- (stategg');
+
+	\draw[->, dashed] (state') -- (state'');
+	\draw[->, dashed] (state') -- (stateg'');
+	\draw[->] (state') -- (stategg'');
+
+	\path[->, color=uofgrust] (stategg'') edge[bend right=45] node [right] {\tiny $\gamma\acvalblank$} (state');
+	\path[->, color=uofgrust] (state') edge[bend left=45] node [left] {\tiny $\gamma^2\acvalblank$} (state);
+\end{tikzpicture}

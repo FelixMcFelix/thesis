@@ -1,0 +1,53 @@
+\begin{tikzpicture}		
+	% Top half
+	\def\startacs{
+		{0.8},
+		{0.3},
+		{-0.4}%
+	}
+	
+	\foreach \line [count=\y] in \startacs {
+		\foreach \pix [count=\x] in \line {
+			\ifthenelse{\lengthtest{\pix pt < 0 pt}}{
+				\pgfmathtruncatemacro\lambda{(\pix+1)*100}
+				\draw[shift={(-0.7,0)},fill=midac!\lambda!lowac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+			}{
+				\pgfmathtruncatemacro\lambda{\pix*100}
+				\draw[shift={(-0.7,0)},fill=highac!\lambda!midac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+			}
+			\node[shift={(-0.35,0.175)}] at (0.7*\x,-0.35*\y) {\footnotesize \pix};
+		}
+	}
+	
+	\draw[xstep=0.7cm,ystep=0.35cm,shift={(0,0)}] (0,-1.06) grid (0.7,0);
+	\node[label=left:{$T_{1,9}$},shift={(0,-0.125)}] at (0,0) {}; 
+	\node[label=left:{$T_{2,5}$},shift={(0,-0.125)}] at (0,-0.375) {}; 
+	\node[label=left:{$T_{\mathit{bias}}$},shift={(0,-0.125)}] at (0,-0.75) {};
+	\node[label=below:{\footnotesize Action 4},shift={(0.35,-0.125)}] at (0,-0.75) {};
+	\node[label=above:{\footnotesize $\wvec{t}$},shift={(0.35,-0.125)}] at (0,0) {};
+	
+	\def\finalacs{
+		{0.7},
+		{0.2},
+		{-0.5}%
+	}
+	
+	\foreach \line [count=\y] in \finalacs {
+		\foreach \pix [count=\x] in \line {
+			\ifthenelse{\lengthtest{\pix pt < 0 pt}}{
+				\pgfmathtruncatemacro\lambda{(\pix+1)*100}
+				\draw[shift={(2-0.7,0)},fill=midac!\lambda!lowac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+			}{
+				\pgfmathtruncatemacro\lambda{\pix*100}
+				\draw[shift={(2-0.7,0)},fill=highac!\lambda!midac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+			}
+			\node[shift={(2-0.35,0.175)}] at (0.7*\x,-0.35*\y) {\footnotesize \pix};
+		}
+	}
+	
+	\draw[xstep=0.7cm,ystep=0.35cm,shift={(2,0)}] (0,-1.06) grid +(0.7,1.06);
+	\node[label=below:{\footnotesize Action 4},shift={(2.35,-0.125)}] at (0,-0.75) {};
+	\node[label=above:{\footnotesize $\wvec{t+1}$},shift={(0.35,-0.125)}] at (2,0) {};
+	
+	\draw[->] (0.9,-0.5) -- node[above] {$+ \alpha \delta_t$} (1.8,-0.5);
+\end{tikzpicture}

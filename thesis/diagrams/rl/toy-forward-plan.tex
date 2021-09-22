@@ -1,0 +1,41 @@
+\centering
+\begin{tikzpicture}
+	\node[circle, draw] (meadow) {};
+
+	\node[circle, draw, fill=example-swamp] (swamp) at ($(meadow) + (-1, -1.5)$) {};
+	\node[circle, draw, fill=example-steppe] (steppe) at ($(meadow) + (+1, -1.5)$) {};
+	
+	\node[circle, draw, fill=example-forest] (forest) at ($(swamp) + (+0, -1.5)$) {};
+	\node[circle, draw, fill=example-desert] (desert) at ($(steppe) + (+0, -1.5)$) {};
+
+	\node[circle, draw, double, fill=example-castle] (castle) at ($(forest) + (+1, -1.5)$) {};
+	
+	% \node (agent) at ($(2, 0) + (state)$) {Agent};
+	% \node[below of=agent] (action) {Action $A$};
+	
+	% \node[right of=state'] {$+ R$};
+	
+	\draw[->] ($(meadow) + (0, 1)$) -- (meadow);
+
+	\draw[->, dashed] (meadow) -- (swamp) node[midway, left] {\small \textsc{Sw}};
+	\draw[->, dashed] (meadow) -- (steppe) node[midway, right] {\small \textsc{Se}};
+
+	\path[->, dashed] (swamp) edge[bend right=45] node [left] {\small \textsc{Sw}} (forest);
+	\path[->, dashed] (swamp) edge[bend left=45] node [right] {\small \textsc{Se}} (forest);
+
+	\path[->, dashed] (steppe) edge[bend right=45] node [left] {\small \textsc{Sw}} (desert);
+	\path[->, dashed] (steppe) edge[bend left=45] node [right] {\small \textsc{Se}} (desert);
+
+	\draw[->, dashed] (desert) -- (castle) node[midway, right] {\small \textsc{Sw}};
+	\draw[->, dashed] (forest) -- (castle) node[midway, left] {\small \textsc{Se}};
+
+	\node[above left of=swamp, align = center] {{\bfseries\color{example-swamp}Swamp}\\$R$ = \num{-1}};
+	\node[below left of=forest, align = center] {{\bfseries\color{example-forest}Forest}\\$R$ = 10};
+	\node[above right of=steppe, align = center] {{\bfseries\color{example-steppe}Steppe}\\$R$ = 1};
+	\node[below right of=desert, align = center] {{\bfseries\color{example-desert}Desert}\\$R$ = \num{-10}};
+	\node[below of=castle, align = center] {{\bfseries\color{example-castle}Castle}\\$R$ = 5};
+	
+	% \draw[dotted, ->, bend left = 30] (state) -- (agent);
+	% \draw[->] (agent) -- (action);
+	% \draw[dotted, ->] (action) -- (state);
+\end{tikzpicture}

@@ -59,21 +59,21 @@ Due to its relevance in \gls{acr:dnn} and \gls{acr:drl}, this comprises a brief 
 ?? The standard. Probably space here to reference a good many techniques.
 
 \subsection{Reinforcement learning}
+\begin{marginfigure}
+	\centering
+	\resizebox{0.9\linewidth}{!}{\input{diagrams/rl/toy-forward-plan}}
+	\caption[A motivating example for MDPs in handling delayed rewards.]{A toy example showing how the \emph{delayed rewards} which an \gls{acr:rl} agent learns to maximise. Consider a traveller journeying towards a castle in the south, with $R$ being some aggregate of food, water and rest. Learning only to optimise immediate rewards attached to actions would lead our traveller to choose an overall worse path---going thirsty in the desert!}\label{fig:toy-rl-motiv}
+\end{marginfigure}
 Supervised and unsupervised methods alike typically offer clear ways to map from the model parameters we have at this moment, and our performance on a training dataset, into a \emph{loss function}.
 Naturally, when we're trying to optimise for decisions and estimations in classification, clustering, and regression, it suffices to apply gradient descent and similar optimisations to minimise this loss function alone.
 How might things differ when we want to design some \emph{agent}---an actor who sees and acts on a system for many timesteps---to interact with the world?
 Consider a toy example in \cref{fig:toy-rl-motiv}: an oracle with global knowledge knows that a hypothetical traveller would best be served by going through the swamp, even if it appears the worse of two choices.
-Yet if we applied simple input classification to choose our path at each turn, we would always act poorly without some way of propagating knowledge of later choices!
+Yet if we applied simple input classification to choose our path at each turn, we would always act poorly without some way of propagating knowledge of later choices.
 It becomes more complex to collect training data once we realise that our actions move the world forward and change it (thus we may not be able to rewind a simulation to explore alternative choices), and that we might need to explore apparently suboptimal choices for some time to be better off.
 
 \gls{acr:rl} algorithms are methods of training such an agent to choose an optimal sequence of actions in pursuit of a given task~\parencite{RL2E}, and neatly encode these training- and run-time notions of \emph{exploration} and \emph{exploitation}.
 An agent is typically defined by its \emph{policy} $\pi$, which chooses an action in response to an input state.
 These powerful techniques effectively use a \emph{reward} metric to learn this state-action mapping without any explicit model of the system they're learning to control---even when reward signals are sparse or come with some delay after an initial choice.
-
-\begin{marginfigure}
-	Test..
-	\caption[A motivating example for MDPs.]{A toy example showing...}\label{fig:toy-rl-motiv}
-\end{marginfigure}
 
 To achieve the goals described above, we first make the assumption that the task we're attempting to solve is structured as an \gls{acr:mdp}.
 In an \gls{acr:mdp}, we break the world or target problem down into a set of \emph{states} ($\mathcal{S}$), \emph{actions} ($\mathcal{A}$), and \emph{reward measurements} ($\mathbb{R}$).
@@ -85,8 +85,8 @@ This is captured up to an infinite horizon by the concept of the \emph{expected 
 \begin{equation}
 	\mathbb{E}\left[\sum_{t=0}^{\infty}\gamma^{t}R_t\right]
 \end{equation}
-where the \emph{discount} $\gamma \in \left[0,1\right]$ controls how ``forward-planning'' an agent may be\sidenote{Setting $\gamma=0$ defines a `myopic' agent, where no intermediate loss of reward is allowed (equivalent to a multi-armed bandit problem) (??). Choosing $\gamma=1$ will prioritise future rewards, with no concern over how long it may take to \emph{achieve} those rewards. This hyperparameter features in many \gls{acr:rl} algorithms; in practice, we choose values closer to \num{1}.}, always choosing $a_t \sim \pi\left(\cdot | s_t\right)$.
-While dense, this formalism essentially captures and describes the performance of our agent over all possible run-lengths from all starting states (i.e,, over all \emph{episodes}), and in general this is what \gls{acr:rl} algorithms are designed to maximise.
+where the \emph{discount} $\gamma \in \left[0,1\right]$ controls how ``forward-planning'' an agent may be\sidenote{Setting $\gamma=0$ defines a `myopic' agent, where no intermediate loss of reward is allowed. Choosing $\gamma=1$ will prioritise future rewards, with no concern over how long it may take to \emph{achieve} those rewards. This hyperparameter features in many \gls{acr:rl} algorithms; in practice, we choose values closer to \num{1}.}, always choosing $a_t \sim \pi\left(\cdot | s_t\right)$.
+While dense, this formalism essentially captures and describes the performance of our agent over all possible run-lengths from all starting states (i.e., over all \emph{episodes}), and in general this is what \gls{acr:rl} algorithms are designed to maximise.
 
 \glspl{acr:mdp} assume that there are stationary, well-defined (though stochastic) transitions between these states.
 For any $s, s' \in \mathcal{S}, a \in A_s$, an \gls{acr:mdp} is defined by a state transition function, $\operatorname{P_a}\left(s,s'\right)$ which returns the probability that we will land in $s'$ after taking action $a$ in state $s$, and a function returning the \emph{expected reward} $\operatorname{R_a}\left(s,s'\right)$ for each valid transition.
@@ -118,20 +118,50 @@ We can then update $\wvec{}$ over time as follows:
 	where $\delta_t$ is known as the \gls{acr:td} error, and the vector gradient $\nabla$ is taken with respect to $\wvec{}$. $\alpha\in[0,1]$ defines the learning rate (governing the policy stability), with $\gamma$ defined as in the \gls{acr:mdp} formulation.
 \end{subequations}
 
-\begin{marginfigure}
-	Test
-	\caption[An illustration of how value adjustments in single-step RL propagate backwards through a state trajectory.]{Test.}\label{fig:sarsa-intuition}
-\end{marginfigure}
-
-\begin{figure}
-	Test.
-	\caption[A worked example showing how $\epsilon$-greedy Sarsa performs inference and learning with a tile coded function approximation.]{Put the worked example from TNSM paper here.}\label{fig:sarsa-end-to-end}
-\end{figure}
-
 In essence, at each timestep the policy parameters ($\wvec{}$) are increased along the gradient ($\nabla{\acvalblank}$) using a fixed learning rate ($\alpha$) and a computed adjustment ($\delta_t$).
 This adjustment is equal to the difference between the chosen action $a$'s value in state $s$ and the reward received ($r_{t+1} - \acval{s_t}{a_t}{\wvec{}}$), \emph{plus} some part of the \emph{next} action's value ($\gamma\acval{s_{t+1}}{a_{t+1}}{\wvec{}}$).
 Naturally, as state transitions are visited and revisited during training, the value of later choices can propagate down the tree of states, as shown by \cref{fig:sarsa-intuition}.
-To see how this combines with a simple linear function approximation, consider \cref{fig:sarsa-end-to-end}.
+To see how this combines with a simple linear function approximation, consider \cref{fig:sarsa-tilecode,fig:sarsa-tilecode-update}.
+
+\begin{marginfigure}
+	\resizebox{0.9\linewidth}{!}{\input{diagrams/rl/td-learn}}
+	\caption[An illustration of how value adjustments in single-step RL propagate backwards through a state trajectory.]{A simplified view of how action values propagate back through visited states: because a state's value includes some portion $\gamma$ of its children's values, at convergence it includes $\gamma^2$ of its grandchildren, and so on. A limitation of the single-step family is that they must visit the same transitions several times for earlier states to learn about their successors.}\label{fig:sarsa-intuition}
+\end{marginfigure}
+
+\begin{figure}
+	\centering
+	\begin{subfigure}{0.6\linewidth}
+		\resizebox{\linewidth}{!}{\input{diagrams/rl/tile-coding-worked}}
+		\caption{Tile Coding\label{fig:tilecode-code}}
+	\end{subfigure}
+
+	\begin{subfigure}{0.6\linewidth}
+		\resizebox{\linewidth}{!}{\input{diagrams/rl/tile-coding-acsel}}
+		\caption{\centering Value Estimation and Action Selection\label{fig:tilecode-select}}
+	\end{subfigure}
+	
+	\caption[An end-to-end example of Sarsa selecting an action using a tile-coded policy.]{
+		An example of tile coding for 2-dimensional state and 4 actions, using 2 tilings, 3 tiles per dimension, and a bias tile.
+		All components of $s$ are clamped to $[0,1]$.
+		For simplicity, we denote $\symbfit{x}(s,\cdot)$ as a list of indices and represent the values of all actions at each tile with a vector.
+		(a) The state $s$ activates the bias tile and exactly one tile in each tiling.
+		(b) The action values of active tiles are summed to produce the current value estimate for each action available in $s$---for this state, local knowledge ensures that action 4 is chosen by the greedy policy despite typically being a poor choice elsewhere.
+		\label{fig:sarsa-tilecode}
+	}
+	\vspace{-0.6cm}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\resizebox{0.6\linewidth}{!}{\input{diagrams/rl/tile-coding-update}}
+	\caption[An end-to-end example of Sarsa updating the values for a chosen action using a tile-coded policy.]{
+		The update step for \cref{fig:sarsa-tilecode}, given an observed \gls{acr:td} error $\delta_t=-0.2$ (indicating a lower observed reward than the expected long-term value of \num{0.7}) and $\alpha=0.5$.
+		Action 4's value is thus reduced in the tiles associated with state $s$, but remains the most likely choice; the negative $\delta_t$ may have arisen from noise in the reward signal.
+		For illustrative purposes, we choose an unrealistically high $\alpha$ (typically, $\alpha\le0.05$ is a more reasonable choice).
+		\label{fig:sarsa-tilecode-update}
+	}
+	\vspace{-0.6cm}
+\end{figure}
 
 \paragraph{The algorithm design space}
 To give some context on the design space here, other algorithms may employ separate state value approximations, use the entirety of an agent's trace, or be tailored to characteristics of the policy approximator (e.g., how neural networks benefit from batching).
