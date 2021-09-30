@@ -65,9 +65,24 @@ As something of a counterpoint to the main focus of this thesis, much community 
 
 ?? This is how the network can, in turn, benefit the development of ML/RL appls.
 
-\subsection{Multiagent methods}
+%\subsection{Multiagent methods}
 
-\subsection{Distributed training}
+\subsection{Distributed Training}
+As discussed above, distributed training of neural networks is a hot-button topic.
+My understanding is that the case for traditional neural networks (ML classifiers and so on) relies upon much of the same technology that is used in distributed RL training, with a lower dependency on gradient aggregation time due to the larger updates observed at each node (hence, fewer iterations of training).
+For ease, I reproduce the relevant RL literature:
+
+\begin{quote}
+		Modern distributed RL may either be synchronous or asynchronous, and either uses a central parameter/processing server~\cite{DBLP:conf/nips/LiASY14} (introducing an obvious bottleneck) or the AllReduce~\cite{DBLP:conf/micro/LiPAYQPWSEK18} paradigm (more network hops) to combine policy gradient updates.
+		Aggregating gradient updates consumes around \SI{83.2}{\percent} of training time for synchronous training, while gradient vectors can grow ``stale'' in the asynchronous case if they take too long to arrive at agents (harming convergence).
+\end{quote}
+
+iSwitch~\cite{DBLP:conf/isca/LiLYCSH19} uses programmable switches to combine model updates between RL agents acting as part of a distributed RL training system.
+Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this is properly explained in the PDP seciton: source is `report-yr2.tex'.}
+
+Specialised optical interconnects~\parencite{DBLP:conf/sigcomm/ShirkoohiGAZGBV21}
+
+Whatever this is~\parencite{DBLP:conf/sigcomm/ZhuangLZWLNMS21}, can accelerate e.g. the RL library Ray~\parencite{DBLP:conf/osdi/MoritzNWTLLEYPJ18}.
 
 \subsection{Federated Learning}
 
@@ -93,6 +108,8 @@ Invented by \textcite{DBLP:journals/corr/KonecnyMRR16}.
 ?? More broadly, this looks at non-convex loss functions in general.
 ?? New Algo---FedAVG seems to outperform FedSVG despite having fewer terms to correct for bias. I've written that it's analogous to dropout (which itself can offer behaviour close to a Bayesian net), check again to see what exactly this refers to.
 ?? Core idea---still essentially just taking (weighted) average of the policies from edge learners. Pretty important that they're all initialised from the same seed, at least then. Better convexity behaviour than expected.
+
+FL with Homeomorphic Encryption~\parencite{DBLP:conf/usenix/ZhangLX00020,DBLP:journals/corr/abs-2109-00675} -- Check FLASHE for good cites and discussion of issues introduced by homeomorphic encryption.
 
 \section{Numerical representations for embedded ML}\label{sec:numerical-representations-for-embedded-ml}
 A key feature universally lacking from the target environments is floating-point arithmetic support.
