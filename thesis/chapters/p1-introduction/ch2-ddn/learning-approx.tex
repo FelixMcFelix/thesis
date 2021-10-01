@@ -2,29 +2,32 @@ Having introduced function approximation schemes of relevance to this thesis (an
 Due to its relevance in \gls{acr:dnn} and \gls{acr:drl}, this comprises a brief discussion of gradient descent techniques and stochastic optimisers, followed by a more in-depth introduction to and overview of the field of \gls{acr:rl}.
 
 \subsection{Gradient descent}
-Most supervised \gls{acr:ml} problems are defined in terms of a \emph{loss function}: assuming that we're trying to learn a mapping from an input space to an output space, we can generally output a numeric score in $\mathbb{R}$ for our current policy parameter set $\wvec{}$.
-However, knowing a simple quality metric is insufficient for determining how we should change our many-dimensional policy parameter vector
+Most supervised \gls{acr:ml} problems are defined in terms of a \emph{loss function}: assuming that we're trying to learn a mapping from an input space to an output space, we can generally output a numeric score in $\mathbb{R}$ for our current policy parameter set $\wvec{}$ which we aim to minimise.
+However, knowing a simple quality metric is insufficient for determining how we should change our many-dimensional policy parameter vector, in the sense that we need a direction to alter our parameter vector by.
+For this reason, the loss functions commonly used are differentiable with respect to both their input data and this parameter vector, allowing us to compute the loss function's gradient based on both the input data and parameter vector.
+Some examples in use today include the mean absolute and mean squared errors ($L_1$\&$L_2$ loss) in regression tasks, or (categorical) cross-entropy loss in classification.
+This output gradient is simply a vector, which represents the direction in parameter-space which if followed would have the largest \emph{increase} in the value of the loss function.
+Naturally, we then subtract this from $\wvec{}$.
 
-Regression: (LIST), Classification: (LIST)
-?? Examples??
-
-Moreover, these common loss functions are differentiable in input data and params...
-Output is a gradient vector which represents a direction in parameter-space which would \emph{increase} the value of the loss function for the given input data.
-
-\emph{Gradient descent} is the iterative process of optimising our parameter vector $\wvec{}$, using all input data at each iteration:
+This concept underlies \emph{gradient descent}.
+Gradient descent is the iterative process of optimising our parameter vector $\wvec{}$, using all input data and labels $\symbfit{X}$ at each iteration:
 \begin{equation}
-	\wvec{t+1} = \wvec{t} - \alpha\nabla{L\left(\cdot,\wvec{t}\right)}
+	\wvec{t+1} = \wvec{t} - \alpha\nabla{L\left(\symbfit{X},\wvec{t}\right)}
 \end{equation}
-By the above intuition, this moves the parameter vector a small step (learning rate $\alpha\in\left(0,1\right)$) in the direction which would optimise its overall performance.
+By the above intuition, this moves the parameter vector a small step in the direction which would optimise its overall performance; this is the learning rate hyperparameter $\alpha\in\left(0,1\right)$.
 However, re-evaluating the loss function over all input data becomes intractable in the case that either the function is expensive to compute on a moderately-sized dataset, or the dataset itself is monstrously large---both of are often true in \gls{acr:dnn} training.
-
 It is for this reason that \gls{acr:sgd} and related algorithms are typically employed in \gls{acr:ml} model training, particularly for \glspl{acr:dnn}.
 \gls{acr:sgd} modifies the above such that individual, randomly chosen samples (or larger minibatches) are used as the input for the loss function rather than the entire dataset.
 This \emph{approximates} the loss gradient at $\wvec{}$ on the input data, but in practice this is key for the training of modern \gls{acr:ml} techniques---$\alpha$ may be reduced over time and the dataset reshuffled as necessary until convergence.
 
-\emph{Adam}~\parencite{DBLP:journals/corr/KingmaB14} from RMSProp~\parencite{rmsprop}
+While \gls{acr:sgd} provides the theoretical underpinning for more efficient \gls{acr:ml} training, in practice the difficulty of choosing $\alpha$ with regard to different parameter sensitivity has led to more adaptive methods.
+These also introduce the notion of per-parameter learning rates.
+\emph{AdaGrad}~\parencite{DBLP:journals/jmlr/DuchiHS11} gives each parameter a learning rate $\alpha$, divided by the square root of the sum of squared gradient values (i.e., large derivatives in a parameter lead to a greater reduction in learning rate).
+\emph{RMSProp}~\parencite{rmsprop} converts this accumulation into an exponentially-weighted moving average, better handling the non-convex loss behaviour seen in \gls{acr:dnn} training.
+\emph{Adam}~\parencite{DBLP:journals/corr/KingmaB14} includes momentum terms (to carry a general direction in gradient across several steps) and additional bias correction on top of this, giving advantages in the early stages of training.
 
-It should be noted that the above discussion is a very cursory treatment of the subject, primarily intended to contrast the in-depth discussion of \gls{acr:rl} methods in the sequel.
+It should be noted that the above discussion is a very cursory treatment of the subject, primarily intended to contrast the in-depth discussion of \gls{acr:rl} methods in the remainder of the section.
+Similarly, learning-centric modifications to loss functions such as regularisation terms or function-specific regularisation strategies (to mitigate overfitting) are also out of scope.
 For more details, readers should refer to more specialised texts such as \Textcite{DBLP:journals/siamrev/BottouCN18, DBLP:books/daglib/0040158}.
 
 \begin{marginfigure}
@@ -70,7 +73,7 @@ By requiring that our policy approximation, i.e. $\pi\left(a | s, \wvec{} \right
 
 %\gls{acr:rl} works in tandem with other mathematical training approaches: the key insight is that the structure of an MDP allows external information and model(-free) observation to strengthen or weaken different function responses.
 
-\paragraph{Demonstrating RL: Sarsa}
+\subsection{Demonstrating RL: Sarsa}
 While many \gls{acr:rl} algorithms have been developed (each of which making quite different choices on how to apply trajectory data), it is likely most helpful to start with a concrete point in the design space \emph{before} listing their full variety.
 Doubly so here, as this particular algorithm---single-step, semi-gradient Sarsa~\parencite[pp. \numrange{217}{221}]{RL2E}---underpins \cref{chap:ddos-rl,chap:in-net-rl}.
 The Sarsa algorithm considers only one transition at a time: a pair of states $s_t,s_{t+1}$, their accompanying actions $a_t,a_{t+1}$, and the reward $r_{t+1}$ accompanying $s_{t+1}$.
@@ -133,7 +136,7 @@ To see how this combines with a simple linear function approximation, consider \
 	\vspace{-0.6cm}
 \end{figure}
 
-\paragraph{The algorithm design space}
+\subsection{The RL algorithm design space}
 While the above introduction to Sarsa is a clear way to intuit the key ideas underpinning \gls{acr:rl}, it is a very specific point within a remarkable design space.
 For context, other algorithms may employ separate state-value approximations, use the entirety of an agent's trace, or be tailored to characteristics of the policy approximator (e.g., how neural networks benefit from batching).
 Algorithms tend to differ in some key ways:
@@ -143,7 +146,7 @@ Algorithms tend to differ in some key ways:
 	\item[The role of values in a policy.] Sarsa (and many other algorithms) follow a \emph{value-based} approach: the role of the function approximator is to compute and learn the value for each action, and then action selection chooses based on these values. This design, however, prevents continuous control (i.e., $A\in\mathbb{R}$). The dominating paradigm of late has been \emph{policy gradient methods}, which impose no requirement on the output---given a differentiable performance metric in $\wvec{}$ is known. This allows easier expression of many system designs, such as having mixed real-valued and discrete action components. The development of \emph{DPG}~\parencite{DBLP:conf/icml/SilverLHDWR14} has been a key driver in ensuring their suitability for continuous problems. \emph{Actor-critic} algorithms are a considerable subset of this which also learn separate a value estimate for the current state to provide this performance measure. Going further still, \emph{direct policy search} approaches such as those inspired by or using \gls{acr:es}.
 \end{description}
 
-\paragraph{Modern algorithms}
+\subsection{Modern RL algorithms}
 \emph{Q-learning}~\parencite{WatkinsThesisQLearning}, similar to Sarsa (though \emph{off-policy}), has had a long and continuing influence on the design of \gls{acr:rl} algorithms.
 \emph{DQN}~\parencite{DBLP:journals/corr/MnihKSGAWR13} introduces the additional modifications required to make Q-learning stable and feasible using \glspl{acr:dnn}---introducing \gls{acr:drl}---primarily by including an \emph{experience replay buffer}.
 This buffer contains a history of individual state transitions, and once this is full enough the model is updated using a randomly chosen subset (minibatch) of such transitions at each timestep, drawing influence from \gls{acr:sgd}.\sidenote{This is indicative of the high \emph{sample complexity} of \gls{acr:drl} methods in general.}
@@ -178,7 +181,7 @@ The mean of their noise vectors is then taken to be the `true' policy update.
 %?? The reference~\parencite{RL2E}
 
 %?? Can we relate this to the broader ML notion of concept drift?
-
+\subsection{RL design considerations}
 \paragraph{Exploration vs. exploitation in practice}
 Consider again the dilemma presented in \cref{fig:toy-rl-motiv}: discovery of an optimal policy relies on either global knowledge, or \emph{exploration} of a suboptimal portion of the state-space.
 \gls{acr:rl} agents are typically initialised with either zeroed or random policy parameters, but we cannot expect that for larger state spaces this produces \emph{meaningful} exploration.

@@ -61,13 +61,24 @@ Sadly, full examination and further development lies beyond the scope of this th
 %Both programmable devices and the network environment make this more difficult, as we'll examine in the sequel.
 
 \section{Collaborative training}
-As something of a counterpoint to the main focus of this thesis, much community interest has been given to how networks can improve, accelerate, or innovate in \gls{acr:ml} model training.
+While the main focus of this thesis is to investigate how \gls{acr:ml} or data-driven methods can benefit the network, there is equal interest in the asking instead \emph{how networking can benefit \gls{acr:ml}}.
+Driven by the high compute-time requirements of modern \gls{acr:drl} and \gls{acr:dnn} training---in simulation, sample complexity, and raw input data---much community interest has been given to how networks can improve, accelerate, or innovate in \gls{acr:ml} model training.
 
-?? This is how the network can, in turn, benefit the development of ML/RL appls.
+?? Explain what's upcoming.
 
 %\subsection{Multiagent methods}
 
-\subsection{Distributed Training}
+\subsection{Distributed training}
+?? Why else needed? \glspl{acr:gpu} often needed, naturally there's a per-machine limit due to \gls{acr:pcie} bus.
+
+?? Some PS-related works?~\parencite{DBLP:journals/corr/AbadiABBCCCDDDG16,DBLP:conf/nips/DeanCMCDLMRSTYN12,DBLP:conf/osdi/LiAPSAJLSS14}
+
+?? Data-parallel vs model parallel.
+
+?? Parameter server... Synchronous vs Asynchronous
+
+?? Than all-reduce (sync).
+
 As discussed above, distributed training of neural networks is a hot-button topic.
 My understanding is that the case for traditional neural networks (ML classifiers and so on) relies upon much of the same technology that is used in distributed RL training, with a lower dependency on gradient aggregation time due to the larger updates observed at each node (hence, fewer iterations of training).
 For ease, I reproduce the relevant RL literature:
@@ -84,32 +95,67 @@ Specialised optical interconnects~\parencite{DBLP:conf/sigcomm/ShirkoohiGAZGBV21
 
 Whatever this is~\parencite{DBLP:conf/sigcomm/ZhuangLZWLNMS21}, can accelerate e.g. the RL library Ray~\parencite{DBLP:conf/osdi/MoritzNWTLLEYPJ18}.
 
-\subsection{Federated Learning}
+Paradigm instrumental in Big RL Successes. (link to all the OpenAI Stuff here).
 
-?? Describe it here
+\subsection{Federated learning}
+The key driver behind distributed training is the idea that disparate and networked resources within a single organisation can be used together to accelerate (or even make feasible) the training of complex \gls{acr:dnn} models.
+A more difficult question that has arisen since is how best to achieve this between \emph{several} organisations, or even weaker devices in consumers' hands or the edge of the Internet.
 
-?? Issue? Only works on certain problems (explicitly unsupervised, or easy to acquire local supervised measurements).
+\acrfull{acr:fl}~\parencite{DBLP:journals/corr/KonecnyMRR16,DBLP:journals/corr/Konecny17,DBLP:conf/mlsys/BonawitzEGHIIKK19} allows several unaffiliated devices to independently train local \gls{acr:ml} models from the data available to them.
+The main goal of \gls{acr:fl} is to train a high-quality, centralised model, potentially including local or device-specific optimisations, when input data are divided unevenly over a large number of nodes.
+Crucially, we require that training remains effective when such data are non-\gls{acr:iid} across these devices.
+The key intuition is that we can make use of device-local intelligence to train our model.
+By having any device update its parameter set locally, a node collects its set of combined gradients which are then sent to the parameter server; these are collected as above, and a new canonical model may be published to all users.
+This saves computing cost at the central parameter server, bandwidth consumption due to the large size and total volume of training samples, and (in principle) protects the privacy of users with regard to sensitive or personally identifying input data.
 
-?? Core concept: push out most of the work involved in training the network to users/edge node learners, and then combine their models to train a new centralised model (rather than sending all data points over the network (bandwidth and privacy concerns))
+The original solution~\parencite{DBLP:journals/corr/KonecnyMRR16} requires that each node solves a subproblem subject to some quadratic perturbation, combining DANE~\parencite{DBLP:conf/icml/ShamirS014} and Stochastic Variance Reduced Gradient~\parencite{DBLP:conf/nips/Johnson013}.
+Much of the algorithmic developments are dedicated to correcting for potential sources of bias from the edge-node results before they are combined.
+This includes weighting contributions by each node's proportion of input samples and the distribution of non-zero values in these input data.
+This was first adapted to more non-convex functions (i.e., \glspl{acr:dnn}) by \textcite{DBLP:conf/aistats/McMahanMRHA17}.
+Notably, they \emph{only} make use of this weighted averaging step---which they claim has an inherent regularisation effect analogous to dropout---yet achieve respectable training performance.
+Crucially, they raise the point that all candidate models must be at the very least be initialised from the same seed or master policy.
 
-Okay, what conditions does it impose on the type of data we want to use for training (right now, at least)?
-?? Need trivially (user-)labelled data, to get the high volume we need. (label-able at the edge nodes? is unsupervised remotely worthwhile?)
-?? Ex: predictive text works (data is word the user had typed, label is what they picked from the dict OR what they typed by the end.)
+\gls{acr:fl} has since been divided into two classes:
+\begin{description}
+	\item[Cross-device \gls{acr:fl}] covers the above motivating case, where contributing devices are assumed to be mobile or \gls{acr:iot} devices.
+	\item[Cross-silo \gls{acr:fl}] describes this paradigm applied to shared learning \emph{between} organisations. This formulation applies far stricter privacy guarantees: the parameter server must be unable to see the learned model (but is still responsible for hosting and updating it), and organisations must limit the ability to extract or infer personally identifying information from the trained model.
+\end{description}
 
-Invented by \textcite{DBLP:journals/corr/KonecnyMRR16}.
-?? (Probably look at the lead author's shiny new PhD Thesis \cite{DBLP:journals/corr/Konecny17}? Look for more of his stuff?)
-?? IDEA -- train a high-quality centralised model when data are divided unevenly over a large number of nodes (read: non-IID).
-?? Main problem is that the best-performing algorithms are very much sequential in nature. Even then, many make assumption that all learners see a representative sample.
-?? Each node solves a subproblem subject to some quadratic perturbation (as in DANE \cite{DBLP:conf/icml/ShamirS014} (not read!)) but for Stochastic Variance Reduced Gradient (SVRG).
-?? Much of the algorithm is correcting for potential sources of bias from the edge-node results before they are combined (averaged very carefully).
+The latter case introduces additional engineering and design challenges, and is a topic of ongoing research.
+\emph{Secure aggregation}~\parencite{DBLP:conf/ccs/BonawitzIKMMPRS17} has been proposed such that gradient combination is pushed down to clients who have randomised communication patterns with one another, while the only final model change is exposed to the parameter server.
+Homomorphic encryption hides this from even the central server without requiring that hosts perform piecewise aggregation: arithmetic operations applied between a pair of ciphertexts behave as though applied to the clear texts.
+\emph{BatchCrypt}~\parencite{DBLP:conf/usenix/ZhangLX00020} applies this to batches of integer-quantised gradients, where batching and sparsification are the key tricks needed to reduce the heavy bandwidth of homomorphic ecnryption.
+This is then improved upon in bandwidth overheads, encryption time, and aggregation cost by \emph{FLASHE}~\parencite{DBLP:journals/corr/abs-2109-00675}, which moves to a simpler \emph{symmetric} cryptosystem that supports only \emph{addition}.
+When considering whitebox attacks of the form discussed throughout \cref{sec:ddn-security} such as data reconstruction attacks~\parencite{DBLP:conf/icml/LamW0RM21}, cross-silo \gls{acr:fl} often draws on differential privacy literature~\parencite{DBLP:conf/iclr/McMahanRT018}.
 
-\textcite{DBLP:conf/aistats/McMahanMRHA17} examine:
-?? Federated Learning to train deep neural nets.
-?? More broadly, this looks at non-convex loss functions in general.
-?? New Algo---FedAVG seems to outperform FedSVG despite having fewer terms to correct for bias. I've written that it's analogous to dropout (which itself can offer behaviour close to a Bayesian net), check again to see what exactly this refers to.
-?? Core idea---still essentially just taking (weighted) average of the policies from edge learners. Pretty important that they're all initialised from the same seed, at least then. Better convexity behaviour than expected.
+%FL with Homomorphic Encryption~\parencite{DBLP:conf/usenix/ZhangLX00020,DBLP:journals/corr/abs-2109-00675} -- Check FLASHE for good cites and discussion of issues introduced by homeomorphic encryption.
 
-FL with Homeomorphic Encryption~\parencite{DBLP:conf/usenix/ZhangLX00020,DBLP:journals/corr/abs-2109-00675} -- Check FLASHE for good cites and discussion of issues introduced by homeomorphic encryption.
+%?? Explcitly describe the requirement for locally-acquired labels.
+
+\gls{acr:fl} as a paradigm is limited in how it can be deployed to solve supervised tasks.
+As each node, device or organisation must contribute gradient information that \emph{they themselves have locally sourced}, we can see that in supervised problems this mandates that these nodes must also be able to label the data themselves somehow.
+To get the high volume of data required to overcome \glspl{acr:dnn}' sample complexity, input data must either be trivially user-labelled data, effectively self-labelling (i.e., known at a later time), or arise through time-series forecasting.
+For instance, predictive text~\parencite{federated-learning-blog} was used as one of the first large-scale use cases by Google---an input datum is a word the user had typed, and its label is either the chosen suggestion \emph{or} what they themselves typed instead.
+Naturally, there is still applicability in semi-supervised or unsupervised techniques like autoencoders~\parencite{DBLP:journals/ftml/KingmaW19} which can be cast as a gradient descent problem.
+
+%?? Issue? Only works on certain problems (explicitly unsupervised, or easy to acquire local supervised measurements).
+%
+%Okay, what conditions does it impose on the type of data we want to use for training (right now, at least)?
+%?? Need trivially (user-)labelled data, to get the high volume we need. (label-able at the edge nodes? is unsupervised remotely worthwhile?)
+%?? Ex: predictive text works (data is word the user had typed, label is what they picked from the dict OR what they typed by the end.)
+
+%Invented by \textcite{DBLP:journals/corr/KonecnyMRR16}.
+%?? (Probably look at the lead author's shiny new PhD Thesis \cite{DBLP:journals/corr/Konecny17}? Look for more of his stuff?)
+%?? IDEA -- train a high-quality centralised model when data are divided unevenly over a large number of nodes (read: non-IID).
+%?? Main problem is that the best-performing algorithms are very much sequential in nature. Even then, many make assumption that all learners see a representative sample.
+%?? Each node solves a subproblem subject to some quadratic perturbation (as in DANE \cite{DBLP:conf/icml/ShamirS014} (not read!)) but for Stochastic Variance Reduced Gradient (SVRG).
+%?? Much of the algorithm is correcting for potential sources of bias from the edge-node results before they are combined (averaged very carefully).
+
+%\textcite{DBLP:conf/aistats/McMahanMRHA17} examine:
+%?? Federated Learning to train deep neural nets.
+%?? More broadly, this looks at non-convex loss functions in general.
+%?? New Algo---FedAVG seems to outperform FedSVG despite having fewer terms to correct for bias. I've written that it's analogous to dropout (which itself can offer behaviour close to a Bayesian net), check again to see what exactly this refers to.
+%?? Core idea---still essentially just taking (weighted) average of the policies from edge learners. Pretty important that they're all initialised from the same seed, at least then. Better convexity behaviour than expected.
 
 \section{Numerical representations for embedded ML}\label{sec:numerical-representations-for-embedded-ml}
 A key feature universally lacking from the target environments is floating-point arithmetic support.
@@ -153,6 +199,8 @@ This again fits our goals of integrating RL techniques directly within bump-in-t
 \section{Security}\label{sec:ddn-security}
 
 ?? Discuss attacks on ML models, techniques, paradigms here.
+
+?? NOTE check FLASHE paper for more attacks on e.g. FL.
 
 ?? Very respectable source \cite{DBLP:conf/eurosp/PapernotMJFCS16} that they're bad I guess? (Not Read)
 
