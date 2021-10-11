@@ -147,6 +147,8 @@ Algorithms tend to differ in some key ways:
 \end{description}
 
 \subsection{Modern RL algorithms}
+As a preface... OpenAI Gym~\parencite{DBLP:journals/corr/BrockmanCPSSTZ16} ?? better tooling via...
+
 \emph{Q-learning}~\parencite{WatkinsThesisQLearning}, similar to Sarsa (though \emph{off-policy}), has had a long and continuing influence on the design of \gls{acr:rl} algorithms.
 \emph{DQN}~\parencite{DBLP:journals/corr/MnihKSGAWR13} introduces the additional modifications required to make Q-learning stable and feasible using \glspl{acr:dnn}---introducing \gls{acr:drl}---primarily by including an \emph{experience replay buffer}.
 This buffer contains a history of individual state transitions, and once this is full enough the model is updated using a randomly chosen subset (minibatch) of such transitions at each timestep, drawing influence from \gls{acr:sgd}.\sidenote{This is indicative of the high \emph{sample complexity} of \gls{acr:drl} methods in general.}
@@ -225,5 +227,5 @@ Achieving this often requires that state measurements are combined or coalesced~
 		\resizebox{0.75\linewidth}{!}{\input{diagrams/rl/sa-slip2}}
 		\caption{Reality: costs of measurement and action lead to \emph{state drift}---over a time delay $t_1+t_2+t_3$, inaction transforms state $S$ into $S'$.}
 	\end{subfigure}
-	\caption[State slippage in an asynchronous RL agent.]{One issue which arises when we aim to introduce \gls{acr:rl} into temporally fine-grained environments is that the \gls{acr:mdp} formulation can fail to capture how state drifts during computation. Input states may take some time to acquire and transmit to an agent over the network ($t_1$), the function approximator itself has an associated computational cost for inference ($t_2$), and enacting said action can involve network latency \emph{and} expensive table preprocessing in the case of hardware P4 implementations ($t_3$). As a result, the system actually undergoes the transition $(S', A)\rightarrow(S'')$, introducing noise or variance into the value function being learned. \label{fig:state-slip}}
+	\caption[Illustrating state slippage in an asynchronous RL agent.]{One issue which arises when we aim to introduce \gls{acr:rl} into temporally fine-grained environments is that the \gls{acr:mdp} formulation can fail to capture how state drifts during computation. Input states may take some time to acquire and transmit to an agent over the network ($t_1$), the function approximator itself has an associated computational cost for inference ($t_2$), and enacting said action can involve network latency \emph{and} expensive table preprocessing in the case of hardware P4 implementations ($t_3$). As a result, the system actually undergoes the transition $(S', A)\rightarrow(S'')$, introducing noise or variance into the value function being learned. \label{fig:state-slip}}
 \end{figure}
