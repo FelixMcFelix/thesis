@@ -200,6 +200,10 @@ In many cases, accuracy losses for doing so are negligible.
 Much of this work goes further still towards integer~\parencite{tensorrt-8bit} or binarised~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16} representations, sacrificing dynamic range for simpler arithmetic operations.
 The works mentions above use similar techniques to make inference tractable on network hardware, i.e., to bring neural networks to the dataplane~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}.
 
+?? Fold in some of the commentary on `efficient policy approximation' here.
+
+?? Train maxouts as low as \qty{19}{\bit} fixedP, \qty{11}{\bit} dynamic fixedP with radix length 5~\parencite{DBLP:journals/corr/CourbariauxBD14}
+
 ?? Expand on all this crap, maybe take some time to actually explain fixed-point.
 
 To make RL workloads feasible under such constraints, we propose the use of quantised, fixed-point representations such as $Qm.n$ (i.e., $m$\si{bit} signed integers with an $n$\si{bit} fractional part), which allow us to evaluate and update policies using only integer arithmetic.
@@ -211,6 +215,12 @@ This again fits our goals of integrating RL techniques directly within bump-in-t
 
 ?? New work on training \qty{8}{\bit} \glspl{acr:dnn} on-device~\parencite{DBLP:conf/usenix/Zhou0QGXZGLZ21}
 
+\paragraph{Floating-point}
+Test.
+
+\paragraph{Fixed-point}
+Test.
+
 \section{Challenges}\label{sec:ddn-challenges}
 
 ?? Include some good, high-level discussion of sensitivity to training environment (i.e., many authors willing to use traces) \textcite{DBLP:conf/hotnets/BartulovicJBSS17}, yet there's still interesting use-cases in being able to do so \textcite{DBLP:conf/hotnets/LecuyerLNSSS17}.
@@ -219,9 +229,12 @@ This again fits our goals of integrating RL techniques directly within bump-in-t
 ?? "includes the tacit assumption that the model will not change in response to the input", which is as true in science as it is in Human systems (a view I am not alone in sharing (cite Hamming book))
 ?? although it can be difficult to know ahead of time, it's worth considering whether the problem ``bites back'' or is adversarial in some way; an ongoing control problem is altogether different from an offline optimisation task. It's unlikely that in an optimised chip allocation, programs will immediately start acting differently (as compared to a network where our actions induce various modes in \glspl{acr:cca})
 
-?? Seems to always require dedicated co-design? (https://www.usenix.org/conference/nsdi21/presentation/fu)
+?? Internet behaviour hard to simulate (relevant to Barto)~\parencite{DBLP:journals/ton/X01c}
 
-?? Interpretability (https://dl.acm.org/doi/10.1145/3387514.3405859),
+?? Seems to always require dedicated co-design?~\parencite{DBLP:conf/nsdi/FuGMR21}
+
+?? Interpretability~\parencite{DBLP:conf/sigcomm/MengWBXMH20}
+
 * https://dl.acm.org/doi/10.1145/3341216.3342218 -- Verifying Deep-RL-Driven Systems
 * https://dl.acm.org/doi/10.1145/3341216.3342210 -- Cracking Open the Black Box: What Observations Can Tell Us About Reinforcement Learning Agents
 * Verification nowadays~\parencite{DBLP:conf/sigcomm/EliyahuKKS21,drl-verification-2}
