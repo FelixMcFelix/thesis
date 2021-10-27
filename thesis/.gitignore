@@ -19,3 +19,4 @@ dissertation.pdf
 *.synctex.gz
 *.toc
 *.fdb_latexmk
+_minted-dissertation

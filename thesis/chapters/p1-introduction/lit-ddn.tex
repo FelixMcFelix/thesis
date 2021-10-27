@@ -192,47 +192,82 @@ In the \gls{acr:rl} case, we require that each learner is solving its own contro
 %?? Core idea---still essentially just taking (weighted) average of the policies from edge learners. Pretty important that they're all initialised from the same seed, at least then. Better convexity behaviour than expected.
 
 \section{Numerical representations for embedded ML}\label{sec:numerical-representations-for-embedded-ml}
-A key feature universally lacking from the target environments is floating-point arithmetic support.
-Luckily, the task of bringing machine learning models to resource-constrained environments without these capabilities is well-studied.
-Quantisation and alternative data formats have been suggested to make ML inference feasible on resource- and power-limited platforms, work around hardware constraints, or compute faster and more efficiently.
-Lower bit depths reduce memory footprints, and improve throughput in designs such as \emph{bfloat16}~\parencite{bfloat16-blog} in Google TPUs~\parencite{DBLP:journals/sigops/XieDMKVZT18} and modern Intel Xeon server \glspl{acr:cpu}~\parencite{intel-bfloat}, \emph{hfp8}~\parencite{DBLP:conf/nips/SunCCWVSCZG19}, and other floating point formats~\parencite{DBLP:journals/corr/abs-2007-01530}.
-In many cases, accuracy losses for doing so are negligible.
-Much of this work goes further still towards integer~\parencite{tensorrt-8bit} or binarised~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16} representations, sacrificing dynamic range for simpler arithmetic operations.
-The works mentions above use similar techniques to make inference tractable on network hardware, i.e., to bring neural networks to the dataplane~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}.
+\gls{acr:ml} training and inference work in the domain of real numbers, and thus require a suitable data format for representation of weights, gradients, and values.
+\emph{Floating-point arithmetic} allows commodity machines and accelerators to approximate real numbers in a fixed-size representation, dividing available bits among a \emph{sign}, \emph{exponent}, and \emph{mantissa}.
+This captures several important properties, principally \emph{dynamic range} (as the exponent describes the magnitude of a number).
+For instance, \qty{32}{\bit} floating-point numbers (FP32) use \qtylist{1; 8; 23}{\bit} to store each component, which is sometimes known as a 1-8-23 representation.
 
-?? Fold in some of the commentary on `efficient policy approximation' here.
+However, there are concrete reasons to consider other data formats, particularly on more resource-constrained environments.
+Although individual floating-point operations, as compared to integers, have effectively equal latency and throughput on modern x86 hardware~\parencite{agner-x86}\sidenote{This leaves aside the performance gains offered by \gls{acr:simd} vectorisation, which is a trickier topic.}, \glspl{acr:fpu} still require additional chip area and power.
+Naturally, chip designers don't want to fabricate or plan around unnecessary \glspl{acr:fu}: for instance, (programmable) network hardware and \glspl{acr:asic} require only basic integer arithmetic.
+This is not the only reason to be interested in alternative data formats; by reducing the size of any individual number from \qty{32}{\bit} to \qtylist[list-pair-separator = { or }]{16; 8}{\bit}, we reduce the size of parameter sets by \qtyrange{2}{4}{\times}.
+This reduces the range of numbers we can express (in both magnitude and precision), but can reduce inference latency and memory cost to the benefit of both commodity machines and dedicated accelerators.
+Luckily, the task of bringing machine learning models to resource-constrained environments without these capabilities is well-studied, and in general the effect on accuracy is small in spite of the introduced quantisation noise.
+Quantisation and alternative data formats have been suggested to make \gls{acr:ml} inference feasible on resource- and power-limited platforms, work around hardware constraints, or compute faster and more efficiently.
 
-?? Train maxouts as low as \qty{19}{\bit} fixedP, \qty{11}{\bit} dynamic fixedP with radix length 5~\parencite{DBLP:journals/corr/CourbariauxBD14}
+\subsection{Floating-point}
+While there are general, standardised floating-point forms such as \emph{half-precision} (FP16, \qty{16}{\bit}, 1-5-10) and \emph{minifloat} (FP8, \qty{8}{\bit}, 1-4-3), these fail to be effective in some \gls{acr:ml} use cases.
+Equivalently, a key factor in \gls{acr:fpu} chip cost is the size of the \emph{mantissa}---which has been observed to have a quadratic scaling effect on area in \gls{acr:tpu} development~\parencite{bfloat16-blog}.
+Accordingly, allocating more bits to the \emph{exponent} can allow for more cores and \glspl{acr:fu} in the same area, or reduce power draw.
+\emph{bfloat16}~\parencite{bfloat16-blog} is a \qty{16}{\bit} format employed in (among other devices) Google TPUs~\parencite{DBLP:journals/sigops/XieDMKVZT18} and modern Intel Xeon server \glspl{acr:cpu}~\parencite{intel-bfloat}.
+It chooses to match the dynamic range of \qty{32}{\bit} floats (1-8-7), better expressing the smaller end of the dynamic range (for e.g., gradients) while having identical failure modes (subnormal numbers, edge cases) to the full-precision case.
+\emph{hfp8}~\parencite{DBLP:conf/nips/SunCCWVSCZG19}, as an \qty{8}{\bit} format, applies different layouts to the forward (1-4-3) and backward (1-5-2) passes, and applying a downward bias of \num{4} to the exponent in both cases.
+This allows better expression of small values in general, and even smaller values during gradient computation, at an extra \qty{5}{\percent} hardware area cost to support both formats.
+While this is an indicative summary, it must be said that there are more formats beyond the scope of this introduction~\parencite{DBLP:journals/corr/abs-2007-01530}.
 
-?? Expand on all this crap, maybe take some time to actually explain fixed-point.
+\subsection{Fixed-point and binary}
+While the above techniques are promising and effective, deployment on environments such as \gls{acr:pdp} hardware requires further ingenuity.
+\emph{Fixed-point arithmetic} is an approach which makes it still possible to represent real numbers as integers, losing dynamic range as a consequence.
+$Qm.n$ expresses a real number using an $m$~\unit{\bit} integer part alongside an $n$~\unit{bit} fractional part, which allows us to evaluate and update policies using only integer arithmetic on $k=1+m+n$~\unit{\bit} numbers, assuming a sign bit.
+For instance, the \qty{8}{\bit} number \mintinline{rust}|0b0010_1000| in $Q3.4$ represents \num{2.5}---we can view this as two separate parts ($2 + 8\times2^{-4}$), or as one whole in the fractional base ($40\times2^{-4}$).
+In practice, the entirety of the number is stored as a two's complement number in place of a sign bit, and base conversion (i.e., changing $n$) requires only bitshifts.
+When $k$ is known, we can simply refer to the representation as $Qn$.
+The most useful part of this scheme is that integer addition and subtraction are \emph{unchanged} for two $Q$ numbers, and conversion of a normal integer requires an $n$~\unit{\bit} left shift.
+Multiplication and division \emph{by a normal integer} can be performed using the standard \gls{acr:alu} operations, while $Q$ numbers need an additional bitshift (pre-/post-op base correction) and temporary expansion into a $2k$~\unit{\bit} register.
 
-To make RL workloads feasible under such constraints, we propose the use of quantised, fixed-point representations such as $Qm.n$ (i.e., $m$\si{bit} signed integers with an $n$\si{bit} fractional part), which allow us to evaluate and update policies using only integer arithmetic.
-This is not only essential in performing this work, but also serves as a mechanism for reducing the processing and memory costs of function approximation ($t_2$, \cref{fig:state-slip}).
+Although these tradeoffs seems to predispose fixed-point towards \emph{only} target environments without \glspl{acr:fpu}, it has still enjoyed application in inference and training.
+In particular, \textcite{DBLP:journals/corr/CourbariauxBD14} were able to train Maxout networks without substantial error as low with $k$ at \qty{19}{\bit}, or \qty{11}{\bit} using dynamic scaling ($m=5$).
+In distributed training, fixed-point arithmetic is useful as an intermediate representation for in-NIC gradient aggregation~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21,DBLP:conf/nsdi/LaoLMCWAS21}.
+Scaling down \glspl{acr:nn} to INT8 requires careful calibration~\parencite{tensorrt-8bit}, binning the activations per layer in an FP32 network to choose optimal saturation thresholds.
+Training INT8 \glspl{acr:dnn} directly on mobile/\gls{acr:iot} devices has become more possible~\parencite{DBLP:conf/usenix/Zhou0QGXZGLZ21}, though this still requires floating point hardware to compute simple compensation terms after moving all tensor operations to fixed-point.
+To some extent, these can also enable in-\gls{acr:nic} \gls{acr:dnn} inference~\parencite{langlet-ml-netronome}.
 
-When combined with the above P4-driven techniques for in-network flow/device measurement, we at last have the mechanisms to collocate the key processes of an RL agent.
-Moreover, the base P4 dataplane can be used to simplify parsing logic and offer runtime control over which flows/packets are monitored, alongside other packet actions.
-This again fits our goals of integrating RL techniques directly within bump-in-the-wire installations and at end-hosts.
-
-?? New work on training \qty{8}{\bit} \glspl{acr:dnn} on-device~\parencite{DBLP:conf/usenix/Zhou0QGXZGLZ21}
-
-\paragraph{Floating-point}
-Test.
-
-\paragraph{Fixed-point}
-Test.
+Binary representations are used to great effect in \acrfullpl{acr:bnn}~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16}; by using 0 to represent to \num{-1}, and 1 to represent $+$\num{1}, we may replace Hadamard product operations between tensors with \textsc{Xnor} operations, which combined with \textsc{Popcnt} allows us to compute the dot product.
+This offers bit-parallel execution compatible with almost all \glspl{acr:alu}, including \gls{acr:pdp} hardware.
+This enables in-NIC execution of \glspl{acr:nn}: either offloading small portions of fully-connected layers to accelerate inference~\parencite{DBLP:conf/sigcomm/SanvitoSB18} or to enable line-rate packet processing~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:journals/corr/abs-1801-05731}.
+While there is vested interested in running these complex function approximators in \glspl{acr:nic} and switches, they are at present trained using real-valued weights and gradients clamped to $\left[-1, 1\right]$ (i.e., using $\tanh$).
+As such, online in-\gls{acr:nic} training remains out of reach.
 
 \section{Challenges}\label{sec:ddn-challenges}
+Leaving security aside for now, there remain key issues in the training and design of \gls{acr:ddn}.
+I briefly discuss several high-level challenges, and initial in-roads to their solution, in the applicability of \gls{acr:ddn}: issues inherent to data collection and simulation in representative environments; the seeming lack of generality of \gls{acr:ml}/\gls{acr:rl} models in the systems domain; and the interpretation and verification of trained function approximators, particularly when given control over such critical infrastructure as the Internet.
 
-?? Include some good, high-level discussion of sensitivity to training environment (i.e., many authors willing to use traces) \textcite{DBLP:conf/hotnets/BartulovicJBSS17}, yet there's still interesting use-cases in being able to do so \textcite{DBLP:conf/hotnets/LecuyerLNSSS17}.
-?? Main problem with traces: not modelling/learning how the controlled system acts in response to change.
-?? Opinion: this is a holdover from the initial wave of people throwing ML algos at datasets and getting papers out. Even the correct handling of this (i.e., using RL to solve static problem instances derived like NP-optimisation problems) limits the field in my opinion.
+\subsection{Input Data and Simulation}
+A key issue in \gls{acr:ddn} is that training from trace data is inherently fraught with risk.
+Consider that traces contain fixed sequences of states, and it should be apparent that through their use we cannot model or learn how the controlled system acts in response to change.
+This includes the tacit assumption that the model will not change in response to the input, either due to an unforeseen operational mode, or because the users of the system actively change their behaviour.
+Even given these difficulties, why do some studies still attempt to learn network control in this manner?
+Network operators are, broadly speaking, unwilling to apply untested and unverified \gls{acr:ml} or \gls{acr:rl} models towards production networks; not only because they aim to prevent misconfiguration or collapse, but to uphold contractually enforced \glspl{acr:sla}.
+Overcoming this requires the design and implementation of accurate simulations, which are marred by complex interactions between and across levels of the (ever-evolving) networking stack, particularly at Internet scale~\parencite{DBLP:journals/ton/X01c}.
+Consider a task such as video stream \gls{acr:abr} selection: a simulation must consider at the minimum client-side and server-side behaviour (resources, contention, and demand), transport-layer protocol dynamics (handshakes, failure modes, \glspl{acr:cca}), and path characteristics (including load balancers) to name but a few.
+The main difficulty arises from the fact that it takes not only expert knowledge to model these dynamics but to \emph{consider} them, and while most of these details can be abstracted over it is harder to determine which will not lead to further surprises in deployment.
+
 ?? "includes the tacit assumption that the model will not change in response to the input", which is as true in science as it is in Human systems (a view I am not alone in sharing (cite Hamming book))
-?? although it can be difficult to know ahead of time, it's worth considering whether the problem ``bites back'' or is adversarial in some way; an ongoing control problem is altogether different from an offline optimisation task. It's unlikely that in an optimised chip allocation, programs will immediately start acting differently (as compared to a network where our actions induce various modes in \glspl{acr:cca})
 
-?? Internet behaviour hard to simulate (relevant to Barto)~\parencite{DBLP:journals/ton/X01c}
+Taking advantage of such data in a more principled way requires insights from \emph{off-policy} \gls{acr:rl}, such as the use of doubly robust estimators~\parencite{DBLP:conf/hotnets/BartulovicJBSS17} or contextual bandits~\parencite{DBLP:conf/hotnets/LecuyerLNSSS17}.
+These include the derivation or learning of reward models, and importance or inverse-propensity sampling.
+Even so, in the case of doubly robust estimators \textcite{DBLP:conf/hotnets/BartulovicJBSS17} explain that these may be invalidated by hard-to-model or highly non-linear assumptions.
+In addition, different policies will invoke different state distributions, and these approaches are incompatible to some extent with non-Markovian problems or non-stationarity.
 
+While it might be easier to cynically connect this goal to the initial wave of dataset-driven \gls{acr:ml} algorithm applications papers, trace data \emph{can be correctly handled}.
+For instance, using \gls{acr:rl} to solve static problem instances derived or cast similarly to \textsf{NP}-hard optimisation problems does not reuire simulation or ongoing interaction with a `real' environment.
+Although it can be difficult to know ahead of time, it's worth considering whether the problem is adversarial in some way; an ongoing control problem is altogether different from an offline optimisation task.
+It's unlikely that in an optimised chip floorplanning, for instance, that target programs will immediately start acting differently---compare this to a network where our actions immediately induce varied modes in \glspl{acr:cca}.
+
+\subsection{Generality}
 ?? Seems to always require dedicated co-design?~\parencite{DBLP:conf/nsdi/FuGMR21}
 
+\subsection{Interpretability and Verification}
 ?? Interpretability~\parencite{DBLP:conf/sigcomm/MengWBXMH20}
 
 * https://dl.acm.org/doi/10.1145/3341216.3342218 -- Verifying Deep-RL-Driven Systems
@@ -341,29 +376,3 @@ An interesting area that isn't discussed is how different sampling distributions
 
 \section{Summary}
 Eh.
-
-\subsection{Efficient policy approximation}
-Some problems either evolve over time in unpredictable ways, or cannot be easily modelled.
-This can then make \emph{online} learning of the task an attractive prospect, using a single available stream of experience.
-\emph{Deep neural networks} (DNNs), particularly when used as the basis for an RL agent's policy, require vast amounts of experience to converge on an accurate parameter set.
-In many problem domains, this equates to training from compute-years worth of distributed offline simulations, which is at odds with the need to adapt to changes in the underlying problem \emph{as they happen}.
-Achieving stable learning requires sizeable batches of gradients to be computed, potentially using the entire experience replay from each simulation.
-Although there has been a vested interest in efficiently \emph{executing} more complex function approximators such as DNNs in-NIC~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:journals/corr/abs-2009-02353,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,langlet-ml-netronome}, the computational cost of gradient computation via backpropagation remains too significant on embedded hardware.
-
-%?? Probably want some cites on the need for batching in NN methods, even though this is understood. DL book?
-
-We then return again to what classical RL methods can offer us; in particular, the simple linear function approximation given by \emph{tile coding} \cite[pp.\ \numrange{217}{221}]{RL2E}.
-The idea is simple: a policy is represented by sets of tiles, each covering one or more dimensions of the input state with several overlapping tilings (offset stepwise to provide generalisation).
-A state vector produces a single `hit' in each tiling, which provides both the set of action preference lists to sum during inference \emph{and} the set of tiles to update at the next timestep.
-Crucially, this internal representation ensures that there are no data dependencies between any tile hit calculations for an input state vector.
-This has important benefits for parallelisation.
-To select an action, we can produce a task for each tiling---retrieving the list of action values contributed by the tile activated by the input state.
-An aggregate step sums up all action preference lists, and the action with the highest value is then selected.
-Updating the policy (with a new $\delta_t$ value) has no aggregate step, and as tile indices map to disjoint memory regions no locks are required.
-
-For instance, a policy with $m$ sets of tiles (each having its own set of input dimensions), each containing $n$ overlapping tilings then creates $m \times n$ separate tasks.\sidenote{Retrieving each individual action's value can be considered a work item (giving $m \times n \times a$ tasks when there are $a$ actions). However, this requires the tile coding operation to repeated $a$ times per tile, which is likely extremely wasteful outside of extreme degrees of parallelism.}
-As an example, a real-world policy size which we examine later (\cref{sec:experimental-setup}) with one bias tile and \num{16} sets containing \num{8} tilings creates \num{129} work items.
-
-Computing a tile hit requires one division per dimension, which is an expensive addition to the ALU operations we require from a platform.
-However, if the width of tiles are fixed at powers-of-two, then these may be replaced with right bitshifts.
-As we shall see shortly, this aligns with our choice of numerical representation.
