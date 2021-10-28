@@ -198,49 +198,49 @@ This captures several important properties, principally \emph{dynamic range} (as
 For instance, \qty{32}{\bit} floating-point numbers (FP32) use \qtylist{1; 8; 23}{\bit} to store each component, which is sometimes known as a 1-8-23 representation.
 
 However, there are concrete reasons to consider other data formats, particularly on more resource-constrained environments.
-Although individual floating-point operations, as compared to integers, have effectively equal latency and throughput on modern x86 hardware~\parencite{agner-x86}\sidenote{This leaves aside the performance gains offered by \gls{acr:simd} vectorisation, which is a trickier topic.}, \glspl{acr:fpu} still require additional chip area and power.
-Naturally, chip designers don't want to fabricate or plan around unnecessary \glspl{acr:fu}: for instance, (programmable) network hardware and \glspl{acr:asic} require only basic integer arithmetic.
-This is not the only reason to be interested in alternative data formats; by reducing the size of any individual number from \qty{32}{\bit} to \qtylist[list-pair-separator = { or }]{16; 8}{\bit}, we reduce the size of parameter sets by \qtyrange{2}{4}{\times}.
-This reduces the range of numbers we can express (in both magnitude and precision), but can reduce inference latency and memory cost to the benefit of both commodity machines and dedicated accelerators.
-Luckily, the task of bringing machine learning models to resource-constrained environments without these capabilities is well-studied, and in general the effect on accuracy is small in spite of the introduced quantisation noise.
 Quantisation and alternative data formats have been suggested to make \gls{acr:ml} inference feasible on resource- and power-limited platforms, work around hardware constraints, or compute faster and more efficiently.
+Although individual floating-point operations, as compared to integers, have effectively equal latency and reciprocal throughput on modern x86 hardware~\parencite{agner-x86}\sidenote{This leaves aside the performance gains offered by \gls{acr:simd} vectorisation, which is a trickier topic.}, \glspl{acr:fpu} still require additional chip area and power.
+Naturally, chip designers don't want to fabricate or plan around unnecessary \glspl{acr:fu}: for instance, (programmable) network hardware and \glspl{acr:asic} require only basic integer arithmetic.
+This is not the only reason to be interested in alternative data formats; by reducing the size of any individual number from \qty{32}{\bit} to \qtylist[list-pair-separator = { or }]{16; 8}{\bit}, we reduce the size of parameter sets and input vectors by \qtyrange{2}{4}{\times}.
+This reduces the range of numbers we can express (in both magnitude and precision), but can reduce inference latency and memory cost for the benefit of both commodity machines and dedicated accelerators.
+Luckily, the task of bringing \gls{acr:ml} models to resource-constrained environments without these capabilities is well-studied, and in general the effect on accuracy is small in spite of the introduced quantisation noise.
 
 \subsection{Floating-point}
-While there are general, standardised floating-point forms such as \emph{half-precision} (FP16, \qty{16}{\bit}, 1-5-10) and \emph{minifloat} (FP8, \qty{8}{\bit}, 1-4-3), these fail to be effective in some \gls{acr:ml} use cases.
-Equivalently, a key factor in \gls{acr:fpu} chip cost is the size of the \emph{mantissa}---which has been observed to have a quadratic scaling effect on area in \gls{acr:tpu} development~\parencite{bfloat16-blog}.
+While there are standardised floating-point forms designed to target mobile and weaker hardware, such as \emph{half-precision} (FP16, \qty{16}{\bit}, 1-5-10) and \emph{minifloat} (FP8, \qty{8}{\bit}, 1-4-3), these fail to be effective in some \gls{acr:ml} use cases.
+At the same time, a key factor in \gls{acr:fpu} chip cost is the size of the \emph{mantissa}---which has been observed to have a quadratic scaling effect on area in \gls{acr:tpu} development~\parencite{bfloat16-blog}.
 Accordingly, allocating more bits to the \emph{exponent} can allow for more cores and \glspl{acr:fu} in the same area, or reduce power draw.
 \emph{bfloat16}~\parencite{bfloat16-blog} is a \qty{16}{\bit} format employed in (among other devices) Google TPUs~\parencite{DBLP:journals/sigops/XieDMKVZT18} and modern Intel Xeon server \glspl{acr:cpu}~\parencite{intel-bfloat}.
-It chooses to match the dynamic range of \qty{32}{\bit} floats (1-8-7), better expressing the smaller end of the dynamic range (for e.g., gradients) while having identical failure modes (subnormal numbers, edge cases) to the full-precision case.
-\emph{hfp8}~\parencite{DBLP:conf/nips/SunCCWVSCZG19}, as an \qty{8}{\bit} format, applies different layouts to the forward (1-4-3) and backward (1-5-2) passes, and applying a downward bias of \num{4} to the exponent in both cases.
+It matches the dynamic range of \qty{32}{\bit} floats (1-8-7), better expressing the smaller end of the dynamic range (for e.g., gradients) while having identical failure modes (subnormal numbers, edge cases) to FP32.
+\emph{hfp8}~\parencite{DBLP:conf/nips/SunCCWVSCZG19}, as an \qty{8}{\bit} format, uses different layouts for the forward (1-4-3) and backward (1-5-2) passes, applying a downward bias of \num{4} to the exponent in both cases.
 This allows better expression of small values in general, and even smaller values during gradient computation, at an extra \qty{5}{\percent} hardware area cost to support both formats.
-While this is an indicative summary, it must be said that there are more formats beyond the scope of this introduction~\parencite{DBLP:journals/corr/abs-2007-01530}.
+While this is an indicative summary , it must be said that there are more formats beyond the scope of this introduction~\parencite{DBLP:journals/corr/abs-2007-01530}.
 
 \subsection{Fixed-point and binary}
 While the above techniques are promising and effective, deployment on environments such as \gls{acr:pdp} hardware requires further ingenuity.
-\emph{Fixed-point arithmetic} is an approach which makes it still possible to represent real numbers as integers, losing dynamic range as a consequence.
-$Qm.n$ expresses a real number using an $m$~\unit{\bit} integer part alongside an $n$~\unit{bit} fractional part, which allows us to evaluate and update policies using only integer arithmetic on $k=1+m+n$~\unit{\bit} numbers, assuming a sign bit.
-For instance, the \qty{8}{\bit} number \mintinline{rust}|0b0010_1000| in $Q3.4$ represents \num{2.5}---we can view this as two separate parts ($2 + 8\times2^{-4}$), or as one whole in the fractional base ($40\times2^{-4}$).
+\emph{Fixed-point arithmetic} is an approach which makes it possible to represent real numbers as integers, losing dynamic range as a consequence.
+$Qm.n$ expresses a real number using an $m$~\unit{\bit} integer part alongside an $n$~\unit{bit} fractional part, which allows us to evaluate and update policies using only integer arithmetic on $k=1+m+n$~\unit{\bit} numbers, assuming the presence of a sign bit.
+For instance, the \qty{8}{\bit} number \mintinline{rust}|0b0010_1000| in $Q3.4$ represents the real number \num{2.5}---we can view this as two separate parts ($2 + 8\times2^{-4}$), or as one whole in the fractional base ($40\times2^{-4}$).
 In practice, the entirety of the number is stored as a two's complement number in place of a sign bit, and base conversion (i.e., changing $n$) requires only bitshifts.
 When $k$ is known, we can simply refer to the representation as $Qn$.
 The most useful part of this scheme is that integer addition and subtraction are \emph{unchanged} for two $Q$ numbers, and conversion of a normal integer requires an $n$~\unit{\bit} left shift.
 Multiplication and division \emph{by a normal integer} can be performed using the standard \gls{acr:alu} operations, while $Q$ numbers need an additional bitshift (pre-/post-op base correction) and temporary expansion into a $2k$~\unit{\bit} register.
 
-Although these tradeoffs seems to predispose fixed-point towards \emph{only} target environments without \glspl{acr:fpu}, it has still enjoyed application in inference and training.
-In particular, \textcite{DBLP:journals/corr/CourbariauxBD14} were able to train Maxout networks without substantial error as low with $k$ at \qty{19}{\bit}, or \qty{11}{\bit} using dynamic scaling ($m=5$).
+Although these tradeoffs seem to predispose fixed-point towards \emph{only} target environments without \glspl{acr:fpu}, it has still enjoyed application in inference and training.
+In particular, \textcite{DBLP:journals/corr/CourbariauxBD14} were able to train Maxout networks without substantial error with $k$ at \qty{19}{\bit}, or \qty{11}{\bit} using dynamic scaling ($m=5$).
 In distributed training, fixed-point arithmetic is useful as an intermediate representation for in-NIC gradient aggregation~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21,DBLP:conf/nsdi/LaoLMCWAS21}.
 Scaling down \glspl{acr:nn} to INT8 requires careful calibration~\parencite{tensorrt-8bit}, binning the activations per layer in an FP32 network to choose optimal saturation thresholds.
 Training INT8 \glspl{acr:dnn} directly on mobile/\gls{acr:iot} devices has become more possible~\parencite{DBLP:conf/usenix/Zhou0QGXZGLZ21}, though this still requires floating point hardware to compute simple compensation terms after moving all tensor operations to fixed-point.
 To some extent, these can also enable in-\gls{acr:nic} \gls{acr:dnn} inference~\parencite{langlet-ml-netronome}.
 
-Binary representations are used to great effect in \acrfullpl{acr:bnn}~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16}; by using 0 to represent to \num{-1}, and 1 to represent $+$\num{1}, we may replace Hadamard product operations between tensors with \textsc{Xnor} operations, which combined with \textsc{Popcnt} allows us to compute the dot product.
+Binary representations are used to great effect in \acrfullpl{acr:bnn}~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16}; by using 0 to represent to \num{-1}, and 1 to represent $+$\num{1}, we may replace Hadamard product operations between tensors with \textsc{Xnor} operations, and when combined with \textsc{Popcnt} instructions we can easily compute the dot product between vectors.
 This offers bit-parallel execution compatible with almost all \glspl{acr:alu}, including \gls{acr:pdp} hardware.
-This enables in-NIC execution of \glspl{acr:nn}: either offloading small portions of fully-connected layers to accelerate inference~\parencite{DBLP:conf/sigcomm/SanvitoSB18} or to enable line-rate packet processing~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:journals/corr/abs-1801-05731}.
-While there is vested interested in running these complex function approximators in \glspl{acr:nic} and switches, they are at present trained using real-valued weights and gradients clamped to $\left[-1, 1\right]$ (i.e., using $\tanh$).
+This enables in-\gls{acr:nic} execution of \glspl{acr:nn}: either offloading small portions of fully-connected layers to accelerate inference~\parencite{DBLP:conf/sigcomm/SanvitoSB18} or to enable line-rate packet processing~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:journals/corr/abs-1801-05731}.
+While there is vested interested in running these complex function approximators in \glspl{acr:nic} and switches, they are at present trained on commodity x86 machines using real-valued weights and gradients clamped to $\left[-1, 1\right]$ (i.e., using $\tanh$).
 As such, online in-\gls{acr:nic} training remains out of reach.
 
 \section{Challenges}\label{sec:ddn-challenges}
-Leaving security aside for now, there remain key issues in the training and design of \gls{acr:ddn}.
-I briefly discuss several high-level challenges, and initial in-roads to their solution, in the applicability of \gls{acr:ddn}: issues inherent to data collection and simulation in representative environments; the seeming lack of generality of \gls{acr:ml}/\gls{acr:rl} models in the systems domain; and the interpretation and verification of trained function approximators, particularly when given control over such critical infrastructure as the Internet.
+Leaving security aside for now, there remain key issues in the training and design of \gls{acr:ddn}-backed systems.
+I briefly discuss several high-level challenges in the applicability of \gls{acr:ddn}, and initial in-roads to their solution: issues inherent to data collection and simulation in representative environments; the seeming lack of generality of \gls{acr:ml}/\gls{acr:rl} models in the systems domain; and the interpretation and verification of trained function approximators, particularly when given control over such critical infrastructure as the Internet.
 
 \subsection{Input Data and Simulation}
 A key issue in \gls{acr:ddn} is that training from trace data is inherently fraught with risk.
@@ -250,35 +250,87 @@ Even given these difficulties, why do some studies still attempt to learn networ
 Network operators are, broadly speaking, unwilling to apply untested and unverified \gls{acr:ml} or \gls{acr:rl} models towards production networks; not only because they aim to prevent misconfiguration or collapse, but to uphold contractually enforced \glspl{acr:sla}.
 Overcoming this requires the design and implementation of accurate simulations, which are marred by complex interactions between and across levels of the (ever-evolving) networking stack, particularly at Internet scale~\parencite{DBLP:journals/ton/X01c}.
 Consider a task such as video stream \gls{acr:abr} selection: a simulation must consider at the minimum client-side and server-side behaviour (resources, contention, and demand), transport-layer protocol dynamics (handshakes, failure modes, \glspl{acr:cca}), and path characteristics (including load balancers) to name but a few.
+These concerns are neither new nor limited to the field of \gls{acr:ddn}:
+\begin{quotation}
+\noindent
+Here you can see the problem clearly.
+It is not that simulations are not essential these days, and will be in the near future, but rather it is necessary for the current crop of people, who have had very little experience with reality, to realize they need to know enough so the simulations include all essential details.
+How will you convince yourself you have not made a mistake somewhere in the vast amount of detail?
+...The relevant accuracy and reliability of simulations are a serious problem.\\
+\strut\hfill\parencite[pp. 248]{hamming-art-of-scieng} 
+\end{quotation}
 The main difficulty arises from the fact that it takes not only expert knowledge to model these dynamics but to \emph{consider} them, and while most of these details can be abstracted over it is harder to determine which will not lead to further surprises in deployment.
 
-?? "includes the tacit assumption that the model will not change in response to the input", which is as true in science as it is in Human systems (a view I am not alone in sharing (cite Hamming book))
-
-Taking advantage of such data in a more principled way requires insights from \emph{off-policy} \gls{acr:rl}, such as the use of doubly robust estimators~\parencite{DBLP:conf/hotnets/BartulovicJBSS17} or contextual bandits~\parencite{DBLP:conf/hotnets/LecuyerLNSSS17}.
+Taking advantage of trace data in a more principled way requires insights from \emph{off-policy} \gls{acr:rl}, such as the use of doubly robust estimators~\parencite{DBLP:conf/hotnets/BartulovicJBSS17} or contextual bandits~\parencite{DBLP:conf/hotnets/LecuyerLNSSS17}.
 These include the derivation or learning of reward models, and importance or inverse-propensity sampling.
-Even so, in the case of doubly robust estimators \textcite{DBLP:conf/hotnets/BartulovicJBSS17} explain that these may be invalidated by hard-to-model or highly non-linear assumptions.
+Even so, in the case of doubly robust estimators \citeauthor{DBLP:conf/hotnets/BartulovicJBSS17} explain that these may be invalidated by hard-to-model or highly non-linear assumptions.
 In addition, different policies will invoke different state distributions, and these approaches are incompatible to some extent with non-Markovian problems or non-stationarity.
 
 While it might be easier to cynically connect this goal to the initial wave of dataset-driven \gls{acr:ml} algorithm applications papers, trace data \emph{can be correctly handled}.
-For instance, using \gls{acr:rl} to solve static problem instances derived or cast similarly to \textsf{NP}-hard optimisation problems does not reuire simulation or ongoing interaction with a `real' environment.
+For instance, using \gls{acr:rl} to solve static problem instances derived or cast similarly to \textsf{NP}-hard optimisation problems does not require simulation or ongoing interaction with a `real' environment.
 Although it can be difficult to know ahead of time, it's worth considering whether the problem is adversarial in some way; an ongoing control problem is altogether different from an offline optimisation task.
 It's unlikely that in an optimised chip floorplanning, for instance, that target programs will immediately start acting differently---compare this to a network where our actions immediately induce varied modes in \glspl{acr:cca}.
 
 \subsection{Generality}
-?? Seems to always require dedicated co-design?~\parencite{DBLP:conf/nsdi/FuGMR21}
+As we can see throughout \cref{sec:use-cases}, \gls{acr:ddn} methods are applicable to a wide variety of problems.
+However, to claim that these use cases require in-depth agent-environment co-design is a generous understatement---particularly applications of \gls{acr:rl}.
+Consider mainly the potent effects of not only the state and action spaces which are inherently problem-specific \emph{and} require domain expertise to define and iterate on.
+
+Recent research aims to investigate whether more general approaches are feasible, by using \gls{acr:ml} inference to convert input vectors and decisions into a performance metric~\parencite{DBLP:conf/nsdi/FuGMR21}---effectively as a black-box form of `what-if' analysis.
+Ideally, there would be no case-specific design elements beyond the chosen input features, performance prediction would function for many separate applications, and perform accurately.
+Looking at this task on scheduling, planning, and placement tasks\sidenote{Generally, the varied parameter which must be optimised is some form of compute allocation, e.g., the number of servers or executors given to a task set.}, they find that inbuilt optimisations add irreducible variance to the learning problem, even when made as simple as possible.
+Non-deterministic behaviour (i.e., stochastic load balancing) is for instance an obvious source of noise, but threshold-based behaviours also cause significant discontinuities.
+Even after diagnosis of these noise sources (removing ease of use), input-sensitive tasks still require probabilistic \gls{acr:ml} methods---which can be harder to action or reason about.
 
 \subsection{Interpretability and Verification}
-?? Interpretability~\parencite{DBLP:conf/sigcomm/MengWBXMH20}
+For all the effort, time and expertise required to craft them, algorithmic or heuristic solutions to network problems have a key advantage over data-driven methods.
+Because they are so well-specified, it is reasonable for a network operator or expert who has observed some unintended behaviour to derive the root cause, and possibly formulate a fix for the issue.
+In contrast, \gls{acr:ml} and \gls{acr:ddn} models' behaviour is governed almost entirely by an opaque set of parameters ($\wvec{}$, which can contain \numrange{e3}{e9} real numbers), which makes it harder to understand what aspects of input data are being acted on and prioritised.
+\emph{Interpretability} captures whether a human can reasonably understand why an input or scenario invokes an output or set of behaviours.
+As a side effect, tweaking a model to correct, modify, or improve behaviour is also rendered difficult or impossible.
+\emph{Verifiability} describes our ability to prove that a \gls{acr:ddn} or heuristic solution upholds through, e.g., modelling or closed-form analysis.
 
-* https://dl.acm.org/doi/10.1145/3341216.3342218 -- Verifying Deep-RL-Driven Systems
-* https://dl.acm.org/doi/10.1145/3341216.3342210 -- Cracking Open the Black Box: What Observations Can Tell Us About Reinforcement Learning Agents
+Interpretability in general \gls{acr:ml} has attracted attention as a research goal in its own right.
+Many classical \gls{acr:ml} approaches such as \glspl{acr:svm} or decision trees offer sensible rule sets or decision boundaries~\parencite{DBLP:conf/pkdd/MolnarCB20,interpretable-ml}, \gls{acr:nn}-based function approximation presents very particular challenges.
+These comprise repeated high-dimensional linear transforms of input data (e.g., by matrices containing thousands of values), interposed with non-linear activation functions.
+\glspl{acr:cnn} and \glspl{acr:lstm} complicate this logic further by introducing learned convolution filters and temporal relationships, respectively.
+On some data classes such as images, it is possible to visualise learned feature activations~\parencite{cnn-features-distil}, which typically manifest as shapes or patterns which make some degree of sense to a human observer.
+Network state spaces, however, are far less intuitive, so feature activations in NNs are less obviously meaningful and still fail to allow `tweakability'.
+%?? Interpretability, particularly for more powerful fn approxes
+%?? Main problem? Can'y humanly visualise the transformations on input data
+%?? Why? High-dimensional transfomrations w/ millions or billions of parameters, interposed with non-linear transformations
+%?? visualise decision surface
+%?? Equally, hard to 'tweak' model.
+%?? General cites~\parencite{DBLP:conf/pkdd/MolnarCB20,interpretable-ml}
+%?? can do for CNNs on images~\parencite{cnn-features-distil} -- what about LSTMs, RNNs, ...
+%?? Interpretability~\parencite{DBLP:conf/sigcomm/MengWBXMH20}
+A \gls{acr:ddn}-specific remedy is to use teacher-student methods to convert (non-recurrent) \glspl{acr:nn} into simpler models~\parencite{DBLP:conf/sigcomm/MengWBXMH20}.
+In particular, `local' decision-making systems (\glspl{acr:cca}, \gls{acr:abr} selection, \gls{acr:to}/\gls{acr:te}) are converted into decision trees after applying branch pruning algorithms to keep the model compact enough for human comprehension.
+For global decisions (job scheduling, routing, \gls{acr:vnf} placement) they produce hypergraphs which express which decisions are critical in an optimal solution.
+%?? Convert \gls{acr:ddn} \glspl{acr:dnn} to more interpretable forms using teacher-student methods: decision trees for local decisions (\glspl{acr:cca}, \gls{acr:abr} selection, \gls{acr:to}/\gls{acr:te}), for global they can show hypergraphs which express the edges which are critical to optimisation (job sched, routing, NF placement) (is this analogous to CNN feature expression?).
+In addition to reducing latency and making it clear what sequence of decisions is responsible for an output, this exposes any `missing classes' in the input and output spaces quite visibly.
+In response, administrators may add additional training data or modify the decision tree themselves.
+Unfortunately, the hypergraph representation fails to explain or simplify the logic behind a given decision set (as opposed to the highest-value members of that set), but can allow model co-design, i.e., important features can be allowed to skip several \gls{acr:nn} layers (having a more direct effect on output).
+%?? In DTs etc, can see `missing classes' and train to include or directly alter DT.
+%?? Latency reductions.
+
+* https://dl.acm.org/doi/10.1145/3341216.3342210 -- Cracking Open the Black Box: What Observations Can Tell Us About Reinforcement Learning Agents~\parencite{DBLP:conf/sigcomm/DethiseCK19}
+
+* https://dl.acm.org/doi/10.1145/3341216.3342218 -- Verifying Deep-RL-Driven Systems~\parencite{DBLP:conf/sigcomm/KazakBKS19}
 * Verification nowadays~\parencite{DBLP:conf/sigcomm/EliyahuKKS21,drl-verification-2}
 
-?? Point to security as a big challenge.
+%?? As in use cases, can buy some of this back by using \gls{acr:ddn} to choose params for an existing approach
+It's worth noting that, as with several approaches examined in \cref{sec:use-cases}, a hybrid approach can be useful in reducing the impact of both these concerns.
+By augmenting an algorithmic or heuristic approach with \gls{acr:ddn} to compute optimal parameter choices, it can be far more reasonable in practice to understand how the system on the whole will behave.
+Equally, it becomes easier to bound such choices within a safe range as needed.
 
-?? Relate these to the security \emph{problem domain}? I.e., as seen by \citeauthor{DBLP:conf/sp/SommerP10}.
-
-?? Can exhibit issues with unseen data or operation modes, inability to converge, or insane resource use as seen in \gls{acr:cca} design~\parencite{DBLP:conf/sigcomm/AbbaslooYC20}.
+%\subsection{Eh??}
+%
+%?? Point to security as a big challenge.
+%
+%?? Relate these to the security \emph{problem domain}? I.e., as seen by \citeauthor{DBLP:conf/sp/SommerP10}.
+%
+%?? Can exhibit issues with unseen data or operation modes, inability to converge, or insane resource use as seen in \gls{acr:cca} design~\parencite{DBLP:conf/sigcomm/AbbaslooYC20}.
 
 \section{Security}\label{sec:ddn-security}
 
