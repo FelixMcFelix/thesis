@@ -48,7 +48,7 @@ Consider a toy example in \cref{fig:toy-rl-motiv}: an oracle with global knowled
 Yet if we applied simple input classification to choose our path at each turn, we would always act poorly without some way of propagating knowledge of later choices.
 It becomes more complex to collect training data once we realise that our actions move the world forward and change it (thus we may not be able to rewind a simulation to explore alternative choices), and that we might need to explore apparently suboptimal choices for some time to be better off in aggregate.
 
-\acrfull{acr:rl} algorithms are methods of training such an agent to choose an optimal sequence of actions in pursuit of a given task~\parencite{RL2E}, and neatly encode these training- and run-time notions of \emph{exploration} and \emph{exploitation}.
+\glsxtrfull{acr:rl} algorithms are methods of training such an agent to choose an optimal sequence of actions in pursuit of a given task~\parencite{RL2E}, and neatly encode these training- and run-time notions of \emph{exploration} and \emph{exploitation}.
 An agent is typically defined by its \emph{policy} $\pi$, which chooses an action in response to an input state.
 These powerful techniques effectively use a \emph{reward} metric to learn a state-action mapping without any explicit model of the system they're learning to control---even when reward signals are sparse or come with some delay after an initial choice.
 
@@ -177,7 +177,7 @@ TRPO~\parencite{DBLP:conf/icml/SchulmanLAJM15} recasts the learning problem as a
 The policy parameters are changed to maximise the expected return from Monte Carlo trajectories, given the constraint that the new policy's expected outputs must fall within a Kullback-Leibler error bound (i.e., must not differ too greatly between $\wvec{t}$ and $\wvec{t+1}$).
 \emph{PPO}~\parencite{DBLP:journals/corr/SchulmanWDRK17} remains a Monte Carlo algorithm over independent agent traces but clips the contribution of an action's probability ratio, leading to a simpler implementation and increased performance as this has the side-effect of \emph{implicitly} limiting the size of policy changes.
 
-\acrfull{acr:es} algorithms, while not strictly belonging to the \gls{acr:rl} family, have become relevant in the same \gls{acr:mdp}-like control problems we are interested in.
+\glsxtrfull{acr:es} algorithms, while not strictly belonging to the \gls{acr:rl} family, have become relevant in the same \gls{acr:mdp}-like control problems we are interested in.
 Hybrid \gls{acr:rl}-\gls{acr:es} works~\parencite{DBLP:journals/corr/SalimansHCS17} inject Gaussian noise into the policy parameters themselves, and then use the Monte Carlo return values of trajectories to perform a weighted combination of noise updates between distributed actors.
 This can be considered as an approximation of policy gradients, \emph{without} executing any gradient function (and so removing the cost of backpropagation).
 This is primarily justified by systems-level optimisations---deterministic noise generation means that agents need not send full policy updates to one another, merely their final reward values (saving on communications overhead).

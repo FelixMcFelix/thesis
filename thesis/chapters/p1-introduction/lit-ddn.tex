@@ -106,13 +106,13 @@ Beyond this, we need not store action values for tiles which have not yet been v
 A caveat of tile coding remains, in that the value of $\alpha$ must be reduced according to the number of tilings to prevent divergence at the expense of slower learning ($\alpha \leftarrow \alpha / n_{\mathit{tilings}}$).
 
 \subsection{Neural Networks}
-\acrfullpl{acr:nn} map an input vector to an output vector via a mathematical graph of neurons.
+\glsxtrfullpl{acr:nn} map an input vector to an output vector via a mathematical graph of neurons.
 Each neuron takes a weighted sum over a set of inputs plus its own \emph{bias} value, and uses this as the input to a non-linear function, producing a single output value (\cref{fig:single-neuron}).
 This non-linear (or piecewise-linear) function, e.g., (leaky) ReLU, $\tanh$, or the sigmoid function expresses the idea of a sufficiently large input `activating' the neuron, and prevents chains of neurons from being expressed as a single linear transformation (allowing greater model capacity).
 As in \cref{fig:fcnn}, this graph of neurons then progresses from transformations to the \emph{output layer}, towards processing of the outputs of intermediate neurons (\emph{hidden layers}), before terminating in a final vector of output values.
 The parameter set $\wvec{}$ is then the concatenation of all edge weights and biases which describe the network.
 This compute graph can contain other, non-neuron operations so long as they are differentiable: it is typical that in classifiers or \gls{acr:rl} systems the last layer of neurons goes through a softmax function to be converted into a valid probability distribution.
-Crucially, any individual neuron is differentiable in $\wvec{}$, and by applying the chain rule over the full graph we can compute the entire \gls{acr:nn}'s parameter gradient through the backpropagation algorithm~\parencite[pp. ??]{DBLP:books/daglib/0040158}.
+Crucially, any individual neuron is differentiable in $\wvec{}$, and by applying the chain rule over the full graph we can compute the entire \gls{acr:nn}'s parameter gradient through the backpropagation algorithm~\parencite[pp. \numrange{197}{217}]{DBLP:books/daglib/0040158}.
 
 \begin{marginfigure}
 	\centering
@@ -127,14 +127,19 @@ Crucially, any individual neuron is differentiable in $\wvec{}$, and by applying
 \end{figure}
 
 \paragraph{Convolutional networks}
+?? Learn a convolution filter to apply to a layer
+?? Excellent for images or learning structural/neighbourhood features of an input
 
 \paragraph{Graph convolution}
 ?? GNNs -- GCN, Edge-GNNs~\parencite{Mirhoseini2021}
-
 ?? graph convolution~\parencite{DBLP:conf/iclr/KipfW17}
+?? NN processes each vertex's feature vector, and then final vectors by aggregating vectors from neighbours.
 
 \paragraph{Recurrent networks}
-\gls{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97}
+?? Captures temporal properties of the input: feeds neuron state from last input into calculation of current (similar to IIR filter).
+?? RNNs?
+?? GRUs?
+?? \gls{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97}
 
 \section{Learning an approximation}\label{sec:learning-an-approximation}%
 \input{chapters/p1-introduction/ch2-ddn/learning-approx.tex}
@@ -152,7 +157,7 @@ Driven by the high compute-time requirements of modern \gls{acr:drl} and \gls{ac
 
 I discuss briefly how networks offer distributed training, allowing models or datasets to be split over many worker nodes who all collaborate towards the training of a single \gls{acr:ml} model within a datacentre or cloud network.
 This extends to brief discussion of novel ways to further optimise these processes as well as how they differ from traditional job scheduling.
-Moving on, I discuss the frontier of this training task across far wider areas, network, or organisational boundaries---\acrfull{acr:fl}---alongside its limits.
+Moving on, I discuss the frontier of this training task across far wider areas, network, or organisational boundaries---\glsxtrfull{acr:fl}---alongside its limits.
 
 %\subsection{Multiagent methods}
 
@@ -214,14 +219,14 @@ Moreover, \glspl{acr:gnn} have been used to dynamically optimise hybrid aggregat
 The key driver behind distributed training is the idea that disparate and networked resources within a single organisation can be used together to accelerate (or even make feasible) the training of complex \gls{acr:dnn} models.
 A more difficult question that has since arisen is how best to achieve this between \emph{several} organisations, or even weaker devices in consumers' hands or at the edge of the Internet.
 
-\acrfull{acr:fl}~\parencite{DBLP:journals/corr/KonecnyMRR16,DBLP:journals/corr/Konecny17,DBLP:conf/mlsys/BonawitzEGHIIKK19} allows several unaffiliated devices to independently train local \gls{acr:ml} models from the data available to them.
+\glsxtrfull{acr:fl}~\parencite{DBLP:journals/corr/KonecnyMRR16,DBLP:journals/corr/Konecny17,DBLP:conf/mlsys/BonawitzEGHIIKK19} allows several unaffiliated devices to independently train local \gls{acr:ml} models from the data available to them.
 The main goal of \gls{acr:fl} is to train a high-quality, centralised model, potentially including local or device-specific optimisations, when input data are divided unevenly over a large number of nodes.
 Crucially, we require that training remains effective when such data are non-\gls{acr:iid} across these devices.
 The key intuition is that we can make use of device-local intelligence to train our model.
 By having any device update its parameter set locally, a node collects its set of combined gradients, which are then sent to the parameter server; these are collected as in above \gls{acr:ps} approaches and a new canonical model may be published to all users.
 This saves computing cost at the central parameter server, bandwidth consumption due to the large size and total volume of training samples, and (in principle) protects the privacy of users with regard to sensitive or personally identifying input data.
 
-The original solution~\parencite{DBLP:journals/corr/KonecnyMRR16} has each node solves a subproblem subject to some quadratic perturbation, combining DANE~\parencite{DBLP:conf/icml/ShamirS014} and Stochastic Variance Reduced Gradient~\parencite{DBLP:conf/nips/Johnson013}.
+The original solution~\parencite{DBLP:journals/corr/KonecnyMRR16} has each node solve a subproblem subject to some quadratic perturbation, combining DANE~\parencite{DBLP:conf/icml/ShamirS014} and Stochastic Variance Reduced Gradient~\parencite{DBLP:conf/nips/Johnson013}.
 Much of the algorithmic developments are dedicated to correcting for potential sources of bias from the edge-node results before they are combined.
 This includes weighting contributions by each node's proportion of input samples and the distribution of non-zero values in these input data.
 This was first adapted to more non-convex functions (i.e., \glspl{acr:dnn}) by \textcite{DBLP:conf/aistats/McMahanMRHA17}.
@@ -313,7 +318,7 @@ Scaling down \glspl{acr:nn} to INT8 requires careful calibration~\parencite{tens
 Training INT8 \glspl{acr:dnn} directly on mobile/\gls{acr:iot} devices has become more possible~\parencite{DBLP:conf/usenix/Zhou0QGXZGLZ21}, though this still requires floating point hardware to compute simple compensation terms after moving all tensor operations to fixed-point.
 To some extent, these can also enable in-\gls{acr:nic} \gls{acr:dnn} inference~\parencite{langlet-ml-netronome}.
 
-Binary representations are used to great effect in \acrfullpl{acr:bnn}~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16}; by using 0 to represent to \num{-1}, and 1 to represent $+$\num{1}, we may replace Hadamard product operations between tensors with \textsc{Xnor} operations, and when combined with \textsc{Popcnt} instructions we can easily compute the dot product between vectors.
+Binary representations are used to great effect in \glsxtrfullpl{acr:bnn}~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16}; by using 0 to represent to \num{-1}, and 1 to represent $+$\num{1}, we may replace Hadamard product operations between tensors with \textsc{Xnor} operations, and when combined with \textsc{Popcnt} instructions we can easily compute the dot product between vectors.
 This offers bit-parallel execution compatible with almost all \glspl{acr:alu}, including \gls{acr:pdp} hardware.
 This enables in-\gls{acr:nic} execution of \glspl{acr:nn}: either offloading small portions of fully-connected layers to accelerate inference~\parencite{DBLP:conf/sigcomm/SanvitoSB18} or to enable line-rate packet processing~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:journals/corr/abs-1801-05731}.
 While there is vested interested in running these complex function approximators in \glspl{acr:nic} and switches, they are at present trained on commodity x86 machines using real-valued weights and gradients clamped to $\left[-1, 1\right]$ (i.e., using $\tanh$).
