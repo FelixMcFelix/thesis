@@ -30,29 +30,110 @@ Sadly, full examination and further development lies beyond the scope of this th
 \input{chapters/p1-introduction/ch2-ddn/use-cases.tex}
 
 \section{Function approximation}\label{sec:function-approximation}
+The main goal of \gls{acr:ml} methods is to learn the function between a set of inputs and a set of outputs, for instance mapping histories of flow statistics into classifications in \gls{acr:ddn}.
+In most cases, we have some body of \emph{training data}---input-output pairs (supervised), inputs alone (unsupervised), or state-action-reward trajectories (\gls{acr:rl})---and require that such a learned function generalises well to unseen inputs, has reasonable accuracy, and is not especially costly to compute.
+Of course, given that we lack \emph{a priori} knowledge of the function's true structure or it may lack a closed-form expression, we must use some learnable \emph{approximation}.
+Such a learned function is then defined by a fixed structure (e.g., an \gls{acr:nn}'s architecture) and a \emph{parameter set} $\wvec{}$, which is typically a collection of real numbers.
+Of particular importance is that the function approximations presented here (and in general) are differentiable with respect to their parameters, which allows for $\wvec{}$ to be trained as we discuss through \cref{sec:learning-an-approximation}.
 
-?? Explain how different approximators work, I suppose?
+I discuss here some forms of function approximation which are pertinent to this thesis, and to \gls{acr:ddn} and \gls{acr:ml}/\gls{acr:rl} in general.
+I introduce and explain \emph{linear tile coding}, a simple and rather interpretable scheme which appears throughout more classical \gls{acr:rl} research, as well as providing an overview of common variations on \glspl{acr:nn}.
+While tile coding has been superseded in modern \gls{acr:rl} works by \glspl{acr:dnn}, I use it as the main function approximation scheme in \cref{chap:ddos-rl} for its computational simplicity for both inference and training.
+Crucially, it plays a key role in the design of \approachshort{} in \cref{chap:in-net-rl}, where it underpins the task of bringing \gls{acr:rl} to \gls{acr:pdp} \glspl{acr:nic} due to their particular constraints.
+\glspl{acr:nn} are presented due to their widespread adoption and hence deep relevance to \gls{acr:ddn} on the whole.
+In addition, they are used for flow classification in \cref{chap:seidr} to make use of the data reduction I develop.
 
-?? Probably  define from first principles.
+%?? Appears more in the RL lit than anything.
+%
+%?? I give an overview of 
+%
+%
+%?? general introduction to common classes of network (list)
+%
+%?? These are all diffable.
+%
+%?? Explain how different approximators work, I suppose?
+%
+%?? Probably  define from first principles.
 %
 %\subsection{Accuracy Measures}
 %
 %?? mean-square error, bias, variance, ...
 
-\subsection{Linear Functions}
+\subsection{Linear Tile Coding}
+\emph{Tile coding}~\parencite[pp.\ \numrange{217}{221}]{RL2E} is a form of feature representation which converts a state-action pair into a sparse boolean feature vector $\operatorname{\mathbf{x}}(s)$.
+A tile-coded representation defines a collection of \emph{tile sets}---each a $d$-dimensional subset of input state.
+Each tile set then comprises a set of \emph{tilings}, overlapping $d$-dimensional grids with different offsets.
+Overall, this may be combined with an always-on \emph{bias tile}, which is a global estimate that can contain a reasonable starting point for unlearned parts of the state space.
+To compute an output value, input state is checked against every tile to identify which grid cell is activated (or \emph{hit})---each tile hit corresponds to an entry of $\operatorname{\mathbf{x}}(s)$ which is set to 1.
+As each tiling admits exactly 1 hit, $\operatorname{\mathbf{x}}(s)$ is a sparse boolean vector of fixed Hamming weight (i.e., equal to the total number of tilings).
+The parameter vector $\wvec{}$ then assigns a value to each tile, allowing us to compute the output $f_\mathit{tile}(s, \wvec{})$:
+\begin{equation}
+	f_\mathit{tile}(s, \wvec{}) = \wvec{}^{\top} \operatorname{\mathbf{x}}(s)
+	\label{eqn:lin-approx}
+\end{equation}
+As all values of $\operatorname{\mathbf{x}}(s)$ are boolean, this is equivalent to simply summing the values of each hit tile.
+Moreover, the parameter gradient ($\nabla_{\wvec{}}$) at any point is \emph{computed during the forward pass}:
+\begin{equation}
+	\nabla_{\wvec{}}{f_\mathit{tile}(s, \wvec{})} = \operatorname{\mathbf{x}}(s)
+\end{equation}
+As a result, \gls{acr:rl} policy updates are simple to perform---i.e., no extra work is required to compute a policy gradient---so long as it is feasible to cache $\operatorname{\mathbf{x}}(s)$.
 
-?? Linear coding
+\Cref{fig:tilecode-code} demonstrates the process for a 2-dimensional state space in an \gls{acr:rl} context, i.e., defining the state-action value $\acval{s}{a}{\wvec{}} = f_\mathit{tile}(s, \wvec{})[a]$.\sidenote{It should be noted that the more \gls{acr:rl}-specific $\operatorname{\mathbf{x}}(s, a)$---i.e., approximating the value of a state-action pair---is virtually interchangeable with this representation. We can simply store the values for all actions together, as they are typically all required in value-based \gls{acr:rl}---if specific tiles are needed to derive the theory or update the representation, we just assign a tile to each action \emph{after} evaluating $\operatorname{\mathbf{x}}(s)$.}
+It should be apparent that the numbers of tiling sets and the degree of subdivision along each dimension allow a designer to control feature resolution and generalisation.
+To capture combinatorial effects or represent an input on multiple scales representation we may combine codings by concatenating individual feature vectors.
+For instance, different tiling sets may choose the same dimensions with different tile widths, or consider each feature both separately and combined with some covariant property.
+
+?? Algorithm block for tile hit computation?
+
+?? Small side-diagram?
+
+%Computing the approximate value of every available action forms the basis of a policy.
+%Actions with maximal value can be chosen each time (the \emph{greedy} policy), we might modify this by taking random actions with probability $\epsilon$ to encourage early exploration (the \emph{$\epsilon$-greedy policy}), or we might use some other mechanism.
+%\Cref{fig:tilecode-select} extends the prior working example to show how the value of each action is computed (and which action would be chosen by a greedy policy), combining a global estimate ($T_{\mathit{bias}}$) with knowledge particular to each state.
+
+In an \gls{acr:rl} context, as in \cref{fig:tilecode-select,fig:sarsa-tilecode-update}, this coding strategy is well optimised for discrete actions.
+This allows a particularly efficient vectorised implementation of the policy and update rules by storing a vector of action values for each tile.
+Summing the weight vectors from all activated tiles as described, this requires  $|\mathcal{A}|(n_{\mathit{tilings}}-1)$ floating point additions per decision for an action set $\mathcal{A}$.
+In particular, hit tiles are amenable to representation as an array of indices, $s_{\mathit{list}}$.
+This means that we need only perform $n_{\mathit{tilings}} + 2$ additions and \num{2} multiplications per model update when combined with Sarsa (\cref{sec:demo-rl-sarsa}):
+\begin{equation}
+	\wvec{t+1}[i][a_t] = \wvec{t}[i][a_t] + \alpha \delta_t, \forall i \in s_{\mathit{list}}.
+	\label{eqn:sg-sarsa-opt}
+\end{equation}
+If desired we may define a state space with an arbitrary number of tiles per dimension (higher-resolution, lower generalisation), yet having constant-size state vectors and constant action computation cost ($\mathcal{O}(n_{\mathit{tilings}})$).
+Beyond this, we need not store action values for tiles which have not yet been visited, conserving memory.
+A caveat of tile coding remains, in that the value of $\alpha$ must be reduced according to the number of tilings to prevent divergence at the expense of slower learning ($\alpha \leftarrow \alpha / n_{\mathit{tilings}}$).
 
 \subsection{Neural Networks}
+\acrfullpl{acr:nn} map an input vector to an output vector via a mathematical graph of neurons.
+Each neuron takes a weighted sum over a set of inputs plus its own \emph{bias} value, and uses this as the input to a non-linear function, producing a single output value (\cref{fig:single-neuron}).
+This non-linear (or piecewise-linear) function, e.g., (leaky) ReLU, $\tanh$, or the sigmoid function expresses the idea of a sufficiently large input `activating' the neuron, and prevents chains of neurons from being expressed as a single linear transformation (allowing greater model capacity).
+As in \cref{fig:fcnn}, this graph of neurons then progresses from transformations to the \emph{output layer}, towards processing of the outputs of intermediate neurons (\emph{hidden layers}), before terminating in a final vector of output values.
+The parameter set $\wvec{}$ is then the concatenation of all edge weights and biases which describe the network.
+This compute graph can contain other, non-neuron operations so long as they are differentiable: it is typical that in classifiers or \gls{acr:rl} systems the last layer of neurons goes through a softmax function to be converted into a valid probability distribution.
+Crucially, any individual neuron is differentiable in $\wvec{}$, and by applying the chain rule over the full graph we can compute the entire \gls{acr:nn}'s parameter gradient through the backpropagation algorithm~\parencite[pp. ??]{DBLP:books/daglib/0040158}.
 
-?? Deep learning book?~\cite{DBLP:books/daglib/0040158}
+\begin{marginfigure}
+	\centering
+	\resizebox{0.9\linewidth}{!}{\includegraphics{diagrams/nns/single-neuron-draft}}
+	\caption[Operation of a single neuron.]{A single neuron in a \gls{acr:nn} takes a weighted sum over its vector of inputs $\mathbf{a}$ (according to $\mathbf{w}$) and its own bias $b$, and produces an output using some non-linear $f$. $\mathbf{w}$ and $b$ are trainable per neuron. ?? Note, diagram misses out bias...}\label{fig:single-neuron}
+\end{marginfigure}
 
-?? Neural networks
+\begin{figure}
+	\centering
+	\resizebox{0.9\linewidth}{!}{\includegraphics{diagrams/nns/fcnn-draft}}
+	\caption[An example fully-connected neural network.]{\glspl{acr:nn} arrange neurons into layers, which allows each layer to be expressed as an affine transformation (i.e., $\mathbf{W}_i\mathbf{a}_{i-1} + \mathbf{b}_i$) followed by an elementwise non-linear operation. By doing so, they can take advantage of commodity \glspl{acr:gpu} (which excel at linear algebra) or more specialised \glspl{acr:tpu}.}\label{fig:fcnn}
+\end{figure}
 
+\paragraph{Convolutional networks}
+
+\paragraph{Graph convolution}
 ?? GNNs -- GCN, Edge-GNNs~\parencite{Mirhoseini2021}
 
 ?? graph convolution~\parencite{DBLP:conf/iclr/KipfW17}
 
+\paragraph{Recurrent networks}
 \gls{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97}
 
 \section{Learning an approximation}\label{sec:learning-an-approximation}%
@@ -259,7 +340,7 @@ How will you convince yourself you have not made a mistake somewhere in the vast
 ...The relevant accuracy and reliability of simulations are a serious problem.\\
 \strut\hfill\parencite[pp. 248]{hamming-art-of-scieng} 
 \end{quotation}
-The main difficulty arises from the fact that it takes not only expert knowledge to model these dynamics but to \emph{consider} them, and while most of these details can be abstracted over it is harder to determine which will not lead to further surprises in deployment.
+The main difficulty arises from the fact that it takes not only expert knowledge to model these dynamics but to \emph{consider} them, and while most of these details can be abstracted over it is harder to determine those which will not lead to further surprises in deployment.
 
 Taking advantage of trace data in a more principled way requires insights from \emph{off-policy} \gls{acr:rl}, such as the use of doubly robust estimators~\parencite{DBLP:conf/hotnets/BartulovicJBSS17} or contextual bandits~\parencite{DBLP:conf/hotnets/LecuyerLNSSS17}.
 These include the derivation or learning of reward models, and importance or inverse-propensity sampling.
@@ -269,34 +350,34 @@ In addition, different policies will invoke different state distributions, and t
 While it might be easier to cynically connect this goal to the initial wave of dataset-driven \gls{acr:ml} algorithm applications papers, trace data \emph{can be correctly handled}.
 For instance, using \gls{acr:rl} to solve static problem instances derived or cast similarly to \textsf{NP}-hard optimisation problems does not require simulation or ongoing interaction with a `real' environment.
 Although it can be difficult to know ahead of time, it's worth considering whether the problem is adversarial in some way; an ongoing control problem is altogether different from an offline optimisation task.
-It's unlikely that in an optimised chip floorplanning, for instance, that target programs will immediately start acting differently---compare this to a network where our actions immediately induce varied modes in \glspl{acr:cca}.
+It's unlikely that in an optimised chip floorplanning task, for instance, that target programs will immediately start acting differently---compare this to a network where our actions immediately induce varied modes in \glspl{acr:cca}.
 
 \subsection{Generality}
 As we can see throughout \cref{sec:use-cases}, \gls{acr:ddn} methods are applicable to a wide variety of problems.
-However, to claim that these use cases require in-depth agent-environment co-design is a generous understatement---particularly applications of \gls{acr:rl}.
-Consider mainly the potent effects of not only the state and action spaces which are inherently problem-specific \emph{and} require domain expertise to define and iterate on.
+However, to claim that these use cases require in-depth agent-environment co-design is a generous understatement---particularly applications of \gls{acr:rl}, which require very careful consideration to construct a sensible \gls{acr:mdp} formulation.
+State and action space definitions have potent effects, are inherently problem-specific, and require domain expertise to define and iterate on.
 
 Recent research aims to investigate whether more general approaches are feasible, by using \gls{acr:ml} inference to convert input vectors and decisions into a performance metric~\parencite{DBLP:conf/nsdi/FuGMR21}---effectively as a black-box form of `what-if' analysis.
-Ideally, there would be no case-specific design elements beyond the chosen input features, performance prediction would function for many separate applications, and perform accurately.
-Looking at this task on scheduling, planning, and placement tasks\sidenote{Generally, the varied parameter which must be optimised is some form of compute allocation, e.g., the number of servers or executors given to a task set.}, they find that inbuilt optimisations add irreducible variance to the learning problem, even when made as simple as possible.
+Ideally, there would be no case-specific design elements beyond the chosen input features, offering accurate performance prediction would function for many separate applications.
+Looking at this task on scheduling, planning, and placement tasks\sidenote{Generally, the varied parameter which must be optimised is some form of compute allocation, e.g., the number of servers or executors given to a task set.}, they find that inbuilt optimisations add irreducible variance to the learning problem, even when the task is made as simple as possible.
 Non-deterministic behaviour (i.e., stochastic load balancing) is for instance an obvious source of noise, but threshold-based behaviours also cause significant discontinuities.
-Even after diagnosis of these noise sources (removing ease of use), input-sensitive tasks still require probabilistic \gls{acr:ml} methods---which can be harder to action or reason about.
+Even after diagnosis of these noise sources (negating the desired ease-of-use), input-sensitive tasks still require probabilistic \gls{acr:ml} methods, which can be harder to reason about or act on.
 
 \subsection{Interpretability and Verification}
 For all the effort, time and expertise required to craft them, algorithmic or heuristic solutions to network problems have a key advantage over data-driven methods.
 Because they are so well-specified, it is reasonable for a network operator or expert who has observed some unintended behaviour to derive the root cause, and possibly formulate a fix for the issue.
 In contrast, \gls{acr:ml} and \gls{acr:ddn} models' behaviour is governed almost entirely by an opaque set of parameters ($\wvec{}$, which can contain \numrange{e3}{e9} real numbers), which makes it harder to understand what aspects of input data are being acted on and prioritised.
-\emph{Interpretability} captures whether a human can reasonably understand why an input or scenario invokes an output or set of behaviours.
 As a side effect, tweaking a model to correct, modify, or improve behaviour is also rendered difficult or impossible.
+\emph{Interpretability} captures whether a human can reasonably understand why an input or scenario invokes an output or set of behaviours.
 \emph{Verifiability} describes our ability to prove that a \gls{acr:ddn} or heuristic solution upholds key properties through, e.g., modelling or closed-form analysis.
 
 Interpretability in general \gls{acr:ml} has attracted attention as a research goal in its own right.
-Many classical \gls{acr:ml} approaches such as \glspl{acr:svm} or decision trees offer sensible rule sets or decision boundaries~\parencite{DBLP:conf/pkdd/MolnarCB20,interpretable-ml}, \gls{acr:nn}-based function approximation presents very particular challenges.
+Many classical \gls{acr:ml} approaches such as \glspl{acr:svm} or decision trees offer sensible rule sets or decision boundaries~\parencite{DBLP:conf/pkdd/MolnarCB20,interpretable-ml}, yet \gls{acr:nn}-based function approximation presents very particular challenges.
 These comprise repeated high-dimensional linear transforms of input data (e.g., by matrices containing thousands of values), interposed with non-linear activation functions.
 \glspl{acr:cnn} and \glspl{acr:lstm} complicate this logic further by introducing learned convolution filters and temporal relationships, respectively.
-On some data classes such as images, it is possible to visualise learned feature activations~\parencite{cnn-features-distil}, which typically manifest as shapes or patterns which make some degree of sense to a human observer.
-Network state spaces, however, are far less intuitive, so feature activations in NNs are less obviously meaningful and still fail to allow `tweakability'.
-Tools such as \emph{LIME}~\parencite{DBLP:conf/kdd/Ribeiro0G16} can reveal the relative importance of each feature in such cases, but it can still require in-depth testing to realise that (but not why) an agent never chooses some actions in spite of their optimality~\parencite{DBLP:conf/sigcomm/DethiseCK19}.
+On some data classes such as images, it is possible to visualise learned feature activations~\parencite{cnn-features-distil}, which typically manifest as shapes or patterns that make some degree of sense to a human observer.
+Network state spaces, however, are far less intuitive, so feature activations in NNs are less obviously meaningful and still fail to allow configurability.
+Tools such as \emph{LIME}~\parencite{DBLP:conf/kdd/Ribeiro0G16} can reveal the relative importance of each feature in such cases, but it can still require in-depth testing to realise that (and not \emph{why}) an agent never chooses some actions in spite of their optimality~\parencite{DBLP:conf/sigcomm/DethiseCK19}.
 %?? Interpretability, particularly for more powerful fn approxes
 %?? Main problem? Can'y humanly visualise the transformations on input data
 %?? Why? High-dimensional transfomrations w/ millions or billions of parameters, interposed with non-linear transformations
@@ -306,7 +387,7 @@ Tools such as \emph{LIME}~\parencite{DBLP:conf/kdd/Ribeiro0G16} can reveal the r
 %?? can do for CNNs on images~\parencite{cnn-features-distil} -- what about LSTMs, RNNs, ...
 %?? Interpretability~\parencite{DBLP:conf/sigcomm/MengWBXMH20}
 A \gls{acr:ddn}-specific remedy is to use teacher-student methods to convert (non-recurrent) \glspl{acr:nn} into simpler models~\parencite{DBLP:conf/sigcomm/MengWBXMH20}.
-In particular, `local' decision-making systems (\glspl{acr:cca}, \gls{acr:abr} selection, \gls{acr:to}/\gls{acr:te}) are converted into decision trees after applying branch pruning algorithms to keep the model compact enough for human comprehension.
+In particular, `local' decision-making systems (\glspl{acr:cca}, \gls{acr:abr} selection, \gls{acr:to}/\gls{acr:te}) are converted into decision trees after applying branch pruning algorithms to keep the model compact enough to be understood.
 For global decisions (job scheduling, routing, \gls{acr:vnf} placement) they produce hypergraphs which express which decisions are critical in an optimal solution.
 %?? Convert \gls{acr:ddn} \glspl{acr:dnn} to more interpretable forms using teacher-student methods: decision trees for local decisions (\glspl{acr:cca}, \gls{acr:abr} selection, \gls{acr:to}/\gls{acr:te}), for global they can show hypergraphs which express the edges which are critical to optimisation (job sched, routing, NF placement) (is this analogous to CNN feature expression?).
 In addition to reducing latency and making it clear what sequence of decisions is responsible for an output, this exposes any `missing classes' in the input and output spaces quite visibly.
@@ -315,11 +396,10 @@ Unfortunately, the hypergraph representation fails to explain or simplify the lo
 %?? In DTs etc, can see `missing classes' and train to include or directly alter DT.
 %?? Latency reductions.
 
-Verification has a broad set of meanings in \gls{acr:ml} research, from investigating security properties (i.e., adversarial robustness) to more global guarantees of input and output properties.
-I discuss verification towards adversarial example resistance in \cref{sec:ddn-security}.
+Verification has a broad set of meanings in \gls{acr:ml} research, from investigating security properties (i.e., adversarial robustness\sidenote{I discuss verification as an approach towards adversarial example resistance in \cref{sec:ddn-security}.}) to more global guarantees of input and output properties.
 One promising line of work in this area applies \gls{acr:smt} solvers to smaller \glspl{acr:dnn} for, e.g., safety and liveness constraints on inputs~\parencite{DBLP:conf/cav/KatzBDJK17,DBLP:conf/cav/KatzHIJLLSTWZDK19}.
 These verification techniques are powerful in that they can guarantee a desired property is upheld (or produce a distinct counterexample where it is not), although recalling that \gls{acr:smt} solution is \textsf{NP}-Hard, this comes at a high execution cost.
-Luckily, most \gls{acr:ddn} use cases considered in this thesis apply small-to-moderately sized networks, to which such verification is well-suited.
+Luckily, most \gls{acr:ddn} use cases considered in this thesis apply small-to-moderately sized networks, to which such verification is well-suited---moreover, latency and throughput demands incentivise the use of smaller \glspl{acr:nn}.
 Extending this towards \gls{acr:rl} is trickier, given that we must now verify that properties hold over state trajectories of arbitrary length.
 In addition, the onus now falls on system operators to design suitable state transition functions (i.e., accurate system simulations) to model how a system evolves in response to an action.
 With these primitives, some degree of \gls{acr:drl} verification is possible via bounded model checking~\parencite{DBLP:conf/sigcomm/KazakBKS19,DBLP:conf/sigcomm/EliyahuKKS21} (checking run-lengths of $n$ states from a set of initial states), and $k$-induction~\parencite{drl-verification-2}.

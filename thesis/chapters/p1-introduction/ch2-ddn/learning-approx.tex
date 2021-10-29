@@ -78,7 +78,7 @@ By requiring that our policy approximation $\pi\left(a~|~s, \wvec{} \right)$ is 
 
 %\gls{acr:rl} works in tandem with other mathematical training approaches: the key insight is that the structure of an MDP allows external information and model(-free) observation to strengthen or weaken different function responses.
 
-\subsection{Demonstrating RL: Sarsa}
+\subsection{Demonstrating RL: Sarsa}\label{sec:demo-rl-sarsa}
 While many \gls{acr:rl} algorithms have been developed (each of which making quite different choices on how to apply trajectory data), it is likely most helpful to start with a concrete point in the design space \emph{before} listing their full variety.
 Doubly so here, as this particular algorithm---single-step, semi-gradient Sarsa~\parencite[pp. \numrange{217}{221}]{RL2E}---underpins \cref{chap:ddos-rl,chap:in-net-rl}.
 The Sarsa algorithm considers only one transition at a time: a pair of states $s_t,s_{t+1}$, their accompanying actions $a_t,a_{t+1}$, and the reward $r_{t+1}$ accompanying $s_{t+1}$.
