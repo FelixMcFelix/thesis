@@ -1,0 +1,124 @@
+While the main focus of this thesis is to investigate how \gls{acr:ml} or data-driven methods can benefit the network, there is equal interest in asking instead \emph{how networking can benefit \gls{acr:ml}}.
+Driven by the high compute-time requirements of modern \gls{acr:drl} and \gls{acr:dnn} training---in simulation, sample complexity, and raw input data---much community interest has been given to how networks can improve, accelerate, or innovate in \gls{acr:ml} model training.
+
+I discuss briefly how networks offer distributed training, allowing models or datasets to be split over many worker nodes who all collaborate towards the training of a single \gls{acr:ml} model within a datacentre or cloud network.
+This extends to brief discussion of novel ways to further optimise these processes as well as how they differ from traditional job scheduling.
+Moving on, I discuss the frontier of this training task across far wider areas, network, or organisational boundaries---\glsxtrfull{acr:fl}---alongside its limits.
+
+%\subsection{Multiagent methods}
+
+\subsection{Distributed training}
+For various reasons, such as the high sample complexity of \glspl{acr:dnn} and \gls{acr:drl} in particular, \gls{acr:ml} model training must often scale beyond several machines.
+The most practical reason for this is that we can use the parallelism we have across a computing cluster to improve training performance---for instance, spreading minibatches across many machines allows us to compute more gradient update vectors in the same amount of time.
+The scale of some modern \glspl{acr:nn} requires this; either due to the sheer size of the input dataset, or due to the size of the \gls{acr:nn} model itself.
+This latter case requires some explanation; high-speed training requires \glspl{acr:gpu} which are capped on a single machine by the shared \gls{acr:pcie} bus, and in turn have limited cores or \gls{acr:vram}.
+Due to this, a single \gls{acr:gpu} may be unable to store the entirety of a model and related structures or data, particularly when training infrastructure is shared.
+The former and simpler use case, spreading training data across distributed nodes, is known as \emph{data parallel} training.
+Dividing an \gls{acr:nn}'s compute graph across either local or remote accelerators is known as \emph{model parallel} training.
+These concepts may be applied independently, or hybridised as necessary.
+For context, consider the level of distributed compute required to train high-profile \gls{acr:drl} works such as the Dota-playing \emph{OpenAI Five}~\parencite{openai-five}---consuming \num{128000} \gls{acr:cpu} cores and \num{100} \glspl{acr:gpu}---or \emph{AlphaGo Fan}~\parencite{DBLP:journals/nature/SilverSSAHGHBLB17}---\num{176} \glspl{acr:gpu}. 	
+
+%Paradigm instrumental in Big RL Successes. (link to all the OpenAI Stuff here).
+
+However, effectively exploiting this parallelism is less simple in practice than in theory.
+Device heterogeneity, different batch sizes and contents, and episode lengths in the \gls{acr:rl} case can all affect how long it takes any individual compute node to complete its own set of tasks.
+Network behaviour such as transient load across paths or switches, worsened by incast traffic behaviour at central \glspl{acr:ps} when all workers transmit gradient vectors at the same time, all add to latency or cause lengthy retransmits in response to losses.
+Moreover, we aim to minimise the amount of time that nodes remain inactive.
+In the data parallel case, this is considered from two main directions:
+\begin{description}
+	\item[Parameter Server] approaches designate one or more servers who are responsible for holding the current version of a trained model.
+	Worker nodes send their individual gradient updates to the \gls{acr:ps}, who aggregates all inputs and broadcasts the completed update to be applied~\parencite{DBLP:conf/nips/DeanCMCDLMRSTYN12,DBLP:conf/osdi/LiAPSAJLSS14}.
+	Larger models reduce contention or bottlenecks by sharding portions of $\wvec{}$ across different \glspl{acr:ps}.
+	These aggregate and broadcast steps may either be synchronous (as above) or \emph{asynchronous}, where workers do not wait to receive this broadcast vector before computing further updates (at the cost of losing model convergence guarantees as updates grow `stale').
+	
+	\item[AllReduce] techniques have workers transmit gradient updates to one another in a structured overlay network to perform gradient aggregation without a \gls{acr:ps}~\parencite{DBLP:conf/cluster/MamidalaLP04,DBLP:conf/ipps/PatarasukY07}.
+	These communication patterns may be ring structured (bandwidth-optimal, at the cost of $\mathcal{O}{\left(n\right)}$ latency) or structured as a binary tree.
+\end{description}
+Existing frameworks such as TensorFlow~\parencite{DBLP:journals/corr/AbadiABBCCCDDDG16} support these concepts via Horovod~\parencite{DBLP:journals/corr/abs-1802-05799}, Ray~\parencite{DBLP:conf/osdi/MoritzNWTLLEYPJ18}, BytePS~\parencite{DBLP:conf/osdi/JiangZLYCG20}, or recent designs such as Hoplite~\parencite{DBLP:conf/sigcomm/ZhuangLZWLNMS21}.\sidenote{It should be stated that gradient aggregation in general is simply the summation of all individual update vectors. This conceptually simple processing is what enables the task to be converted into a map-reduce workload so easily, but also enables many in-network approaches worth examining.}
+
+Developing and optimising these distribution strategies is an ongoing line of work; consider that some works have seen that aggregating gradient updates consumes around \qty{83.2}{\percent} in the synchronous \gls{acr:ps} case~\parencite{DBLP:conf/isca/LiLYCSH19}, and that device heterogeneity can cause stragglers to greatly inflate latency in the AllReduce case.
+In particular, different use cases or approximators (\gls{acr:rl}, \glspl{acr:gnn}) have different demands or characteristics; e.g., distributed \gls{acr:rl} policy updates are small and extremely frequent due to having an iteration count around an order of magnitude higher compared to \glspl{acr:nn} as classifiers~\parencite{DBLP:conf/isca/LiLYCSH19}.
+Meanwhile, the explicit message-passing built into \glspl{acr:gnn} requires deliberate communication planning across nodes on one or many machines~\parencite{DBLP:conf/eurosys/Cai0WMCY21,DBLP:conf/eurosys/WangY0YCYYZ21}.
+
+Distributed \gls{acr:ml} training has been found to exhibit different cluster use characteristics from other job scheduling tasks.
+Work remains common on minimising \glspl{acr:jct}, wasted resource use (i.e., dollar cost to the user) and other sources of contention in the network.
+These include \gls{acr:rl}-based policies such as \emph{MLFS}~\parencite{DBLP:conf/conext/0002LS20}, which optimise job and cluster performance with awareness of overfitting.
+non-\gls{acr:ddn} works provide dynamic downscaling of per-task resources~\parencite{DBLP:conf/eurosys/MisraLDBKGST21}, and fair sharing and allocation between different \gls{acr:gpu} classes~\parencite{DBLP:conf/eurosys/ChaudharyRSKV20}.
+More recent works include explicit prioritisation of jobs which are short or likely to maximise model accuracy increases, combined with the above class of elastic scaling~\parencite{DBLP:conf/nsdi/HwangKKSP21}.
+Indeed, there have been suggestions from the research community that even the underlying transports protocols or \glspl{acr:cca}---including RoCE~\parencite{rocev2} and \gls{acr:tcp}---are at fault in bottlenecks rather than bandwidth~\parencite{DBLP:conf/sigcomm/ZhangCLWAJ20}.
+Of course, this does not preclude the development of specialised optical interconnects~\parencite{DBLP:conf/sigcomm/ShirkoohiGAZGBV21} to provide extremely high-bandwidth, reliable circuit-switched communications between nodes.
+
+Recalling the large amount of time spent centrally aggregating parameter updates in \gls{acr:ps} methods (in addition to heavy incast behaviour), it is clear they have several disadvantages over AllReduce in exchange for lower latency.
+\emph{In-switch} aggregation approaches have been proposed to remedy these issues such that the update vectors are aggregated \emph{en-route} to the \gls{acr:ps}, ensuring not only that the \gls{acr:ps} itself performs less work, but also minimises its inbound packet volume.
+\emph{iSwitch}~\parencite{DBLP:conf/isca/LiLYCSH19} uses NetFPGA-SUME hardware to implement special handling for RL model update packets, building floating-point adders and limited storage space into bump-in-the-wire \glspl{acr:nic} to achieve \qtyrange{3.66}{3.71}{\times} faster training.
+\emph{SwitchML}~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21} converts a programmable \gls{acr:tor} switch \emph{into a \gls{acr:ps}}, offering this as a P4 program built on fixed-point quantisation.
+\emph{ATP}~\parencite{DBLP:conf/nsdi/LaoLMCWAS21} extends this to a best-effort service and custom transport protocol in front of the true \gls{acr:ps}, falling back to floating point on detection of overflows and offering better support for several dynamic jobs.
+However, this family of optimisations can only be applied when two gradient packets are able to meet in the network excluding, e.g., ring AllReduce.
+I discuss implementation specifics in more detail through \cref{sec:in-network-computation}, and some rationale in \cref{sec:numerical-representations-for-embedded-ml}.
+
+%?? communication and compute can be cleverly overlapped and optimised
+Techniques such as \emph{Wait-Free Backpropagation}~\parencite{DBLP:conf/usenix/ZhangZXDHLHWXX17,DBLP:conf/ppopp/AwanHHP17} have enabled tighter optimisation of when individual gradient parts can be set out and used to optimise for a compute-communication tradeoff.
+This can be combined with gradient sparsification to achieve reduced bandwidth~\parencite{DBLP:conf/infocom/ShiWCLQLZ20}, and further optimised for \gls{acr:ps}~\parencite{DBLP:conf/infocom/WangLG20} and AllReduce~\parencite{DBLP:conf/infocom/BaoPCW20} communication patterns.
+Moreover, \glspl{acr:gnn} have been used to dynamically optimise hybrid aggregation strategies and model/data parallelism across heterogeneous \gls{acr:gpu} clusters~\parencite{DBLP:conf/conext/0001ZLLDWZYL20}.
+
+\subsection{Federated learning}
+The key driver behind distributed training is the idea that disparate and networked resources within a single organisation can be used together to accelerate (or even make feasible) the training of complex \gls{acr:dnn} models.
+A more difficult question that has since arisen is how best to achieve this between \emph{several} organisations, or even weaker devices in consumers' hands or at the edge of the Internet.
+
+\glsxtrfull{acr:fl}~\parencite{DBLP:journals/corr/KonecnyMRR16,DBLP:journals/corr/Konecny17,DBLP:conf/mlsys/BonawitzEGHIIKK19} allows several unaffiliated devices to independently train local \gls{acr:ml} models from the data available to them.
+The main goal of \gls{acr:fl} is to train a high-quality, centralised model, potentially including local or device-specific optimisations, when input data are divided unevenly over a large number of nodes.
+Crucially, we require that training remains effective when such data are non-\gls{acr:iid} across these devices.
+The key intuition is that we can make use of device-local intelligence to train our model.
+By having any device update its parameter set locally, a node collects its set of combined gradients, which are then sent to the parameter server; these are collected as in above \gls{acr:ps} approaches and a new canonical model may be published to all users.
+This saves computing cost at the central parameter server, bandwidth consumption due to the large size and total volume of training samples, and (in principle) protects the privacy of users with regard to sensitive or personally identifying input data.
+
+The original solution~\parencite{DBLP:journals/corr/KonecnyMRR16} has each node solve a subproblem subject to some quadratic perturbation, combining DANE~\parencite{DBLP:conf/icml/ShamirS014} and Stochastic Variance Reduced Gradient~\parencite{DBLP:conf/nips/Johnson013}.
+Much of the algorithmic developments are dedicated to correcting for potential sources of bias from the edge-node results before they are combined.
+This includes weighting contributions by each node's proportion of input samples and the distribution of non-zero values in these input data.
+This was first adapted to more non-convex functions (i.e., \glspl{acr:dnn}) by \textcite{DBLP:conf/aistats/McMahanMRHA17}.
+Notably, they \emph{only} make use of this weighted averaging step---which they claim has an inherent regularisation effect analogous to dropout---yet achieve respectable training performance.
+Crucially, they raise the point that all candidate models must be at the very least be initialised from the same seed or master policy.
+More recent work examines the possibility of applying \gls{acr:rl} to better handle non-\gls{acr:iid} input data by selecting the gradient vectors to include in an update round at runtime~\parencite{DBLP:conf/infocom/WangKNL20}.
+
+\gls{acr:fl} has since been divided into two classes by some practitioners:
+\begin{description}
+	\item[Cross-device \gls{acr:fl}] covers the above motivating case, where contributing devices are assumed to be mobile or \gls{acr:iot} devices.
+	\item[Cross-silo \gls{acr:fl}] describes this paradigm as applied to shared learning \emph{between} organisations. This formulation applies far stricter privacy guarantees: the parameter server may be unable to see the learned model or individual gradients (but is still responsible for hosting and updating it), and organisations must limit the ability to extract or infer personally identifying information from the trained model.
+\end{description}
+
+The latter case introduces additional engineering and design challenges, and is a topic of ongoing research.
+\emph{Secure aggregation}~\parencite{DBLP:conf/ccs/BonawitzIKMMPRS17} has been proposed such that gradient combination is pushed down to clients who have randomised communication patterns with one another, while only the final model change is exposed to the parameter server.
+Homomorphic encryption hides this from even the central server without requiring that hosts perform piecewise aggregation: arithmetic operations applied between a pair of ciphertexts behave as though applied to the clear texts.
+\emph{BatchCrypt}~\parencite{DBLP:conf/usenix/ZhangLX00020} applies this to batches of integer-quantised gradients, where batching and sparsification are the key tricks needed to reduce the heavy bandwidth of homomorphic encryption.
+This is then improved upon in bandwidth overheads, encryption time, and aggregation cost by \emph{FLASHE}~\parencite{DBLP:journals/corr/abs-2109-00675}, which moves to a simpler \emph{symmetric} cryptosystem that supports only \emph{addition}.
+When considering whitebox attacks of the form discussed throughout \cref{sec:ddn-security} such as data reconstruction attacks~\parencite{DBLP:conf/icml/LamW0RM21}, cross-silo \gls{acr:fl} often draws on differential privacy literature~\parencite{DBLP:conf/iclr/McMahanRT018}.
+
+%FL with Homomorphic Encryption~\parencite{DBLP:conf/usenix/ZhangLX00020,DBLP:journals/corr/abs-2109-00675} -- Check FLASHE for good cites and discussion of issues introduced by homeomorphic encryption.
+
+%?? Explcitly describe the requirement for locally-acquired labels.
+
+\gls{acr:fl} as a paradigm is limited in how it can be deployed to solve supervised tasks.
+As each node, device or organisation must contribute gradient information that \emph{they themselves have locally sourced}, we can see that in supervised problems this mandates that these nodes must also be able to label the data themselves somehow.
+To get the high volume of data required to overcome \glspl{acr:dnn}' sample complexity, input data must either be trivially user-labelled data, effectively self-labelling (i.e., known at a later time), or arise through time-series forecasting.
+For instance, predictive text~\parencite{federated-learning-blog} was one of the first large-scale use cases at Google---input data are words the user had typed, and their labels are either the chosen suggestion \emph{or} what they themselves typed instead.
+Naturally, there is still applicability in semi-supervised or unsupervised techniques like autoencoders~\parencite{DBLP:journals/ftml/KingmaW19} which can be cast as a gradient descent problem.
+In the \gls{acr:rl} case, we require that each learner is solving its own control problem with locally available reward measurements.
+
+%?? Issue? Only works on certain problems (explicitly unsupervised, or easy to acquire local supervised measurements).
+%
+%Okay, what conditions does it impose on the type of data we want to use for training (right now, at least)?
+%?? Need trivially (user-)labelled data, to get the high volume we need. (label-able at the edge nodes? is unsupervised remotely worthwhile?)
+%?? Ex: predictive text works (data is word the user had typed, label is what they picked from the dict OR what they typed by the end.)
+
+%Invented by \textcite{DBLP:journals/corr/KonecnyMRR16}.
+%?? (Probably look at the lead author's shiny new PhD Thesis \cite{DBLP:journals/corr/Konecny17}? Look for more of his stuff?)
+%?? IDEA -- train a high-quality centralised model when data are divided unevenly over a large number of nodes (read: non-IID).
+%?? Main problem is that the best-performing algorithms are very much sequential in nature. Even then, many make assumption that all learners see a representative sample.
+%?? Each node solves a subproblem subject to some quadratic perturbation (as in DANE \cite{DBLP:conf/icml/ShamirS014} (not read!)) but for Stochastic Variance Reduced Gradient (SVRG).
+%?? Much of the algorithm is correcting for potential sources of bias from the edge-node results before they are combined (averaged very carefully).
+
+%\textcite{DBLP:conf/aistats/McMahanMRHA17} examine:
+%?? Federated Learning to train deep neural nets.
+%?? More broadly, this looks at non-convex loss functions in general.
+%?? New Algo---FedAVG seems to outperform FedSVG despite having fewer terms to correct for bias. I've written that it's analogous to dropout (which itself can offer behaviour close to a Bayesian net), check again to see what exactly this refers to.
+%?? Core idea---still essentially just taking (weighted) average of the policies from edge learners. Pretty important that they're all initialised from the same seed, at least then. Better convexity behaviour than expected.

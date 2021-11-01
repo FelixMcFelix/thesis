@@ -1,0 +1,21 @@
+\centering
+\begin{tikzpicture}
+	\node[circle, draw] (in0) {$a_0$};
+	\node[circle, draw] (in1) at ($(in0) + (0, -1.5)$) {$a_1$};
+	\node[circle, draw] (in2) at ($(in1) + (0, -1.5)$) {$a_2$};
+	\node[circle, draw] (in3) at ($(in2) + (0, -1.5)$) {$a_3$};
+
+	\node[circle, draw] (out) at ($(in1) + (2, -0.75)$) {$z$};
+
+	\node at ($(in3) + (0, -1)$) {$\mathbf{a}$};
+	\node (w0) at ($(in0) + (1, 0.5)$) {$\mathbf{w}$};
+	\node (b0) at ($(w0) + (1, 0)$) {$b$};
+	
+	\draw[->] (in0) -- (out) node[text=uofgrust, midway, font=\small, above] {$+w_0\times{}a_0$};
+	\draw[->] (in1) -- (out) node[text=uofgrust, midway, font=\small, above] {$+w_1\times{}a_1$};
+	\draw[->] (in2) -- (out) node[text=uofgrust, midway, font=\small, below] {$+w_2\times{}a_2$};
+	\draw[->] (in3) -- (out) node[text=uofgrust, midway, font=\small, below] {$+w_3\times{}a_3$};
+
+	% \node (tw0) at ($(w0) + (-1.25, 0)$) {$\wvec{}=\operatorname{concat}\{$};
+	% \node (tw1) at ($(b0) + (0.3, 0)$) {$\}$};
+\end{tikzpicture}

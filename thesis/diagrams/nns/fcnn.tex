@@ -1,0 +1,61 @@
+\centering
+\begin{tikzpicture}
+	\node[circle, draw] (in0) {$x_0$};
+	\node[circle, draw] (in1) at ($(in0) + (0, -1)$) {$x_1$};
+	\node[circle, draw] (in2) at ($(in1) + (0, -1)$) {$x_2$};
+
+	\node[circle, draw] (l1n0) at ($(in0) + (2, +0.5)$) {};
+	\foreach [count=\xi] \x in {0,...,2}
+	{\node[circle, draw] (l1n\xi) at ($(l1n\x) + (0, -1)$) {};}
+
+	\node[circle, draw] (l2n0) at ($(in0) + (4, 0)$) {};
+	\foreach [count=\xi] \x in {0,...,1}
+	{\node[circle, draw] (l2n\xi) at ($(l2n\x) + (0, -1)$) {};}
+
+	\node[circle, draw] (l3n0) at ($(in0) + (6, +1)$) {};
+	\foreach [count=\xi] \x in {0,...,3}
+	{\node[circle, draw] (l3n\xi) at ($(l3n\x) + (0, -1)$) {};}
+
+	\foreach [count=\xi] \x in {0,...,4}
+	{\node[circle, draw] (l4n\x) at ($(l3n\x) + (2, 0)$) {$y_\x$};}
+
+	% Arrow time
+	\foreach [count=\xi] \x in {0,...,2}
+	\foreach [count=\yi] \y in {0,...,3}
+	{\draw[->] (in\x) -- (l1n\y);}
+
+	\foreach [count=\xi] \x in {0,...,3}
+	\foreach [count=\yi] \y in {0,...,2}
+	{\draw[->] (l1n\x) -- (l2n\y);}
+
+	\foreach [count=\xi] \x in {0,...,2}
+	\foreach [count=\yi] \y in {0,...,4}
+	{\draw[->] (l2n\x) -- (l3n\y);}
+
+	\foreach [count=\xi] \x in {0,...,4}
+	{\draw[->] (l3n\x) -- (l4n\x);}
+
+	\node [rounded rectangle,fill=uofgrust, text=white, minimum width = 5cm, rotate=90] at ($(l3n2) + (0.8,0) $) {Softmax};
+
+	\node (a0) at ($(in2) + (0, -1.5)$) {$\mathbf{a}_0=\mathbf{x}$};
+	\node (w0) at ($(in0) + (1, 1.5)$) {$\mathbf{W}_0$};
+	\node (b0) at ($(w0) + (1, 0)$) {$\mathbf{b}_0$};
+
+	\foreach [count=\xi] \x in {0,...,2}
+	{
+		\node (a\xi) at ($(a\x) + (2, 0)$) {$\mathbf{a}_\xi$};
+
+		\ifthenelse{\xi < 3}{
+			\node (w\xi) at ($(w\x) + (2, 0)$) {$\mathbf{W}_\xi$};
+			\node (b\xi) at ($(b\x) + (2, 0)$) {$\mathbf{b}_\xi$};
+		}{};
+	}
+
+	\node (tw0) at ($(w0) + (-1.25, 0)$) {$\wvec{}=\operatorname{concat}\{$};
+	\node (tw1) at ($(b2) + (0.3, 0)$) {$\}$};
+	
+	% \draw[->] (in0) -- (out) node[midway, above] {$w_0$};
+	% \draw[->] (in1) -- (out) node[midway, above] {$w_1$};
+	% \draw[->] (in2) -- (out) node[midway, above] {$w_2$};
+	% \draw[->] (in3) -- (out) node[midway, above] {$w_3$};
+\end{tikzpicture}

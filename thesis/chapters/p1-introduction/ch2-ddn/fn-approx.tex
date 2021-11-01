@@ -1,0 +1,170 @@
+The main goal of \gls{acr:ml} methods is to learn the function between a set of inputs and a set of outputs, for instance mapping histories of flow statistics into classifications in \gls{acr:ddn}.
+In most cases, we have some body of \emph{training data}---input-output pairs (supervised), inputs alone (unsupervised), or state-action-reward trajectories (\gls{acr:rl})---and require that such a learned function generalises well to unseen inputs, has reasonable accuracy, and is not especially costly to compute.
+Of course, given that we lack \emph{a priori} knowledge of the function's true structure or it may lack a closed-form expression, we must use some learnable \emph{approximation}.
+Such a learned function is then defined by a fixed structure (e.g., an \gls{acr:nn}'s architecture) and a \emph{parameter set} $\wvec{}$, which is typically a collection of real numbers.
+Of particular importance is that the function approximations presented here (and in general) are differentiable with respect to their parameters, which allows for $\wvec{}$ to be trained as we discuss through \cref{sec:learning-an-approximation}.
+
+I discuss here some forms of function approximation which are pertinent to this thesis, and to \gls{acr:ddn} and \gls{acr:ml}/\gls{acr:rl} in general.
+I introduce and explain \emph{linear tile coding}, a simple and rather interpretable scheme which appears throughout more classical \gls{acr:rl} research, as well as providing an overview of common variations on \glspl{acr:nn}.
+While tile coding has been superseded in modern \gls{acr:rl} works by \glspl{acr:dnn}, I use it as the main function approximation scheme in \cref{chap:ddos-rl} for its computational simplicity for both inference and training.
+Crucially, it plays a key role in the design of \approachshort{} in \cref{chap:in-net-rl}, where it underpins the task of bringing \gls{acr:rl} to \gls{acr:pdp} \glspl{acr:nic} due to their particular constraints.
+\glspl{acr:nn} are presented due to their widespread adoption and hence deep relevance to \gls{acr:ddn} on the whole.
+In addition, they are used for flow classification in \cref{chap:seidr} to make good use of the data reduction provided by \seidr{} histograms.
+
+%?? Appears more in the RL lit than anything.
+%
+%?? I give an overview of 
+%
+%
+%?? general introduction to common classes of network (list)
+%
+%?? These are all diffable.
+%
+%?? Explain how different approximators work, I suppose?
+%
+%?? Probably  define from first principles.
+%
+%\subsection{Accuracy Measures}
+%
+%?? mean-square error, bias, variance, ...
+
+\subsection{Linear Tile Coding}
+\emph{Tile coding}~\parencite[pp.~\numrange{217}{221}]{RL2E} is a form of feature representation which converts input state $s$ into a sparse boolean feature vector $\operatorname{\mathbf{x}}(s)$.
+A tile-coded representation defines a collection of \emph{tile sets}---each a $d$-dimensional subset of input state.
+Each tile set then comprises a set of \emph{tilings}, overlapping $d$-dimensional grids with different offsets.
+Overall, this may be combined with an always-on \emph{bias tile}, which is a global estimate that can contain a reasonable starting point for unlearned parts of the state space.
+To compute an output value, input state is checked against every tile to identify which grid cell is activated (or \emph{hit})---each tile hit corresponds to an entry of $\operatorname{\mathbf{x}}(s)$ which is set to 1.
+As each tiling admits exactly 1 hit, $\operatorname{\mathbf{x}}(s)$ is a sparse boolean vector of fixed Hamming weight (i.e., equal to the total number of tilings).
+The parameter vector $\wvec{}$ then assigns a value to each tile, allowing us to compute the output $f_\mathit{tile}(s, \wvec{})$:
+\begin{equation}
+	f_\mathit{tile}(s, \wvec{}) = \wvec{}^{\top} \operatorname{\mathbf{x}}(s)
+	\label{eqn:lin-approx}
+\end{equation}
+As all values of $\operatorname{\mathbf{x}}(s)$ are boolean, this is equivalent to simply summing the values of each hit tile.
+Moreover, the parameter gradient ($\nabla_{\wvec{}}$) at any point is \emph{computed during the forward pass}:
+\begin{equation}
+	\nabla_{\wvec{}}{f_\mathit{tile}(s, \wvec{})} = \operatorname{\mathbf{x}}(s)
+\end{equation}
+As a result, \gls{acr:rl} policy updates are simple to perform---i.e., no extra work is required to compute a policy gradient---so long as it is feasible to cache $\operatorname{\mathbf{x}}(s)$.
+
+\Cref{alg:tile-code} describes the basic procedure for a single tiling.
+Generally, tile sets cover overlapping areas by varying the maxima and minima of the tiling to model offsets applied to a fixed-size grid.
+The number of tiles in any one tiling is easy to know, as we only need to take the product of all entries of \emph{tiles\_on\_dim}---or return 1 for a bias tiling---and global starting indices into $\wvec{}$ can be precached for each tiling.
+\Cref{fig:tilecode-code} then demonstrates the process for a 2-dimensional state space in an \gls{acr:rl} context, i.e., defining the state-action value $\acval{s}{a}{\wvec{}} = f_\mathit{tile}(s, \wvec{})[a]$.\sidenote{It should be noted that the more \gls{acr:rl}-specific $\operatorname{\mathbf{x}}(s, a)$---i.e., approximating the value of a state-action pair---is virtually interchangeable with this representation. We can simply store the values for all actions together, as they are typically all required in value-based \gls{acr:rl}---if specific tiles are needed to derive the theory or update the representation, we just assign a tile to each action \emph{after} evaluating $\operatorname{\mathbf{x}}(s)$.}
+It should be apparent that the numbers of tiling sets and the degree of subdivision along each dimension allow a designer to control feature resolution and generalisation.
+To capture combinatorial effects or represent an input on multiple scales representation we may combine codings by concatenating individual feature vectors.
+For instance, different tiling sets may choose the same dimensions with different tile widths, or consider each feature both separately and combined with some covariant property.
+
+\begin{algorithm}
+	%	\small
+%	\footnotesize
+	\caption{Tile coding, for a single uniform grid tiling.\label{alg:tile-code}}
+	\SetKw{Let}{let}
+	\SetKw{Return}{return}
+	\SetKw{Enum}{enum}
+	\SetKw{In}{in}
+	\SetKw{Await}{await}
+	\SetKw{Const}{const}
+	\SetKwInOut{Output}{output}
+	\SetKwInOut{Input}{input}
+		
+	\SetKwProg{tilecode}{fn \emph{TileCode}}{}{end}
+	\SetKwProg{tilesz}{fn \emph{TileSz}}{}{end}
+	
+	\Input{A \emph{state} vector and \emph{tiling}. Each tiling has a list of dimension indices (\emph{dims}), minimum and maximum values for each dimension (\emph{mins, maxes}), and a count of tiles for each (\emph{tiles\_on\_dim}). These lists are empty for a bias tiling.}
+	\Output{The index of the tile hit \emph{within this tiling}.}
+	\BlankLine
+	\tilecode{state, tiling}{
+		\Let \emph{scale}: u64 = 1\;
+		\Let \emph{local\_tile}: u64 = 0\;
+		\ForAll{(i, dim\_idx) \In tiling.dims.enumerate()}{
+			\Let \emph{min}: f64 = \emph{tiling.mins[i]}\;
+			\Let \emph{max}: f64 = \emph{tiling.maxes[i]}\;
+			\Let \emph{n\_tiles}: u64 = \emph{tiling.tiles\_on\_dim[i]}\;
+			\Let \emph{width}: f64 = (\emph{max}$-$\emph{min}) / \emph{n\_tiles}\;
+			\BlankLine
+			\Let \emph{local\_hit}: u64 = \emph{state[dim\_idx]}.clamp(\emph{min}, \emph{max}) / \emph{width}\;
+			\Let \emph{scaled\_hit}: u64 = \emph{local\_hit}.max(\emph{n\_tiles}$-$1) $\times$ \emph{scale}\;
+			\emph{local\_tile} $\leftarrow$ \emph{local\_tile} $+$ \emph{scaled\_hit}\;
+			\emph{width\_product} $\leftarrow$ \emph{width\_product} $\times$ \emph{n\_tiles}\;
+		}
+	
+		\Return \emph{local\_tile}\;
+	}
+
+%	\tilesz{tiling}{
+%		\Let \emph{width\_product}: u64 = 1\;
+%		\ForAll{n\_tiles \In tiling.tiles\_on\_dim}{
+%			\emph{width\_product} $\leftarrow$ \emph{width\_product} $\times$ \emph{n\_tiles}\;
+%		}
+%		\Return \emph{width\_product}\;
+%	}
+\end{algorithm}
+
+%?? Small side-diagram?
+
+%Computing the approximate value of every available action forms the basis of a policy.
+%Actions with maximal value can be chosen each time (the \emph{greedy} policy), we might modify this by taking random actions with probability $\epsilon$ to encourage early exploration (the \emph{$\epsilon$-greedy policy}), or we might use some other mechanism.
+%\Cref{fig:tilecode-select} extends the prior working example to show how the value of each action is computed (and which action would be chosen by a greedy policy), combining a global estimate ($T_{\mathit{bias}}$) with knowledge particular to each state.
+
+In an \gls{acr:rl} context, as in \cref{fig:tilecode-select,fig:sarsa-tilecode-update}, this coding strategy is well optimised for discrete actions.
+This allows a particularly efficient vectorised implementation of the policy and update rules by storing a vector of action values for each tile.
+Summing the weight vectors from all activated tiles as described, this requires  $|\mathcal{A}|(n_{\mathit{tilings}}-1)$ floating point additions per decision for an action set $\mathcal{A}$.
+In particular, hit tiles are amenable to representation as an array of indices, $s_{\mathit{list}}$.
+This means that we need only perform $n_{\mathit{tilings}} + 2$ additions and \num{2} multiplications per model update when combined with Sarsa (\cref{sec:demo-rl-sarsa}):
+\begin{equation}
+	\wvec{t+1}[i][a_t] = \wvec{t}[i][a_t] + \alpha \delta_t, \forall i \in s_{\mathit{list}}.
+	\label{eqn:sg-sarsa-opt}
+\end{equation}
+If desired we may define a state space with an arbitrary number of tiles per dimension (higher-resolution, lower generalisation), yet having constant-size state vectors and constant action computation cost ($\mathcal{O}(n_{\mathit{tilings}})$).
+Beyond this, we need not store action values for tiles which have not yet been visited, conserving memory.
+A caveat of tile coding remains, in that the value of $\alpha$ must be reduced according to the number of tilings to prevent divergence at the expense of slower learning ($\alpha \leftarrow \alpha / n_{\mathit{tilings}}$).
+
+\subsection{Neural Networks}
+\glsxtrfullpl{acr:nn} map an input vector to an output vector via a mathematical graph of neurons.
+Each neuron takes a weighted sum over a set of inputs plus its own \emph{bias} value, and uses this as the input to a non-linear function, producing a single output value (\cref{fig:single-neuron}).
+This non-linear (or piecewise-linear) function, e.g., (leaky) ReLU~\parencite{DBLP:conf/icml/NairH10,leaky-relu}, $\tanh$, or the sigmoid function expresses the idea of a sufficiently large input `activating' the neuron, and prevents chains of neurons from being expressed as a single linear transformation (allowing greater model capacity).
+As in \cref{fig:fcnn}, this graph of neurons then progresses from transformations to the \emph{output layer}, towards processing of the outputs of intermediate neurons (\emph{hidden layers}), before terminating in a final vector of output values.
+The parameter set $\wvec{}$ is then the concatenation of all edge weights and biases which describe the network.
+This compute graph can contain other, non-neuron operations so long as they are differentiable: it is typical that in classifiers or \gls{acr:rl} systems the last layer of neurons goes through a softmax function to be converted into a valid probability distribution.
+Crucially, any individual neuron is differentiable in $\wvec{}$, and by applying the chain rule over the full graph we can compute the entire \gls{acr:nn}'s parameter gradient through the backpropagation algorithm~\parencite[pp.~\numrange{197}{217}]{DBLP:books/daglib/0040158}.
+Some input data, such as images or fixed-length time-series sequences, often contain clear structural features that must be exploited to learn a function.
+\glsxtrfullpl{acr:cnn}~\parencite{LeCun89} capture these dynamics between adjacent values in a layer by learning a convolution filter.
+
+\begin{marginfigure}
+	\centering
+	\resizebox{0.9\linewidth}{!}{\input{diagrams/nns/single-neuron}}
+	\caption[Operation of a single neuron.]{A single neuron in an \gls{acr:nn} takes a weighted sum over its vector of inputs $\mathbf{a}$ (according to $\mathbf{w}$) and its own bias $b$, and produces an output using some non-linear $f$. Thus, it produces an output $z=f(b + \mathbf{a}\cdot\mathbf{w})$, where $\mathbf{w}$ and $b$ are trainable per neuron.}\label{fig:single-neuron}
+\end{marginfigure}
+
+\begin{figure}
+	\centering
+	\resizebox{0.9\linewidth}{!}{\input{diagrams/nns/fcnn}}
+	\caption[An example fully-connected neural network.]{\glspl{acr:nn} arrange neurons into layers, which allows all activations in each layer to be calculated by a single affine transformation followed by an elementwise application of some non-linear function. I.e., in this fully-connected network $\mathbf{a}_{i} = \operatorname{map}\left(f, \mathbf{W}_i\mathbf{a}_{i-1} + \mathbf{b}_i\right)$. By doing so, they can take advantage of commodity \glspl{acr:gpu} (which excel at linear algebra) or more specialised \glspl{acr:tpu}.}\label{fig:fcnn}
+\end{figure}
+
+%\paragraph{Convolutional networks}
+%?? Excellent for images or learning structural/neighbourhood features of an input
+
+%\paragraph{Graph convolution}
+Variable-size input data can also be handled by \glspl{acr:nn}.
+\glsxtrfullpl{acr:gnn}~\parencite{DBLP:conf/iclr/KipfW17} attach state to each vertex of an input graph, which are all processed by the same \gls{acr:nn} architecture and weights.
+Each vertex's weight is then modified by a message-passing-like model: a transform is applied over the aggregate of a node's intermediate vector and those of all its neighbours, producing a final embedding vector for each node.
+Further modifications, e.g., Edge-GNNs~\parencite{Mirhoseini2021}, exist to include edge labels in the formulation or offer alternate aggregation strategies.
+%?? graph convolution~\parencite{DBLP:conf/iclr/KipfW17}
+%?? NN processes each vertex's feature vector, and then final vectors by aggregating vectors from neighbours.
+%\paragraph{Recurrent networks}
+In the case of variable length sequences of data (i.e., an obvious time-series use case such as audio transcoding), \glsxtrfullpl{acr:rnn}~\parencite{Rumelhart1986} capture temporal properties of the input.
+The main way in which they differ is that they feed neuron state from the previous input into the calculation being applied to the current datum, similar to an infinite impulse response filter.
+\glsxtrfull{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97} units include extra gates to control how hidden state is held between timesteps element-wise (input, output and forget gates), whose parameters are also trainable.
+\glsxtrfullpl{acr:gru}~\parencite{DBLP:conf/emnlp/ChoMGBBSB14} remove the output gate (passing on only the hidden state), and as a result are competitive with fewer weights to learn.
+
+\section{Learning an approximation}\label{sec:learning-an-approximation}%
+\input{chapters/p1-introduction/ch2-ddn/learning-approx.tex}
+
+%?? Find some cites citing the relevance of this problem wrt. self-driving cars, robotics, etc.
+
+%The solution we propose is to make use of the recent wave of programmable network devices to \emph{bring reinforcement learning to the dataplane}---referring again to \cref{fig:state-slip}, we would place place state measurement ($t_1$), low-cost decision-making processes ($t_2$), and controlled systems ($t_3$) as close to one another as possible.
+%In networks, actions are most likely to be installed on backbone switches, bump-in-the-wire NICs or middleboxes, and in the NICs of end-hosts.
+%Ideally, these functions which comprise an RL agent would all be collocated on the same chip or device, but this is easier said than done. 
+%Both programmable devices and the network environment make this more difficult, as we'll examine in the sequel.
