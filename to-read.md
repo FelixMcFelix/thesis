@@ -359,6 +359,75 @@ HyperTester: high-performance network testing driven by programmable switches
 * https://dl.acm.org/doi/10.1145/3386367.3431311 -- You do (not) belong here: detecting DPI evasion attacks with context learning
  - ML to detect? I assume this is closer to main security than adversarial example-like evasion.
 
+# ddn security
+## cvpr '21
+* https://openaccess.thecvf.com/content/CVPR2021/html/Truong_Data-Free_Model_Extraction_CVPR_2021_paper.html -- Data-Free Model Extraction
+
+## ieee s&p '21
+* https://ieeexplore.ieee.org/document/9519467 -- Detecting AI Trojans Using Meta Neural Analysis
+ * detect whether a model is poisoned?
+* https://ieeexplore.ieee.org/document/9519394 -- Poltergeist: Acoustic Adversarial Machine Learning against Cameras and Computer Vision
+* https://ieeexplore.ieee.org/document/9519428 -- Machine Unlearning
+ * Useful agasint model regurgitation, maybe against poisoning?
+* https://ieeexplore.ieee.org/document/9519424 -- Adversary Instantiation: Lower Bounds for Differentially Private Machine Learning
+ * Might be most useful for more cites on DP learning.
+* https://ieeexplore.ieee.org/document/9519395 -- SoK: The Faults in our ASRs: An Overview of Attacks against Automatic Speech Recognition and Speaker Identification Systems
+ * useful for "affects this non-DDN environment (speech/speaker recognition)"
+
+## ieee s&p '20
+* https://ieeexplore.ieee.org/document/9152781 -- Intriguing Properties of Adversarial ML Attacks in the Problem Space
+* https://ieeexplore.ieee.org/document/9152608 -- Humpty Dumpty: Controlling Word Meanings via Corpus Poisoning
+
+## ieee s&p '19
+* https://doi.org/10.1109/SP.2019.00044 -- Certified Robustness to Adversarial Examples with Differential Privacy
+* https://ieeexplore.ieee.org/document/8835375 -- DEEPSEC: A Uniform Platform for Security Analysis of Deep Learning Model
+* https://ieeexplore.ieee.org/document/8835269 -- Exploiting Unintended Feature Leakage in Collaborative Learning
+* https://ieeexplore.ieee.org/document/8835365 -- Neural Cleanse: Identifying and Mitigating Backdoor Attacks in Neural Networks
+
+## ieee euros&p '21
+* https://arxiv.org/abs/2103.07101 -- On the (In)Feasibility of Attribute Inference Attacks on Machine Learning Models
+ * I.e., model data point extraction.
+* https://arxiv.org/abs/2006.03463 -- Sponge Examples: Energy-Latency Attacks on Neural Networks
+* https://arxiv.org/abs/2104.05996# -- Fall of Giants: How popular text-based MLaaS fall against a simple evasion attack
+ * Attacks on publically available ML translation services.
+* https://arxiv.org/abs/2005.00191 -- Bullseye Polytope: A Scalable Clean-Label Poisoning Attack with Improved Transferability
+* https://arxiv.org/abs/2008.00312 -- Trojaning Language Models for Fun and Profit
+
+## ieee euros&p '20
+* https://doi.org/10.1109/EuroSP48549.2020.00017 -- Jekyll: Attacking Medical Image Diagnostics using Deep Generative Models
+ * "not DDN, but medical use vulnerable too."
+* https://doi.org/10.1109/EuroSP48549.2020.00018 -- Evaluating Explanation Methods for Deep Learning in Security
+ * Explainability in security -- port back to challenges?
+* https://doi.org/10.1109/EuroSP48549.2020.00019 -- Bypassing Backdoor Detection Algorithms in Deep Learning
+ * Trojaning slightly different from poisoning.
+* https://doi.org/10.1109/EuroSP48549.2020.00021 -- DLA: Dense-Layer-Analysis for Adversarial Example Detection
+
+## acsac '20
+* https://doi.org/10.1145/3427228.3427268 -- StegoNet: Turn Deep Neural Network into a Stegomalware
+ * Unsure hwo this differs from trojans.
+* https://doi.org/10.1145/3427228.3427264 -- Februus: Input Purification Defense Against Trojan Attacks on Deep Neural Network Systems.
+ * They state that trojans are applied to 'any input'.
+
+## usenix security '21
+* https://www.usenix.org/conference/usenixsecurity21/presentation/xi -- Graph Backdoor
+ * Backdoor on GNNs!
+* https://www.usenix.org/conference/usenixsecurity21/presentation/bagdasaryan -- Blind Backdoors in Deep Learning Models
+ * Stronger attacks and defences.
+* https://www.usenix.org/conference/usenixsecurity21/presentation/tang-di -- Demon in the Variant: Statistical Analysis of DNNs for Robust Backdoor Contamination Detection
+ * Backdoor/poisoning detection?
+* https://www.usenix.org/conference/usenixsecurity21/presentation/carlini-poisoning -- Poisoning the Unlabeled Dataset of Semi-Supervised Learning
+ * CARLINI.
+ * Poison via the unlabelled parts of semi-supervised learning.
+ * More accurate => More vulnerable.
+* https://www.usenix.org/conference/usenixsecurity21/presentation/azizi -- T-Miner: A Generative Approach to Defend Against Trojan Attacks on DNN-based Text Classification
+ * Defence against trojan DNNs.
+* https://www.usenix.org/conference/usenixsecurity21/presentation/xiang -- PatchGuard: A Provably Robust Defense against Adversarial Patches via Small Receptive Fields and Masking
+* https://www.usenix.org/conference/usenixsecurity21/presentation/wu-xian -- Adversarial Policy Training against Deep Reinforcement Learning
+ * Important since RL.
+* https://www.usenix.org/conference/usenixsecurity21/presentation/he-yingzhe -- DRMI: A Dataset Reduction Technology based on Mutual Information for Black-box Attacks
+ * Important: claims that black box adversarial hard to launch, and this makes that more feasible.
+* https://www.usenix.org/conference/usenixsecurity21/presentation/zhu -- Hermes Attack: Steal DNN Models with Lossless Inference Accuracy
+ * Model stealing by PCIe examination on target machine.
 
 # MISC
 Infocom 21 has some federated learning resources to discuss, maybe.
