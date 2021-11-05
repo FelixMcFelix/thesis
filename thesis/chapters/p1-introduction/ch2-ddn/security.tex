@@ -1,76 +1,79 @@
+\gls{acr:ml} models, introduce particular security issues in their training, use, and how we expose them or their decisions to users.
+Recall that, in general, their operation is \emph{entirely governed by their parameter set $\wvec{}$}, and that we currently face great difficulty in understanding exactly what transformations or logic they encode.
+What additional concerns might arise from this?
+The most obvious challenge is that an attacker might construct input samples which appear to a human to have one label, but produce a strong response in a \gls{acr:ddn} model for \emph{another label}.
+We call such inputs \emph{adversarial examples} or \emph{evasion attacks}.
+Changing focus, the idea of online or \emph{active learning}~\parencite{active-learning-report} can seem like a powerful capability to have in the administration of a network for saving operator time.
+In introducing this, we now need to ask how an attacker might aim to covertly modify our model's behaviour, either to change the label for a handful of samples (e.g., ensure a malware sample always evades inspection), adjust the entire decision surface (e.g., to incur a \gls{acr:dos} or performance degradation by incorrectly handling \emph{all} flows), or to encode an input pattern which always triggers a given output.
+These behaviours fall under the umbrella of \emph{poisoning attacks}.
+In tandem, we must also ask whether attackers are able to reverse engineer our model parameters from queries or environmental observation, and the privacy implications of a parameter vector $\wvec{}$ being leaked or extracted---\emph{data extraction} attacks.
+These classes of attack, interestingly, mostly mirror those that have historically threatened classifiers in the security domain~\parencite{DBLP:conf/ccs/BarrenoNSJT06}.
 
-?? Discuss attacks on ML models, techniques, paradigms here.
+%?? valid concerns in is the model behaving as intended? Can an attacker change our model's behaviour? Can sensitive data be extracted from an ML model?
 
-?? NOTE check FLASHE paper for more attacks on e.g. FL.
+I introduce in this section the techniques and procedures for undertaking these classes of attack, in addition to defences and present suggestions on how and why they work.
+%Finally, I ...
+It must be stated that the attack and defence surface of \gls{acr:ml} models is very much subject to the same game of cat-and-mouse as any other security domain, i.e. malware or \gls{acr:ddos} design and detection.
+This field in particular moves very quickly due to the larger reach and impact of \glspl{acr:dnn} in society as a whole, motivating constant scrutiny by the security community.
+As a result, any defences listed are certain to have been invalidated by the time this thesis is read; I hope this section at least provides an illustration of the \emph{classes} of input, output and model transforms that have held some promise.
 
-?? Very respectable source \cite{DBLP:conf/eurosp/PapernotMJFCS16} that they're bad I guess? (Not Read)
+%?? Discuss attacks on ML models, techniques, paradigms here.
 
-?? The full summary paper \cite{DBLP:conf/eurosp/PapernotMSW18}.
+\subsection{Evasion attacks and adversarial examples}\label{sec:evasion-attacks}
+\emph{Adversarial examples} are input data which have been subtly modified to trick a machine learning model into producing an incorrect output~\parencite{DBLP:conf/eurosp/PapernotMSW18,DBLP:conf/eurosp/PapernotMJFCS16}.
+This problem has been known to security experts for a much longer time under the moniker of \emph{evasion attacks}~\parencite{DBLP:conf/ccs/BarrenoNSJT06}.
+The context for these evasions includes cases as simple as spam filter avoidance, and as complex as self-modifying and virtualisation-aware malware~\parencite{DBLP:conf/acsac/CoptyDEEMZ18}.
+The term does not purely cover \gls{acr:ml}-based approaches in this context, though there are similarities in the sense that the transformed output must maintain a key property (i.e., it remains a functioning malware payload).
 
-?? Put this somewhere: can extract portions of training data w/ carefully crafted inputs~\parencite{DBLP:journals/corr/abs-2012-07805}. Not read, though maybe relate to privacy in general? I.e., differentially private methods.
+For instance, assume we have in input vector $\mathbf{x}$ with a ground truth label $w$ that the classifier correctly outputs.
+An attacker wishes to add some \emph{perturbation} $\symbfit{\delta}$ such that the adversarial example $\mathbf{x}+\symbfit{\delta}$ produces a new output $w'$ from a classifier but still appears to belong to $w$ according to a human observer.
+They may require that $w'$ is a specific label, or simply that $w \ne w'$.
+These attacks typically assume a white-box attacker (i.e., one who has direct read access to the \gls{acr:ml} model's parameters), who is able to use their knowledge of $\wvec{}$ to compute this $\symbfit{\delta}$.
+The data extraction techniques discussed shortly (\cref{sec:data-extraction-and-privacy}) offer more concrete tools for mounting a black-box evasion attack.
+Typically, this is then formalised as an optimisation problem in terms of the underlying model, which can be solved via a stochastic optimiser like \emph{Adam}~\parencite{DBLP:journals/corr/KingmaB14}.
+To ensure that these alterations are subtle enough to be unnoticeable to a human operator, the constraint to be minimised is some distance metric in $\ell_{\{0,1,2,...,\infty\}}$\sidenote{These specific metrics are the \emph{Hamming} metric $\ell_0$ (number of altered elements in $\mathbf{x}$), \emph{Manhattan} metric $\ell_1$, \emph{Euclidean} metric $\ell_2$, and the \emph{Chebyshev} metric $\ell_\infty$ (the largest change to any element).} between the altered data and its original.
+For instance, in a pixel image a bounded $\ell_0$ limits the number of pixels that may be changed, while $\ell_2$ limits the overall strength of noise added.
+These adversarial examples typically occur very close to the decision hyperplane; applying too much noise can either accidentally `push' the data into a classification the attacker did not desire, or it may become humanly perceptible.
+Since their inception~\parencite{DBLP:journals/corr/SzegedyZSBEGF13}, they have been shown to generalise between models and input vectors~\parencite{DBLP:journals/corr/GoodfellowSS14}.
+In the image domain, they have been made transform-resilient~\parencite{DBLP:journals/corr/KurakinGB16}, to transfer to textural information on 3D-printed objects~\parencite{DBLP:journals/corr/AthalyeS17}, and to persist through projection onto surfaces~\parencite{DBLP:journals/corr/abs-2108-06247}.
 
-\subsection{Attacks on Data-Driven Techniques}\label{sec:attacks-on-data-driven-techniques}
-
-?? Older taxonomy, includes what we now call poisoning, evasion~\cite{DBLP:conf/ccs/BarrenoNSJT06}. Is there an updated?
-
-?? White-box attacks -- evasion, adversarial examples, etc.
-
-\paragraph{Poisoning Attacks}
-?? Attacker wants to (permanently) alter the behaviour of a system which is still training in some way.
-The key intuition is that an attacker wishes to affect which data points are used in training, and in turn affect the decision boundaries to do... something bad?
-
-?? For systems which assume a stable (stationary) form of normality, it takes an exponential amount of packets with respect to how far the mean must move.
-Yet in systems which use a finite number of data points (i.e. modelling non-stationarity) an attacker requires only a linear amount of data if they control a sufficient fraction of the network throughput.
-Further findings are more optimistic: if the attacker controls insufficient traffic, then they cannot succeed in appreciably shifting the mean with even an infinite amount of traffic.
-It isn't made clear how these findings relate to more complex systems or models, but it will remain an important consideration. \cite{DBLP:journals/jmlr/KloftL10}
-
-?? More modern cite?
-
-\paragraph{Evasion Attacks/Adversarial Examples}
-
-?? Be clear---this is still evolving today!
-
-?? Yeah these are a thing (note: haven't actually read most of these aside from the wonderful turtle-rifle 3d printer one).
-?? The one, the only, the original \parencite{DBLP:journals/corr/SzegedyZSBEGF13}, the application \parencite{DBLP:journals/corr/GoodfellowSS14}.
-?? Second one here suggests that part of the weakness is that models fall back on their heavily linear components -- verify this.
-
-?? Most recently summed up in the SoK paper by \textcite{DBLP:conf/eurosp/PapernotMSW18}.
-
-?? Where are we now? Transform invariant (i.e., photographs \cite{DBLP:journals/corr/KurakinGB16}, 3D model \& 2D transforms \cite{DBLP:journals/corr/AthalyeS17}): what does this mean with regards to the transforms we apply to our input data?
+%?? Indeed, others~\parencite{DBLP:conf/sp/PierazziPCC20} are noticing that most research remains in \emph{feature-space} (i.e., techniques and mathematics), rather than \emph{problem-space}---and most of these are in malware.
 
 A more recent formalisation and strengthening of attacks based on raw input data was recently presented by \textcite{DBLP:conf/sp/Carlini017}.
-Around the time of publication, distillation \cite{DBLP:conf/sp/PapernotM0JS16} was proposed as a form of hardening for neural networks expected to perform in adversarial settings where evasion attacks might be common.
+Around the time of publication, distillation~\parencite{DBLP:conf/sp/PapernotM0JS16} was proposed as a form of hardening for neural networks expected to perform in adversarial settings where evasion attacks might be common.
 This work reveals that existing approaches for generating adversarial examples \emph{weren't strong enough} and, accordingly, approaches like defensive distillation are shown to be ineffective.
-Some future works refer to the methods they propose as CW-$L_{\{0, 2, \infty\}}$ attacks, according to the target data distance metric to be minimised (respectively, the Hamming, Euclidean and Chebyshev metrics).
+Some future works refer to the methods they propose as CW-$\ell_{\{0, 2, \infty\}}$ attacks.
 Their attacks exceed existing work based on these three well-understood metrics by a more in-depth analysis of the construction of cost functions, a reworked box constraint built around $\tanh(\cdot)$ (as in HDR image tone mapping), and a more nuanced treatment of the effects of discretisation error.
 By introducing a \emph{confidence factor} $\kappa$, they are able to explicitly design attacks which are \emph{transferable} between one classifier and its distilled form, or a network derived from the original by black box inference.
-All attacks are computed by way of a general stochastic optimiser, such as \emph{Adam} \cite{DBLP:journals/corr/KingmaB14}.
-Their work currently establishes the benchmark for future mitigation techniques.
+%Their work currently establishes the benchmark for future mitigation techniques.
 
-While it is feasible that an attacker could start with a \emph{white-box} understanding of your model to aid in evasion, a more feasible situation is the case where they do not.
-\textcite{DBLP:conf/uss/TramerZJRR16} have shown that attackers can infer many classes of learned models from observation (\emph{model extraction attacks}), allowing evasion attacks, model cloning or discovery of confidential training data characteristics.
-They are able to demonstrate model extraction on logistic regressors, SVMs, MLPs and NNs with and without confidence values.
-Furthermore, from their retrained models they are able to extract images of faces which are ``visually indistinguishable'' from the real training data of a facial recognition classifier.
-As far as defences go, they recommend: hiding or rounding confidence values (to limited success); applying differential privacy to mode parameters (an open question); and ensemble methods (which may still be beaten by evasion attacks).
+%?? Yeah these are a thing (note: haven't actually read most of these aside from the wonderful turtle-rifle 3d printer one).
+%?? The one, the only, the original \parencite{DBLP:journals/corr/SzegedyZSBEGF13}, the application \parencite{DBLP:journals/corr/GoodfellowSS14}.
+%?? Second one here suggests that part of the weakness is that models fall back on their heavily linear components -- verify this.
 
-?? RL algorithms based on NNs are just as vulnerable \cite{DBLP:journals/corr/HuangPGDA17}!
+%?? Where are we now? Transform invariant (i.e., photographs \cite{DBLP:journals/corr/KurakinGB16}, 3D model \& 2D transforms \cite{DBLP:journals/corr/AthalyeS17}): what does this mean with regards to the transforms we apply to our input data?
 
-?? New work \parencite{DBLP:journals/corr/abs-2002-04599} covering the balancing attack between sensitivity/invariance-based attacks. Sensitivity is what we usually think of (small change which doesn't impact the true label), invariance is a change which \emph{would} change the true label, but is performed in such a way that the model still outputs the old label. Implication: defending against one makes you more sensitive to the other (specifically, attacks within some $\ell_p$ norm ball)---even more sensitive than an undefended network.
-?? Even modern provably robust systems based on $\ell_\infty$ \parencite{DBLP:conf/iclr/ZhangCXGSLBH20} are vuln.
+In practice, inputs to \gls{acr:ml} classifiers are often heavily pre-processed or undergo some statistical transformation; either to achieve a fixed-size and compact representation or to increase accuracy.
+In this sense we can refer to the `true' inputs as belonging to the \emph{problem space}, while the transformed input given to the \gls{acr:dnn}/\gls{acr:ml} classifier belongs to the \emph{feature space}\sidenote{Image and audio processing are something of an exception to this, where the feature space \emph{is} the problem space. As a result, most adversarial \gls{acr:ml} research targets these domains for simplicity.}.
+A malware detector would not, for instance, take an executable's binary as its input, and would instead process behavioural features extracted by static and dynamic analysis tools. 
+Of course, these transforms are non-invertible and often non-differentiable, the need to maintain input functionality (in, e.g., malware), and when combined with input validity checks this makes it difficult to create adversarial examples.
+A recent frontier on enabling such attacks is a framework for expressing input validity and transformation constraints~\parencite{DBLP:conf/sp/PierazziPCC20}; if feature transformations are approximately differentiable then, otherwise falling back on genetic algorithms and Monte Carlo tree search.
 
-\subsection{Defences on above}
+\gls{acr:drl} algorithms are equally vulnerable to this class of attacks, despite the fact that their stochastic nature greatly influences the trajectories gathered during training.
+The meaning of an attacker manipulating the environment is, again, problem space dependent, and most work focuses to some extent on reducing agent performance rather than invoking specific actions.
+\Textcite{DBLP:journals/corr/HuangPGDA17} have shown that this vulnerability to adversarial inputs extends between \gls{acr:rl} algorithms in white-box settings, while perturbations acquired in a black-box setting on the same \gls{acr:nn} architecture require greater error bounds to invoke the same loss of reward.
+An alternative strategy is to directly modify the PPO algorithm, training agents to choose actions with the highest likelihood of making another victim agent perform suboptimally~\parencite{DBLP:conf/uss/Wu0WX21}---i.e., through this adversarial agent's effect on shared environment state via valid actions.
 
-?? DIstillation, other papers I read ages ago.
+%?? RL algorithms based on NNs are just as vulnerable~\parencite{DBLP:journals/corr/HuangPGDA17}, now~\parencite{DBLP:conf/uss/Wu0WX21}!
 
-?? Mine the relevant conferences for more...
+%?? Very respectable source \cite{DBLP:conf/eurosp/PapernotMJFCS16} that they're bad I guess? (Not Read)
+%
+%?? The full summary paper \cite{DBLP:conf/eurosp/PapernotMSW18}.
 
-\paragraph{Poisoning}
-?? Poisoning defences. Auror \cite{DBLP:conf/acsac/ShenTS16} relies upon the fact that masked features (i.e. gradient updates) submitted by users tend to have a known distribution.
-By performing 2-means cluster detection on \emph{indicative features}, users whose updates consistently fall outside of the benign distribution may be detected and blacklisted.
+\paragraph{Defences}
+How to not get pwned?
 
-\paragraph{Evasion}
-
-?? \textcite{DBLP:conf/sp/PapernotM0JS16}---distillation---not read.
+?? \textcite{DBLP:conf/sp/PapernotM0JS16}---distillation---not read, and defeated by CW attacks.
 
 In ensemble classification, if many of the individual classifiers disagree then this can represent a high degree of uncertainty about the observed data.
 \textcite{DBLP:conf/ndss/SmutzS16} realise that this uncertainty can act as a powerful indicator of an evasion attack in progress, and propose \emph{mutual agreement analysis} as a defence.
@@ -90,3 +93,82 @@ Detection of the standard set of attacks \cite{DBLP:conf/sp/Carlini017} is shown
 An interesting area that isn't discussed is how different sampling distributions might affect robustness in the face of even this.
 
 ?? Newest on these?~\parencite{DBLP:journals/corr/abs-1902-06705}. Attempts to offer concrete methodology in response to very variable analysis/testing and slow research on defences. Most defences posited in response to the rapid development of attacks are shown to be incorrectly or incompletely evaluated. ?? Human and machine classification/decision-making performance are tied in efficacy, while there remains a huge gap between sensitivity to adversarial examples. The norm is to assume attackers have white-box access, because this includes black-box defence.
+
+?? NN structure analysis~\parencite{DBLP:conf/eurosp/SperlKCLB20}
+
+?? With DiffPriv?~\parencite{DBLP:conf/sp/LecuyerAG0J19}
+
+\Textcite{DBLP:conf/ndss/SmutzS16} examined an ensemble-based defence on top of the PDFrate (PDF malware) and Drebin (Android executables) malware detection systems.
+Both of these platforms had well-established adversarial attacks~\parencite{DBLP:conf/ccs/MaiorcaCG13,DBLP:conf/sp/SrndicL14}, built around the constraint that core exploit functionality must be preserved.
+
+Recent work~\parencite{DBLP:journals/corr/abs-2002-04599} suggests an inherent balancing act between sensitivity/invariance-based attacks---in that defence against one creates a vulnerability against the other.
+Sensitivity attacks are what we usually consider in this family (a small change which doesn't impact the input's true label), while invariance attacks use a change which \emph{would} change the true label, but is performed in such a way that the model still outputs the old label.
+The defence in question would be against attacks within some $\ell_p$ norm ball (i.e., similar pixel/state similarity)---with the findings suggesting that a `robust' neural network is even more sensitive than an undefended one.
+
+?? Adversarial patches?~\parencite{DBLP:conf/uss/0001BSM21}
+
+?? New work~\parencite{DBLP:journals/corr/abs-2002-04599} covering the balancing attack between sensitivity/invariance-based attacks. Sensitivity is what we usually think of (small change which doesn't impact the true label), invariance is a change which \emph{would} change the true label, but is performed in such a way that the model still outputs the old label. Implication: defending against one makes you more sensitive to the other (specifically, attacks within some $\ell_p$ norm ball)---even more sensitive than an undefended network.
+?? Even modern provably robust systems based on $\ell_\infty$~\parencite{DBLP:conf/iclr/ZhangCXGSLBH20} are vuln.
+
+\subsection{Poisoning attacks}
+?? Attacker wants to (permanently) alter the behaviour of a system which is still training in some way.
+The key intuition is that an attacker wishes to affect which data points are used in training, and in turn affect the decision boundaries to do... something bad?
+
+?? For systems which assume a stable (stationary) form of normality, it takes an exponential amount of packets with respect to how far the mean must move.
+Yet in systems which use a finite number of data points (i.e. modelling non-stationarity) an attacker requires only a linear amount of data if they control a sufficient fraction of the network throughput.
+Further findings are more optimistic: if the attacker controls insufficient traffic, then they cannot succeed in appreciably shifting the mean with even an infinite amount of traffic.
+It isn't made clear how these findings relate to more complex systems or models, but it will remain an important consideration. \cite{DBLP:journals/jmlr/KloftL10}
+
+?? Backdooring/Trojan~\parencite{DBLP:conf/eurosp/TanS20}
+
+?? Semi-supervised~\parencite{DBLP:conf/uss/Carlini21}
+
+?? on GNNs~\parencite{DBLP:conf/uss/XiPJ021}
+
+?? Clean-label?~\parencite{DBLP:journals/corr/abs-2005-00191}
+
+\paragraph{Defences}
+How to not get pwned?
+
+?? Poisoning defences. Auror \cite{DBLP:conf/acsac/ShenTS16} relies upon the fact that masked features (i.e. gradient updates) submitted by users tend to have a known distribution.
+By performing 2-means cluster detection on \emph{indicative features}, users whose updates consistently fall outside of the benign distribution may be detected and blacklisted.
+
+?? Input validation~\parencite{DBLP:conf/acsac/DoanAR20}
+
+?? Detecting AI Trojans Using Meta Neural Analysis~\parencite{DBLP:conf/sp/XuWLBGL21}
+
+?? Backdoors~\parencite{DBLP:conf/sp/WangYSLVZZ19}
+
+\subsection{Data extraction and privacy}\label{sec:data-extraction-and-privacy}
+Eh.
+
+?? NOTE check FLASHE paper for more attacks on e.g. FL.
+
+Furthermore, it should be noted that the \emph{white-box} requirement can be discarded in network-facing or observable models.
+\textcite{DBLP:conf/uss/TramerZJRR16,DBLP:conf/uss/JagielskiCBKP20} have shown that visibility of input-output pairs can allow neural network parameters to be reverse-engineered, and that attacks computed on these surrogates transfer to the target.
+
+While it is feasible that an attacker could start with a \emph{white-box} understanding of your model to aid in evasion, a more feasible situation is the case where they do not.
+\textcite{DBLP:conf/uss/TramerZJRR16} have shown that attackers can infer many classes of learned models from observation (\emph{model extraction attacks}), allowing evasion attacks, model cloning or discovery of confidential training data characteristics.
+They are able to demonstrate model extraction on logistic regressors, SVMs, MLPs and NNs with and without confidence values.
+Furthermore, from their retrained models they are able to extract images of faces which are ``visually indistinguishable'' from the real training data of a facial recognition classifier.
+As far as defences go, they recommend: hiding or rounding confidence values (to limited success); applying differential privacy to mode parameters (an open question); and ensemble methods (which may still be beaten by evasion attacks).
+
+?? Put this somewhere: can extract portions of training data w/ carefully crafted inputs~\parencite{DBLP:journals/corr/abs-2012-07805}. Not read, though maybe relate to privacy in general? I.e., differentially private methods.
+
+?? state of art in black box?~\parencite{DBLP:conf/uss/HeM0HH21}
+This is reduction of the input dataset (assuming you and target model have similar data) to learn the `most valuable points' in your dataset to query from an victim's model.
+
+?? Data-free model extraction~\parencite{DBLP:conf/cvpr/TruongMWP21}
+
+?? Just look at PCIe lol~\parencite{DBLP:conf/uss/ZhuCZL21}
+
+?? Feature leakage?~\parencite{DBLP:conf/sp/MelisSCS19}
+
+\paragraph{Defences}
+How to not get pwned?
+
+Link some diffpriv here?
+
+?? Huh~\parencite{DBLP:journals/corr/abs-2103-07101}
+
+?? Machine Unlearning~\parencite{DBLP:conf/sp/BourtouleCCJTZL21}
