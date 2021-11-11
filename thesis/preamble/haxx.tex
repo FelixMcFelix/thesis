@@ -161,6 +161,20 @@
   \oldchapter
 }
 
+% Lets me know the cite count :)
+% https://tex.stackexchange.com/questions/163451/total-number-of-citations
+% \newtotcounter{citenum} %From the package documentation
+\newcounter{refs}
+\makeatletter
+\defbibenvironment{counter}
+  {\setcounter{refs}{0}
+  \renewcommand{\blx@driver}[1]{}
+  }
+  {We have \therefs references}
+  {\stepcounter{refs}}
+\makeatother
+
+
 %
 % Below here are some default additions from Stephen Strowes's template.
 %

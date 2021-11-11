@@ -98,6 +98,8 @@ An interesting area that isn't discussed is how different sampling distributions
 
 ?? With DiffPriv?~\parencite{DBLP:conf/sp/LecuyerAG0J19}
 
+?? Adversarial Training~\parencite{DBLP:conf/iclr/MadryMSTV18,DBLP:journals/corr/abs-1712-09196}
+
 \Textcite{DBLP:conf/ndss/SmutzS16} examined an ensemble-based defence on top of the PDFrate (PDF malware) and Drebin (Android executables) malware detection systems.
 Both of these platforms had well-established adversarial attacks~\parencite{DBLP:conf/ccs/MaiorcaCG13,DBLP:conf/sp/SrndicL14}, built around the constraint that core exploit functionality must be preserved.
 
@@ -113,13 +115,16 @@ The defence in question would be against attacks within some $\ell_p$ norm ball 
 \subsection{Poisoning attacks}
 ?? Attacker wants to (permanently) alter the behaviour of a system which is still training in some way.
 The key intuition is that an attacker wishes to affect which data points are used in training, and in turn affect the decision boundaries to do... something bad?
+Either sneak something by, or degrade model performance.
 
 ?? For systems which assume a stable (stationary) form of normality, it takes an exponential amount of packets with respect to how far the mean must move.
 Yet in systems which use a finite number of data points (i.e. modelling non-stationarity) an attacker requires only a linear amount of data if they control a sufficient fraction of the network throughput.
 Further findings are more optimistic: if the attacker controls insufficient traffic, then they cannot succeed in appreciably shifting the mean with even an infinite amount of traffic.
 It isn't made clear how these findings relate to more complex systems or models, but it will remain an important consideration. \cite{DBLP:journals/jmlr/KloftL10}
 
-?? Backdooring/Trojan~\parencite{DBLP:conf/eurosp/TanS20}
+?? Backdooring/Trojan~\parencite{DBLP:journals/corr/abs-1712-05526,DBLP:conf/eurosp/TanS20}
+
+?? Online/active learning and FL~\parencite{DBLP:conf/aistats/BagdasaryanVHES20} at risk.
 
 ?? Semi-supervised~\parencite{DBLP:conf/uss/Carlini21}
 
