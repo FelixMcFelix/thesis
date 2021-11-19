@@ -45,4 +45,12 @@ Sadly, full examination and further development lies beyond the scope of this th
 \input{chapters/p1-introduction/ch2-ddn/security.tex}
 
 \section{Summary}
-Eh.
+I have introduced and discussed a wide variety of problems in the networking domain where \gls{acr:ml} and \gls{acr:rl} techniques are able to provide tangible improvements in performance and resilience of modern networks.
+We have also covered the basics of \gls{acr:ml} techniques and function approximations, as well as the intuition and \gls{acr:mdp} formalism underpinning \gls{acr:rl} algorithms.
+Finally, we have examined modern \gls{acr:rl} algorithms, techniques for the network to improve \gls{acr:ml} training, concessions and design decisions required to bring \gls{acr:rl} and \gls{acr:ml} to network devices, and open challenged pertinent to \gls{acr:ddn}.
+
+Unfortunately, the security context around \gls{acr:ddn} remains an uncomfortably open question.
+While not all the attacks presented can \emph{immediately} generalise to networks or other problem-space representations, the absence of research into specific attacks in this field does not inspire confidence.
+The interaction model of networks \emph{does} present a useful level of indirection, such that model extraction and similar approaches are harder to perform.
+For instance, while exact traffic routing or queueing decisions should enjoy some degree of isolation from the actual effects they cause on a monitored flow---there are many potential hypotheses behind a decrease in maximum flow performance.
+Efficacy aside, this casts significant doubt on whether we can (safely) elevate \gls{acr:rl} or other online approaches from an interesting research question towards real-world deployment.

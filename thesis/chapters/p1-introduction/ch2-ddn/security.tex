@@ -151,6 +151,8 @@ These attacks are possible in black-box scenarios with little effort: consider t
 White-box scenarios can make these learned triggers less obvious to an analyst, by including additional terms in the loss function to penalise cases where their feature activations are easy to discriminate from benign inputs~\parencite{DBLP:conf/eurosp/TanS20}.
 Concrete attacks have also been proposed, which target \gls{acr:fl}~\parencite{DBLP:conf/aistats/BagdasaryanVHES20} and \glspl{acr:gnn}~\parencite{DBLP:conf/uss/XiPJ021}.
 
+%In \gls{acr:ddn}...
+
 \paragraph{Defences}
 Earlier work on centroid-distance anomaly detection~\parencite{DBLP:journals/jmlr/KloftL10} indicated that online learning systems which assume stationary normality require exponential amount of poison samples with respect to how far the mean must move.
 If non-stationarity is modelled via a bounded memory of points then an attacker requires only a linear amount of samples if they control a sufficient fraction of the network throughput.
@@ -173,37 +175,66 @@ Backdoors may also be detected by analysing the \gls{acr:nn} parameters directly
 In black-box scenarios, they explore the classification of input-output pairs selected to maximise model information, rather than parameter vectors.
 
 \subsection{Data extraction and privacy}\label{sec:data-extraction-and-privacy}
-Eh.
+A key consideration of many \gls{acr:ml} models is that their dense parameter sets encode an accurate, specialised, and \emph{monetarily expensive} logical transform---even if it can't be directly humanly interpreted.
+This expense arises through the processes required to collect and label input datasets, as well as the vast compute cost associated with training and hyperparameter optimisation in energy and hardware procurement.
+As a result, learned models themselves have high monetary value as intellectual property.
+\emph{Model extraction attacks} allow an attacker to either directly steal knowledge of the architecture and parameter set, or to train a functionally equivalent model using input and output pairs (analogous to distillation).
+An attacker typically aims to derive a new model with similar or greater accuracy on the same workloads at minimal effort.
+Furthermore, they make for an excellent precursor to the above evasion and poisoning attacks as a means to elevate a black-box adversary to a white-box one---in such scenarios it is preferable to pursue model fidelity (i.e., matching correct decisions and mistakes alike).
 
-?? NOTE check FLASHE paper for more attacks on e.g. FL.
+In general, these attacks are launched through acquiring soft labels (i.e., class probabilities) for a representative set of input points from a victim model~\parencite{DBLP:conf/uss/TramerZJRR16}, and are also applicable to more models than \glspl{acr:nn}.
+The presence of soft labels essentially provides strong knowledge about the class and decision boundaries which have been learned by the victim model, simplifying the training of a new cloned model.
+\Textcite{DBLP:conf/uss/JagielskiCBKP20} examine the extraction of high-fidelity models in greater depth, finding that this distillation-like approach is somewhat limited by non-determinism in the \gls{acr:sgd} procedure and random initialisation of $\wvec{}$ (i.e., peak \qty{93}{\percent} fidelity).
+Their analytic extraction of truly functionally equivalent models based on ReLU behaviour is limited to 2-layer models at this stage.
+Exact model theft is most possible when directly monitoring \gls{acr:pcie} bus traffic, i.e., as performed by a compromised or outright adversarial cloud host provider.
+Even when running application code on \glspl{acr:tee} to prevent external inspection, access to \glspl{acr:gpu} or \glspl{acr:tpu} still requires communication over the insecure \gls{acr:pcie} bus.\sidenote{While confidential models could in theory be run on the \gls{acr:cpu} using \glspl{acr:tee}, most capable Intel \glspl{acr:cpu} have an enclave memory limit of around \qty{128}{\mebi\byte}. More recent offering are beginning to extend this into $\ge$\qty{8}{\gibi\byte}~\parencite{tee-memlimit}, though this still limits the achievable throughput one can attain versus a dedicated accelerator.}
+Although additional \gls{acr:pcie} traffic, re-ordering, and batching complicate this task, by using locally known models as a reference point it is possible to extract the sent compute kernel in spite of proprietary driver behaviour.
 
-Furthermore, it should be noted that the \emph{white-box} requirement can be discarded in network-facing or observable models.
-\textcite{DBLP:conf/uss/TramerZJRR16,DBLP:conf/uss/JagielskiCBKP20} have shown that visibility of input-output pairs can allow neural network parameters to be reverse-engineered, and that attacks computed on these surrogates transfer to the target.
+%?? Just look at PCIe lol~\parencite{DBLP:conf/uss/ZhuCZL21}
 
-While it is feasible that an attacker could start with a \emph{white-box} understanding of your model to aid in evasion, a more feasible situation is the case where they do not.
-\textcite{DBLP:conf/uss/TramerZJRR16} have shown that attackers can infer many classes of learned models from observation (\emph{model extraction attacks}), allowing evasion attacks, model cloning or discovery of confidential training data characteristics.
-They are able to demonstrate model extraction on logistic regressors, SVMs, MLPs and NNs with and without confidence values.
-Furthermore, from their retrained models they are able to extract images of faces which are ``visually indistinguishable'' from the real training data of a facial recognition classifier.
-As far as defences go, they recommend: hiding or rounding confidence values (to limited success); applying differential privacy to mode parameters (an open question); and ensemble methods (which may still be beaten by evasion attacks).
+%?? What to do if no notion of data?
+The question of which input data should be used to launch such an attack is also worth consideration; extracting a model in fewer samples means that not only can a model be cloned in less time, but in fewer discrete interactions with the victim (lowering the chance of detection).
+Assuming a similar (labelled) training set to the target, \textcite{DBLP:conf/uss/HeM0HH21} use mutual information analysis to aid in this process.
+They reduce the input dataset to learn what the most valuable points in their own dataset to query from a victim's model are.
+If such labels are not known, semi-supervised learning techniques can aid in choosing a pared down set of queries~\parencite{DBLP:conf/uss/JagielskiCBKP20}.
+Construction of a viable query dataset with no knowledge of the victim model's training distribution is also possible~\parencite{DBLP:conf/cvpr/TruongMWP21}---generative models may be used to create input samples which maximise disagreement between the clone and victim models.
 
-?? Put this somewhere: can extract portions of training data w/ carefully crafted inputs~\parencite{DBLP:journals/corr/abs-2012-07805}. Not read, though maybe relate to privacy in general? I.e., differentially private methods.
+%?? NOTE check FLASHE paper for more attacks on e.g. FL.
 
-?? state of art in black box?~\parencite{DBLP:conf/uss/HeM0HH21}
-This is reduction of the input dataset (assuming you and target model have similar data) to learn the `most valuable points' in your dataset to query from an victim's model.
+%Furthermore, it should be noted that the \emph{white-box} requirement can be discarded in network-facing or observable models.
+%\textcite{DBLP:conf/uss/TramerZJRR16,DBLP:conf/uss/JagielskiCBKP20} have shown that visibility of input-output pairs can allow neural network parameters to be reverse-engineered, and that attacks computed on these surrogates transfer to the target.
 
-?? member inference attacks? Find CItes?~\parencite{DBLP:conf/sp/ShokriSSS17}
+%While it is feasible that an attacker could start with a \emph{white-box} understanding of your model to aid in evasion, a more feasible situation is the case where they do not.
+%\textcite{DBLP:conf/uss/TramerZJRR16} have shown that attackers can infer many classes of learned models from observation (\emph{model extraction attacks}), allowing evasion attacks, model cloning or discovery of confidential training data characteristics.
+%They are able to demonstrate model extraction on logistic regressors, SVMs, MLPs and NNs with and without confidence values.
+%Furthermore, from their retrained models they are able to extract images of faces which are ``visually indistinguishable'' from the real training data of a facial recognition classifier.
 
-?? Data-free model extraction~\parencite{DBLP:conf/cvpr/TruongMWP21}
+%?? Put this somewhere: can extract portions of training data w/ carefully crafted inputs~\parencite{DBLP:journals/corr/abs-2012-07805}. Not read, though maybe relate to privacy in general? I.e., differentially private methods.
+%
+%?? member inference attacks? Find CItes?~\parencite{DBLP:conf/sp/ShokriSSS17}
 
-?? Just look at PCIe lol~\parencite{DBLP:conf/uss/ZhuCZL21}
+The opacity of \gls{acr:ml} models has raised the question of how much information they implicitly contain about the training data they are based upon, i.e., whether training data may be extracted or inferred.
+\emph{Membership inference} attacks take a given model and input $\mathbf{x}$, and ask whether $\mathbf{x}$ was used in the training of this model---one of the main risks being that sensitive data may be inferred using a speculative query.
+Models can be expected to have higher confidence about samples they were trained upon; this can be exploited to train a classifier on input/soft label pairs using smaller `shadow' classifiers~\parencite{DBLP:conf/sp/ShokriSSS17}.
+While this was originally thought to arise from overfitting, analysis of language models such as GPT-2 suggests this is not the case~\parencite{DBLP:journals/corr/abs-2012-07805}.
+This same analysis is able to propose and generate prompts to extract such memorized data (including personal data), however accuracy of generated `members' is limited to around \qty{33.5}{\percent}.
+Collaborative learning settings are vulnerable to membership inference on a per-participant level from their gradient updates~\parencite{DBLP:conf/sp/MelisSCS19}, allowing properties of subsets of classes to be detected according to learners' (non-\gls{acr:iid}) training data.
+\emph{Model inversion} attacks focus on extracting information about an input or the space of inputs which would map to a given output class~\parencite{DBLP:conf/ccs/FredriksonJR15}, e.g., extracting the face of an individual from a facial recognition classifier.
+These attacks present a real threat in concert with model extraction, for instance \textcite{DBLP:conf/uss/TramerZJRR16} are able to extract images of faces which are ``visually indistinguishable'' from the real training data of a facial recognition classifier.
+\emph{Attribute inference} attacks, where an attacker has most of the information of a member and seeks to derive the remainder, requires a stronger adversary who can tell apart true inferred members from nearby data points~\parencite{DBLP:journals/corr/abs-2103-07101}.
 
-?? Feature leakage?~\parencite{DBLP:conf/sp/MelisSCS19}
+%In \gls{acr:ddn}...
 
 \paragraph{Defences}
-How to not get pwned?
+Given that model extraction attacks are enabled by information sharing, the simplest defences involve limiting the amount of output information given by a classifier.
+For instance, rounding confidence values and soft labels or outright removing many output probabilities can offer some degree of defence~\parencite{DBLP:conf/uss/TramerZJRR16,DBLP:conf/uss/ChandrasekaranC20}.
+Sampling a model's parameters (potentially as part of an ensemble) may also serve to make the decision boundary harder to learn~\parencite{DBLP:conf/uss/ChandrasekaranC20}.
+Attacks designed to maximise query information exhibit characteristic patterns, differing in aggregate information per query versus normal users.
+This principle has been applied to detect extraction attacks by monitoring the distribution of information content of input-output pairs~\parencite{DBLP:conf/eurosp/JuutiSMA19,DBLP:conf/acsac/KesarwaniMAM18}.
 
-Link some diffpriv here?~\parencite{DBLP:conf/ccs/AbadiCGMMT016}
-
-?? Huh~\parencite{DBLP:journals/corr/abs-2103-07101}
-
-?? Machine Unlearning~\parencite{DBLP:conf/sp/BourtouleCCJTZL21}
+%Link some diffpriv here?~\parencite{DBLP:conf/ccs/AbadiCGMMT016}, reduces accuracy~\parencite{DBLP:conf/uss/Jayaraman019}
+\emph{Differential privacy}~\parencite{DBLP:conf/ccs/AbadiCGMMT016} is a powerful formalism for bounding the amount by which any individual training datum can affect the overall behaviour of the model.
+Typically, this is achieved by injecting noise with magnitude below an analytically derived bound to the objective/loss, gradients, or output vectors.
+By construction, this prevents model and attribute inference attacks, while limiting the amount of information which can be gleaned in collaborative learning settings.
+However, a more secure privacy budget is directly at odds with final model accuracy, and relaxations to the differential privacy formalism invite additional vulnerability to model inference attacks~\parencite{DBLP:conf/uss/Jayaraman019}.
+In addition, recent work on model unlearning (by dataset sharding and slicing) can be used to truly remove training members from the model by partial retraining~\parencite{DBLP:conf/sp/BourtouleCCJTZL21}.
