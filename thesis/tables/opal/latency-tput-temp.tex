@@ -1,0 +1,11 @@
+\begin{tabular}{@{}ccSSSSSS@{}}
+\toprule\multicolumn{1}{c}{Bits} & \multicolumn{1}{c}{Online} & \multicolumn{2}{c}{Throughput (k actions/s)} & \multicolumn{4}{c}{Completion (\si{\micro\second})}\\
+\cmidrule(lr){3-4}\cmidrule(lr){5-8} & & \multicolumn{1}{c}{Single} & \multicolumn{1}{c}{Parallel} & \multicolumn{1}{c}{Single} & \multicolumn{1}{c}{Single (\nth{99})} & \multicolumn{1}{c}{Parallel} & \multicolumn{1}{c}{Parallel (\nth{99})}\\ \midrule
+32 & \cmark & 4.333 \pm 0.005 & 16.122 \pm 0.076 & 230.840 & 232.227 & 62.080 & 63.333\\
+ & \xmark & 172.875 \pm 0.229 & 29.163 \pm 0.173 & 185.133 & 186.213 & 34.347 & 34.573\\
+16 & \cmark & 4.161 \pm 0.004 & 15.477 \pm 0.051 & 240.333 & 241.560 & 64.627 & 66.080\\
+ & \xmark & 165.437 \pm 0.118 & 27.664 \pm 0.036 & 193.427 & 194.587 & 36.147 & 36.293\\
+8 & \cmark & 4.147 \pm 0.005 & 15.560 \pm 0.063 & 241.173 & 242.760 & 64.320 & 65.627\\
+ & \xmark & 164.524 \pm 0.142 & 27.634 \pm 0.099 & 194.520 & 195.240 & 36.227 & 36.333\\
+\bottomrule
+\end{tabular}

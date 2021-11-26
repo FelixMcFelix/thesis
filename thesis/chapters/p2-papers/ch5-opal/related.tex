@@ -1,0 +1,37 @@
+\fakepara{In-network ML}
+Taurus~\parencite{DBLP:journals/corr/abs-2002-08987} proposes that efficient line-rate inference can be achieved using a configurable grid of map-reduce units in the packet pipeline (implementing e.g., LSTMs and SVMs).
+On CGRA hardware, they achieve sub-\si{\micro\second} extra latency.
+\emph{IIsy}~\parencite{DBLP:conf/hotnets/XiongZ19} shows how \emph{classical ML inference} (SVMs, Na\"{i}ve Bayes, etc.) can be converted into match-action tables compatible with \emph{any} P4 deployment.
+They achieve mean \qty{2.62}{\micro\second} extra in-path latency on NetFPGA (at line rate in most cases).
+Neither considers online model training.
+
+A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
+\emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
+%However, fully-connected layers are cache-unfriendly on commodity CPUs~\parencite{DBLP:conf/sigcomm/SanvitoSB18}; the authors hypothesise that networking hardware would be a better fit for some parts of the inference pipeline.
+Full, in-network packet tagging and classification by pre-trained BNNs is shown by \emph{N3IC}~\parencite{DBLP:journals/corr/abs-2009-02353}.
+N3IC achieves packet inference in \qty{45}{\micro\second} on the NFP, and \qty{0.3}{\micro\second} on NetFPGA for \qty{256}{\bit} inputs.
+Comparatively, \approachshort{}-\Coopfw{} can process an identically-sized input (8-dim) in a median \qty{13.83}{\micro\second}.
+Our work handles larger inputs (\qty{640}{\bit}) at lower latencies (\qty{34}{\micro\second}), and offers online learning.
+We expect that a NetFPGA implementation of \approachshort{} would enjoy a similar factor of speedup.
+No works investigate the runtime training of BNN function approximators in-NIC.
+
+\textcite{langlet-ml-netronome} has shown the viability of NN inference using \qty{64}{\bit} quantisation on the NFP, using \emph{in-path} compute rather than our asynchronous model.
+Inference latency on small networks (3 layers, \num{30} neurons) can be as high as \qty{500}{\micro\second} on line rate traffic, emphasising the value of path-adjacent compute.
+
+We stress that none of the other approaches listed here (or that we have seen) tackle the issue of \emph{online learning and control} in-network---we believe \approachshort{} has broken new ground in this regard.
+
+\fakepara{In-network ML \emph{acceleration}}
+Optimisation of distributed neural network training is an area where in-network compute has been key for general NNs~\parencite{DBLP:conf/micro/LiPAYQPWSEK18} and RL-specific procedures~\parencite{DBLP:conf/isca/LiLYCSH19} using NetFPGAs to introduce floating point adders to process dedicated packet classes.
+Distributed training is a partition-aggregate workload, where gradient vectors are sent back to a controller to update the `true' model---in-NIC processing allows these to be aggregated \emph{in-network}, overcoming incast behaviour and host bottlenecks.
+
+\fakepara{RL for network control}
+\Textcite{DBLP:conf/sigcomm/LiangZJS19} use deep RL techniques to train an agent which can build efficient decision tree packet classifiers.
+Their approach, \emph{NeuroCuts}, produces time/space efficient classifiers for use in constrained environments (e.g., network hardware) beyond existing heuristic solutions.
+Deep RL techniques have been used for QUIC congestion control optimisation~\parencite{DBLP:journals/corr/abs-1910-04054}.
+A key facet of this work is the need for asynchronous RL in networks, where pauses for DNN-based inference can significantly harm throughput.
+
+\fakepara{PDP design for asynchronous compute}
+\emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} places a routing fabric between distinct packet/data processing elements \emph{in a SmartNIC}.
+Such designs would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded ME relationships.
+Event-driven versions of P4 have been suggested~\parencite{DBLP:conf/hotnets/IbanezABM19}.
+Timer events and device state changes would empower in-network RL use-cases, signalling timesteps for RL agents or new, effective, fine-grained sources of input state.
