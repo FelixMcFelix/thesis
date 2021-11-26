@@ -40,7 +40,7 @@
 \usepackage[ruled,vlined]{algorithm2e}
 
 \usepackage{color}
-\usepackage{changebar}
+\usepackage[color]{changebar}
 \usepackage{soul}
 
 \usepackage[sortcites
@@ -70,6 +70,8 @@
 \usepackage{epigraph}
 \usepackage{pifont}
 
+\usepackage{adjustbox}
+
 \usepackage{booktabs}
 
 \usepackage{xpatch}
@@ -88,6 +90,8 @@
 
 \usepackage[super,negative]{nth}
 
+\usepackage[normalem]{ulem}
+
 % \newcommand\zzzzzz[1]{\expandafter\let\csname#1\endcsname\relax}
 % \zzzzzz{listing}\zzzzzz{endlisting}
 % \zzzzzz{listing*}\zzzzzz{endlisting*}
@@ -95,3 +99,9 @@
 \usemintedstyle{autumn}
 
 \usepackage{totcount}
+
+\setlength\changebarsep{10pt}
+\setlength\changebarwidth{6pt}
+%\cbcolor{uofgcobalt}
+\cbcolor{white}
+\colorlet{revisiontext}{black}

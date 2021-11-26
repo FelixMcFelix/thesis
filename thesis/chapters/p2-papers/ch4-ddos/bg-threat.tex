@@ -1,0 +1,295 @@
+%?? Introduce RL, related definitions etc.
+
+\subsection{Distributed Denial of Service}
+%?? DDoS attack variants (leading into characteristics, supporting features). Amplification (UDP \cite{DBLP:conf/ndss/Rossow14}, TCP \cite{DBLP:conf/uss/KuhrerHRH14}), Transit-link (Crossfire \cite{DBLP:conf/sp/KangLG13}, Coremelt \cite{DBLP:conf/esorics/StuderP09}). Mirai botnet's involvement \cite{DBLP:conf/uss/AntonakakisABBB17}.
+
+%?? Explain amplification attack, maybe transit-link?
+
+\emph{Distributed denial of service} (DDoS) attacks are concentrated efforts by many hosts to reduce the availability of a service, typically to inflict financial harm or as an act of vandalism.
+Attackers achieve this by either exploiting peculiarities of operating system or application behaviour in \emph{semantic attacks} (e.g., \emph{SYN flooding attacks}), or overwhelming their target through sheer volume of requests or inbound packets (\emph{volume-based attacks}) \cite{DBLP:conf/imc/JonkerKKRSD17}.
+Hosts often participate unwillingly, typically having been recruited into a \emph{botnet} by malware infection to be orchestrated from elsewhere \cite{DBLP:conf/uss/AntonakakisABBB17}.
+
+Although there are variations of each class of attack, flooding attacks are the most relevant to our work.
+\emph{Amplification attacks} exploit services who eagerly send large replies in response to small requests, where UDP-based services like DNS and NTP are most exploitable \cite{DBLP:conf/ndss/Rossow14, DBLP:conf/uss/KuhrerHRH14}.
+Malicious hosts send many small requests, spoofed to appear as though they originated from the victim, causing many large replies to be sent to the intended target---significantly increasing a botnet's throughput while masking the identity of each participant.
+\emph{Transit-link/link-flooding attacks} have been the subject of recent attention, wherein malicious traffic is forwarded across core links needed to reach a target (but not to the target itself) \cite{DBLP:conf/sp/KangLG13, DBLP:conf/esorics/StuderP09}.
+
+% \subsection{Reinforcement Learning}\label{sec:reinforcement-learning}
+% \emph{Reinforcement learning} (RL) is a variant of machine learning principally concerned with training an agent to choose an optimal sequence of actions in pursuit of a given task \cite{RL2E}.
+% We assume the agent has a certain amount of knowledge whenever a decision must be made: at any point in time $t$, it knows which \emph{state} it is in ($S_t \in \mathcal{S}$), the set of \emph{actions} which are available to it ($\operatorname{A}(S_t) \subseteq \mathcal{A}$) and a numeric \emph{reward} obtained from the last action chosen ($R_t \in \mathbb{R}, A_{t-1} \in \operatorname{A}(S_{t-1})$).
+% This model of system interaction is a \emph{Markov Decision Process} (MDP).
+% RL methods combine this information with a current \emph{policy} $\pi$ to determine which action should be taken: such a choice need not be optimal if an agent needs to further explore some region of the state space.
+% The policy is refined by updating value estimates for state-action pairs or via policy gradient methods, meaning that RL-based approaches learn adaptively and online if reward functions are available in the environment they are deployed in.
+% In practice, this means that agents are able to automatically adapt to evolving problems without operator intervention or a new, custom-built training corpus.
+
+% From any point in a sequence of decisions, we may describe the sum of rewards yet to come as the \emph{discounted return}, $G_t = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \ldots$, choosing the discount factor $\gamma \in [0,1)$ to determine how crucial future rewards are vis-\`{a}-vis the current state.
+% Formally, an agent's goal is to choose actions which maximise the \emph{expected discounted return} $\operatorname{\mathbb{E}_{\pi}}[G_t]$.
+
+% %?? Include some details of function approximation in the formalisation? I.e. tile coding, stability and convergence guarantees...
+
+% There is immense variation in \emph{how} policies and/or values may be learned, reliant upon the learning environment, problem and required convergence guarantees.
+% In particular, we focus on methods which choose actions according to their value estimates from the current state: let $\operatorname{q}(s, a) \in \mathbb{R}$ be the estimate of action $a$'s value if it were to be taken in state $s$.
+% %?? Revisit the maths here, d, dim A, s...
+% Exact (tabular) representations require that we store a value estimate for each action in every state---if state is real-valued or high-dimensional, then computation and storage quickly become infeasible.
+% To cope with a continuous state and/or action space, one valuable technique is to employ linear function approximation backed by \emph{tile coding} \cite[pp.\ \numrange{217}{221}]{RL2E}.
+
+% \begin{figure}
+% 	\centering
+% 	\begin{subfigure}{0.4\linewidth}
+% 		\resizebox{\linewidth}{!}{
+% 		\begin{tikzpicture}
+% 		\node at (0,0.3){$s = \begin{pmatrix}
+% 			0.7 \\
+% 			0.3
+% 			\end{pmatrix}$};
+% 		\node at (0,-1) {$\bm{x}(s,\cdot) = \begin{Bmatrix}
+% 			T_{1,9}, \\
+% 			T_{2,5}, \\
+% 			T_{\mathit{bias}}
+% 			\end{Bmatrix}$};
+		
+% 		\node at (2.5,-0.5) {
+% 			\begin{tikzpicture}
+% 			\draw[step=0.5cm,color=uofgcobalt,opacity=0.7,shift={(0,0)},label=above:{Tiling 0}] (-0.5,-0.5) grid (1,1);
+% 			\fill[uofgcobalt,opacity=0.5] (0.5,-0.5) rectangle (1,0);
+% 			\node[color=uofgcobalt] at (0,1.1) {\footnotesize Tiling 1};
+			
+% 			\draw[step=0.5cm,color=uofgpumpkin,opacity=0.9,shift={(0.25,-0.25)},label=above:{Tiling 1}] (-0.5,-0.5) grid (1,1);
+% 			\fill[uofgpumpkin,opacity=0.5,shift={(0.25,-0.25)}] (0,0) rectangle (0.5,0.5);
+% 			\node[color=uofgpumpkin!50!uofgrust] at (0.25,-0.95) {\footnotesize Tiling 2};
+			
+% 			\node[circle, black, draw,
+% 			fill, radius=0.5pt, inner sep=0pt,minimum size=1.5pt, label=above:{$s$}] at (0.625,-0.125) {};
+% %			\filldraw (0.625,-0.125) circle[radius=1.5pt,label=above:{$s$}];
+
+% 			\draw[->] (-0.25,-0.5)--(-0.25,0.85);
+% 			\draw[->] (-0.25,-0.5)--(1.1,-0.5);
+			
+% 			\node at (1,-0.7) {\footnotesize 1};
+% 			\node at (-0.4,0.75) {\footnotesize 1};
+% 			\node at (-0.35,-0.6) {\footnotesize 0};
+% 			\end{tikzpicture}
+% 		};
+		
+% 		\end{tikzpicture}
+% 		}
+% 		\caption{Tile Coding\label{fig:tilecode-code}}
+% 	\end{subfigure}%
+% 	\begin{subfigure}{0.4\linewidth}
+% 		\resizebox{\linewidth}{!}{
+% 		\begin{tikzpicture}
+% 		% Top half
+% 		\def\topacs{
+% 			{-0.3,-0.5,-0.1,0.8},
+% 			{0.1,0.1,-0.2,0.3},
+% 			{0.3,0.4,0.2,-0.4}%
+% 		}
+	
+% 		\foreach \line [count=\y] in \topacs {
+% 			\foreach \pix [count=\x] in \line {
+% 				\ifthenelse{\lengthtest{\pix pt < 0 pt}}{
+% 					\pgfmathtruncatemacro\lambda{(\pix+1)*100}
+% 					\draw[shift={(-0.7,0)},fill=midac!\lambda!lowac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+% 				}{
+% 					\pgfmathtruncatemacro\lambda{\pix*100}
+% 					\draw[shift={(-0.7,0)},fill=highac!\lambda!midac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+% 				}
+% 				\node[shift={(-0.35,0.175)}] at (0.7*\x,-0.35*\y) {\footnotesize \pix};
+% 			}
+% 		}
+	
+% 		\draw[xstep=0.7cm,ystep=0.35cm,shift={(0,0)}] (0,-1.06) grid (2.8,0);
+% 		\node[label=left:{$T_{1,9}$},shift={(0,-0.125)}] at (0,0) {}; 
+% 		\node[label=left:{$T_{2,5}$},shift={(0,-0.125)}] at (0,-0.375) {}; 
+% 		\node[label=left:{$T_{\mathit{bias}}$},shift={(0,-0.125)}] at (0,-0.75) {};
+		
+% 		% bottom half
+% 		\def\botacs{
+% 			{0.1,0.0,-0.1,0.7}%
+% 		}
+	
+% 		\foreach \line [count=\y] in \botacs {
+% 			\foreach \pix [count=\x] in \line {
+% 				\ifthenelse{\lengthtest{\pix pt < 0 pt}}{
+% 					\pgfmathtruncatemacro\lambda{(\pix+1)*100}
+% 					\draw[shift={(-0.7,-1.275)},fill=midac!\lambda!lowac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+% 				}{
+% 					\pgfmathtruncatemacro\lambda{\pix*100}
+% 					\draw[shift={(-0.7,-1.275)},fill=highac!\lambda!midac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+% 				}
+% 				\node[shift={(-0.35,-1.1)}] at (0.7*\x,-0.35*\y) {\footnotesize \pix};
+% 			}
+% 		}
+	
+% 		\draw[xstep=0.7cm,ystep=0.35cm,shift={(0,-1.275)}] (0,-0.35) grid (2.8,0);
+% 		\node[label=left:{$\mathit{Total}$},shift={(0,-0.175)}] at (0,-1.275) {};
+		
+% 		\draw [->] (2.45, -1.9) -- (2.45, -1.65);
+% 		\end{tikzpicture}
+% 		}
+% 		\caption{\centering Value Estimation and Action Selection\label{fig:tilecode-select}}
+% 	\end{subfigure}
+	
+% 	\caption{
+% 		An example of tile coding for 2-dimensional state and 4 actions, using 2 tilings, 3 tiles per dimension, and a bias tile.
+% 		All components of $s$ are clamped to $[0,1]$.
+% 		For simplicity, we denote $\bm{x}(s,\cdot)$ as a list of indices and represent the values of all actions at each tile with a vector.
+% 		(a) The state $s$ activates the bias tile and exactly one tile in each tiling.
+% 		(b) The action values of active tiles are summed to produce the current value estimate for each action available in $s$---for this state, local knowledge ensures that action 4 is chosen by the greedy policy despite typically being a poor choice elsewhere.
+% 		\label{fig:tilecode}
+% 	}
+% 	\vspace{-0.6cm}
+% \end{figure}
+
+% Tile coding is a form of feature representation which converts a state-action pair into a sparse boolean feature vector $\operatorname{\mathbf{x}}(s, a)$ by subdividing a $d$-dimensional subset of the space into a number of overlapping grids with an optional bias component.
+% Each tile corresponds to an entry of $\operatorname{\mathbf{x}}(s, a)$ which is set to 1 if the state-action pair lies within it.
+% \Cref{fig:tilecode-code} demonstrates the process for a 2-dimensional state space, and that the numbers of tilings and tiles per dimension control feature resolution and generalisation.
+% Moreover, to capture combinatorial effects or create multi-scale representation we may combine codings by concatenating individual feature vectors.
+% We may then approximate an action's value with respect to a policy parameter vector $\wvec{}$, defining some $\acval{s}{a}{\wvec{}} \approx \operatorname{q}(s, a)$:
+% \begin{equation}
+% %	\begin{gather}
+% \acval{s}{a}{\wvec{}} = \wvec{}^{\top} \operatorname{\mathbf{x}}(s, a)
+% %	\end{gather}
+% \label{eqn:lin-approx}
+% \end{equation}
+% As each component of $\wvec{}$ is the value estimate of the corresponding tile, learning an effective policy is equivalent to learning $\wvec{}$.
+% Given a learning rate $\alpha \in \mathbb{R}$ and initialising $\wvec{0}=\bm{0}$, we may continually update $\wvec{t}$ using the \emph{1-step semi-gradient Sarsa} algorithm \cite[pp.\ \numrange{243}{244}]{RL2E}:
+% \begin{subequations}
+% 	\begin{gather}
+% 	\delta_t = R_{t+1} + \gamma \acval{S_{t+1}}{A_{t+1}}{\wvec{t}} - \acval{S_t}{A_t}{\wvec{t}},\\
+% 	\bm{w}_{t+1} = \bm{w}_{t} + \alpha \delta_t \nabla{\acval{S_t}{A_t}{\wvec{t}}},
+% 	\end{gather}%
+% 	\label{eqn:sg-sarsa}%
+% 	where $\delta_t$ is known as the \emph{temporal-difference} (TD) error, and the vector gradient $\nabla$ is taken with respect to $\wvec{}$.
+% \end{subequations}
+
+% Computing the approximate value of every available action forms the basis of a policy.
+% Actions with maximal value can be chosen each time (the \emph{greedy} policy), we might modify this by taking random actions with probability $\epsilon$ to encourage early exploration (the \emph{$\epsilon$-greedy policy}), or we might use some other mechanism.
+% \Cref{fig:tilecode-select} extends the prior working example to show how the value of each action is computed (and which action would be chosen by a greedy policy), combining a global estimate ($T_{\mathit{bias}}$) with knowledge particular to each state.
+
+% \begin{figure}
+% 	\centering
+% 	\resizebox{0.45\linewidth}{!}{
+% 		\begin{tikzpicture}		
+% 		% Top half
+% 		\def\startacs{
+% 			{0.8},
+% 			{0.3},
+% 			{-0.4}%
+% 		}
+		
+% 		\foreach \line [count=\y] in \startacs {
+% 			\foreach \pix [count=\x] in \line {
+% 				\ifthenelse{\lengthtest{\pix pt < 0 pt}}{
+% 					\pgfmathtruncatemacro\lambda{(\pix+1)*100}
+% 					\draw[shift={(-0.7,0)},fill=midac!\lambda!lowac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+% 				}{
+% 					\pgfmathtruncatemacro\lambda{\pix*100}
+% 					\draw[shift={(-0.7,0)},fill=highac!\lambda!midac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+% 				}
+% 				\node[shift={(-0.35,0.175)}] at (0.7*\x,-0.35*\y) {\footnotesize \pix};
+% 			}
+% 		}
+		
+% 		\draw[xstep=0.7cm,ystep=0.35cm,shift={(0,0)}] (0,-1.06) grid (0.7,0);
+% 		\node[label=left:{$T_{1,9}$},shift={(0,-0.125)}] at (0,0) {}; 
+% 		\node[label=left:{$T_{2,5}$},shift={(0,-0.125)}] at (0,-0.375) {}; 
+% 		\node[label=left:{$T_{\mathit{bias}}$},shift={(0,-0.125)}] at (0,-0.75) {};
+% 		\node[label=below:{\footnotesize Action 4},shift={(0.35,-0.125)}] at (0,-0.75) {};
+% 		\node[label=above:{\footnotesize $\wvec{t}$},shift={(0.35,-0.125)}] at (0,0) {};
+		
+% 		\def\finalacs{
+% 			{0.7},
+% 			{0.2},
+% 			{-0.5}%
+% 		}
+	
+% 		\foreach \line [count=\y] in \finalacs {
+% 			\foreach \pix [count=\x] in \line {
+% 				\ifthenelse{\lengthtest{\pix pt < 0 pt}}{
+% 					\pgfmathtruncatemacro\lambda{(\pix+1)*100}
+% 					\draw[shift={(2-0.7,0)},fill=midac!\lambda!lowac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+% 				}{
+% 					\pgfmathtruncatemacro\lambda{\pix*100}
+% 					\draw[shift={(2-0.7,0)},fill=highac!\lambda!midac] (0.7*\x,-0.35*\y) rectangle +(0.7,0.35);
+% 				}
+% 				\node[shift={(2-0.35,0.175)}] at (0.7*\x,-0.35*\y) {\footnotesize \pix};
+% 			}
+% 		}
+		
+% 		\draw[xstep=0.7cm,ystep=0.35cm,shift={(2,0)}] (0,-1.06) grid +(0.7,1.06);
+% 		\node[label=below:{\footnotesize Action 4},shift={(2.35,-0.125)}] at (0,-0.75) {};
+% 		\node[label=above:{\footnotesize $\wvec{t+1}$},shift={(0.35,-0.125)}] at (2,0) {};
+		
+% 		\draw[->] (0.9,-0.5) -- node[above] {$+ \alpha \delta_t$} (1.8,-0.5);
+% 		\end{tikzpicture}
+% 	}
+% \vspace{-0.25cm}
+% \caption{
+% 	The update step for \cref{fig:tilecode}, given an observed TD error $\delta_t=-0.2$ (indicating a lower observed reward than the expected long-term value of \num{0.7}) and $\alpha=0.5$.
+% 	Action 4's value is thus reduced in the tiles associated with state $s$, but remains the most likely choice; the negative $\delta_t$ may have arisen from noise in the reward signal.
+% 	For illustrative purposes, we choose an unrealistically high $\alpha$ (typically, $\alpha\le0.05$ is a more reasonable choice).
+% 	\label{fig:tilecode-update}
+% }
+% \vspace{-0.6cm}
+% \end{figure}
+
+% This combination of algorithm and coding strategy is well-optimised, if actions are discrete; this allows a particularly efficient (vectorised) implementation of the policy and update rules by storing a vector of action values for each tile.
+% Action values for any state are then obtained by summing the weight vectors from all activated tiles---taking $|\mathcal{A}|(n_{\mathit{tilings}}-1)$ floating point additions per decision.
+% Observing that $\nabla{\acval{s}{a}{\wvec{}}} = \operatorname{\mathbf{x}}(s, a)$, further optimisations arise by considering that a tile-coded feature vector is a binary vector of constant Hamming weight (and so is amenable to representation as an array of indices, $s_{\mathit{list}}$).
+% This means that we need only perform $n_{\mathit{tilings}} + 2$ additions and \num{2} multiplications per model update:
+% \begin{equation}
+% \bm{w}_{t+1}[i][\operatorname{index}(A_t)] = \bm{w}_{t}[i][\operatorname{index}(A_t)] + \alpha \delta_t, \forall i \in s_{\mathit{list}}.
+% \label{eqn:sg-sarsa-opt}
+% \end{equation}
+% \Cref{fig:tilecode-update} shows how this applies to our prior example.
+% If desired we may define a state space with an arbitrary number of tiles per dimension (higher-resolution, lower generalisation), yet having constant-size state vectors and constant action computation cost ($\mathcal{O}(n_{\mathit{tilings}})$).
+% Beyond this, we need not store action values for tiles which have not yet been visited, conserving memory.
+% A caveat of tile coding remains, in that the value of $\alpha$ must be reduced according to the number of tilings to prevent divergence at the expense of slower learning ($\alpha \leftarrow \alpha / n_{\mathit{tilings}}$).
+
+%?? Is this \emph{actually} just sarsa? We're using fn approx (of course), but this is fraught with its own difficulties. Is it strictly speaking correct to describe it as Sarsa at this point? It's, at the very least, 1-step semi-gradient Sarsa given that it is clearly on-policy w/ fn approx...
+
+%\subsection{Intrusion Detection}
+%Probably want to talk about NIDS/IPS,
+%?? Discuss mininet? Networking terms? SDN stuff?
+
+\subsection{Motivation}\label{sec:motivation}
+%?? What makes RL a suitable method for network anomaly detection, what features are most relevant?
+%?? Point I was thinking of: feedback-loop-like model allows monitoring \emph{after} an action is taken to (in theory) allow forgiveness of mistakenly punished flows. This does hinge on taking a flow-by-flow look at the state space, but if we can combine knowledge of current state (duh!), the last action taken (i.e. an indicator of our previous assessment [such as high pdrop $\implies$ bad]) then perhaps a flow which falls off identically to a legit flow can be rescued.
+Moving beyond the overt benefits of choosing RL-based defences for coping with non-stationary problems, we believe that there are concrete reasons for their use here.
+We have seen that for other domains in particular, misclassification is a serious problem, which can introduce \emph{collateral damage} in the context of DDoS prevention.
+In theory, the feedback-loop-like model allows us to monitor flows \emph{after} an action is taken to allow forgiveness of mistakenly punished flows.
+This does rely upon the ability to take a flow-by-flow view of the state space, but if we can combine knowledge of current state with the last applied action, then perhaps a flow which falls off identically to a legitimate flow can be rescued.
+
+%Which features might be best suited to this problem?
+%?? Relevant features: aggregate network state (load at various points [this has been done, of course]), flow-specific measurements (upload/download ratio when bandwidth above threshold \cite{DBLP:conf/ndss/Rossow14}, packet inter-arrival times, etc.)
+Other studies suggest that there are particularly useful features which make the task of online DDoS flow identification feasible.
+Aggregate network load observed at various locations suggests the overall health of a network \cite{DBLP:journals/eaai/MalialisK15}, and the ratio of correspondence between pair flows can suggest asymmetry and in many cases illegitimacy \cite{DBLP:conf/ndss/Rossow14}.
+Generic volume-based statistics (counts, counts per duration, average packet sizes) have seen effectiveness in such as $k$-nearest neighbours classifiers trained to detect DDoS attacks in progress \cite{DBLP:conf/dsn/LeeKSPY17}.
+Most importantly, there is evidence showing behavioural changes in response to bandwidth expansion \cite{DBLP:conf/ndss/KangGS16}, suggesting similar artefacts might arise after throttling, packet drop, or other interference.
+%?? If we assume amplification attacks, we know it won't be `random' source IPs (since it's mostly-legit servers who think that they're doing a good job by replying)
+%?? If we assume amplification attacks, we know it won't be `random' source IPs (since it's mostly-legit servers who think that they're doing a good job by replying)
+
+%\section{A Plan, of Sorts}
+%
+%\begin{enumerate}
+%	\item The main case for contribution in what I have so far:
+%	\begin{itemize}
+%		\item Past work reliant on unrealistic network models: tcp-like behaviour (and its effects on collateral damage) not captured, disjoint ranges of traffic distribution (no benign heavy-hitters), ISP-like topology.
+%		\item I offer more realistic network emulation environment, better treatment of protocol/traffic characteristics.
+%	\end{itemize}
+%	\item Forthcoming: rethinking state/action spaces to operate at a finer level of granularity. New network model (live tcp back-and-forth), allows us to test collateral damage assumptions in a more realistic manner (and show clear case for moving beyond work of malialis and kudenko)
+%\end{enumerate}
+
+\subsection{Threat Model}
+An attacker's goal is to minimise the fair-share bandwidth allocation that a server can give to hosts, and they are expected to act rationally in its pursuit.
+Threat actors are external and act intentionally, aren't expected to be 
+\emph{advanced persistent threats}, and likely range from hacktivists to moderately funded adversaries.
+We assume that attacks will be volumetric DDoS attacks with the structure of an \emph{amplification attack}, and that traffic aggregates at the target (unlike in a transit-link attack).
+The addresses of the set of unwitting reflector nodes are visible to the target, though any bots taking part in an attack or the machines those bots control are not revealed to the target without communication with \nth{3} party organisations such as upstream ISPs.
+The discovery of any reflector by some defence system does have a cost to the attacker---there is a particularly large (yet finite) supply of viable reflector nodes \cite{DBLP:conf/ndss/Rossow14}, but the constraints that each has a large upstream bandwidth and support for high-amplification-factor protocols narrow this pool.
+
+We do not assume that an attacker has white-box access to an agent's policy, or that they will attempt to intelligently modify flow/system state to indirectly control an agent \cite{DBLP:conf/eurosp/PapernotMJFCS16, DBLP:conf/eurosp/PapernotMSW18, DBLP:journals/corr/HuangPGDA17, DBLP:conf/sp/Carlini017}.
+While they may be able to perform some degree of reverse engineering by observing the health of their own legitimate canary flows, ``stealing'' the policy through observation \cite{DBLP:conf/uss/TramerZJRR16}, investigating whether perturbations would persist in volatile network traffic statistics falls outside of the scope of this work.
+The same observation extends to the possibility of poisoning attacks \cite{DBLP:journals/corr/abs-1902-09062}.
+These are APT-level capabilities, whose exploration presents a rich source for future work.

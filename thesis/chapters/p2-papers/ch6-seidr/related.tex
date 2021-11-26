@@ -1,0 +1,19 @@
+
+\fakepara{In-Network Classification}
+Programmable data-planes are often suggested as a platform for performing TCP telemetry. An example, DAPPER~\cite{DBLP:conf/sosr/GhasemiBR17}, is a real-time TCP congestion monitor acting purely in the data-plane. To overcome limitations of the programmable data-plane (\emph{e.g.}, packets being processed out of order in P4 devices, making retransmission detection impossible) \seidr{} only uses the data-plane to create the small telemetry packets that are processed by scalable software collectors.
+\Textcite{DBLP:conf/usenix/LiuPKP19} have explored the use of SmartNICs for offloading microservices (\emph{e.g.}, DDoS, traffic spike detection), showing increases to energy and cost efficiency.
+Furthermore, \textcite{DBLP:conf/sc/HillAG18} show the viability of Bloom filter-based SYN DDoS attack detection using programmable switch hardware.
+% SONATA paper is relevant~\cite{DBLP:conf/sigcomm/GuptaHCFRW18}.
+
+\fakepara{Congestion Control Analysis}
+The authors of \emph{tcpflows}~\cite{rewaskar2006passive} attempt to passively estimate the congestion window and identify the congestion control algorithm of a flow by analysing its ACK stream. Their work only considers older versions of TCP. \Textcite{DBLP:conf/icccn/HagosEYK18} present a prediction model for passive traffic. They examine only loss-based TCP variations and lack support for delay-based algorithms, which we include in our current work. Moreover, the method presented in this paper is more accurate in identifying all variations of TCP we examine.
+
+% \fakepara{Offline Packet Trace Analysis}
+% Several tools analyse packet traces such as pcaps to find performance limitations~\cite{zhang2002characteristics}. These methods usually work on offline traces and do not provide (near)-real-time analysis.
+% Wireshark~\cite{wireshark} is one of the most well-known applications of this class, known for its ability to parse and analyse many protocols for anomalies and violations by allowing extensions from the community.
+
+\fakepara{ML For Flow Classification}
+Machine learning has been used in internet traffic classification for decades~\cite{nguyen2008survey}. A recent system called NetPoirot~\cite{arzani2016taking} aims to infer failures from TCP statistics collected at the endpoints. Our solution differs in that we collect information inside the network and do not have server-side properties.
+
+% \fakepara{In-Network ML}
+% Solutions exist for entirely in-network Machine Learning, see ~\textcite {DBLP:conf/hotnets/XiongZ19}.

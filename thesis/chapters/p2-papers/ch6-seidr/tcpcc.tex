@@ -1,0 +1,167 @@
+
+
+% We present an example of first-stage analysis performed for each flow and each packet---stateful TCP analysis.
+% This includes numerous metrics which are considered standard when measured at connection endpoints, yet are difficult or invite numerous issues when performed in the network (of which we include a discussion on drawbacks and, curiously, benefits).
+% The introduction of accurate timestamps allows us to explore rate-monitoring at a per-packet level, a new view of flow behaviour which may enable flow and hardware characterisation.
+
+% \subsection{Per-Packet Rate Monitoring}
+
+% \begin{figure*}
+%     \centering
+%     \begin{subfigure}[t]{0.49\linewidth}
+%         \centering
+%         \resizebox{0.5\linewidth}{!}{
+% 	    \begin{tikzpicture}
+%     		[packet/.style={draw, fill=uofgsunshine}]
+% 		    \node[packet] (p1) {$p_1$: 1500B};
+% 		    \node[packet, right= 1cm of p1] (p2) {$p_2$: 800B};
+		
+% 		    \node at ($(p1.south west) - (0,1)$) (t1) {$t_1$};
+% 		    \node at ($(p2.south west) - (0,1)$) (t2) {$t_2$};
+		
+% 		    \draw[-, dotted] (t1.north)--(p1.south west);
+% 		    \draw[-, dotted] (t2.north)--(p2.south west);
+		
+%     		\draw[<->] (t1.north) -- node[below]{$\mathit{dt}$} (t2.north);
+% 	    	\draw[<->] ($(t1.north) + (0,0.2)$) -- node[above]{$s$} ($(t1.north) + (1.8,0.2)$);
+% 		    \draw[<->] ($(t1.north) + (1.8,0.2)$) -- node[above]{$g$} ($(t2.north) + (0,0.2)$);
+% 	    \end{tikzpicture} 
+% 	}
+%     \caption{\centering Per-packet rate, visualised. Note that $p_1$ and $p_2$ are not necessarily packets from the same flow.}
+%     \label{fig:per-packet-rate}
+%     \end{subfigure}
+%     \begin{subfigure}[t]{0.49\linewidth}
+%     \centering
+%     \resizebox{0.9\linewidth}{!}{
+% 		\begin{tikzpicture}
+% 		[packet/.style={draw, fill=uofgsunshine}]
+% 		\node[packet] (p1) {$p_1$: 1500B};
+% 		\node[packet, right= 1cm of p1] (p2) {$p_2$: 800B};
+% 		\node[right= 1cm of p2] (p3) {...};
+% 		\node[packet, right= 1cm of p3] (p4) {$p_{n-1}$: 1500B};
+% 		\node[packet, right= 1cm of p4] (p5) {$p_n$: 1500B};
+		
+% 		\node at ($(p1.south west) - (0,1)$) (t1) {$t_1$};
+% 		\node at ($(p2.south west) - (0,1)$) (t2) {$t_2$};
+% 		\node at ($(p4.south west) - (0,1)$) (t4) {$t_{n-1}$};
+% 		\node at ($(p5.south west) - (0,1)$) (t5) {$t_{n}$};
+		
+% 		\draw[-, dotted] (t1.north)--(p1.south west);
+% 		\draw[-, dotted] (t2.north)--(p2.south west);
+% 		\draw[-, dotted] (t4.north)--(p4.south west);
+% 		\draw[-, dotted] (t5.north)--(p5.south west);
+
+%         \draw[<->] ($(t2.south) + (0,-0.25)$) -- node[above]{$s$} ($(t2.south) + (6.25,-0.25)$);
+%         \draw[<->] ($(t2.south) + (6.25,-0.25)$) -- node[above]{$g$} ($(t5.south) + (0,-0.25)$);
+% 		\draw[-, thick] ($(t2.south) - (0,0.5)$) -- node[below]{$W$} ($(t5.south) - (0,0.5)$);
+% 		\end{tikzpicture} 
+% 	}
+%     \caption{\centering Sliding window rate, visualised. Rate estimates are computed using the sizes of the last $W$ packets seen in the current flow. Packets $p_2$ and $p_{n-1}$ belong to the same flow, but $p_n$ is not assumed to.}
+%     \label{fig:sliding-window-rate}
+%     \end{subfigure}
+%     \caption{Comparison of per-packet and sliding window rates. The lengths of packets and inter-packet gaps are not to scale, and are purely demonstrative.}
+%     \label{fig:pr-vs-slide}
+% \end{figure*}
+
+% Associating each packet with a high-resolution timestamp allows us to introduce the notion of a \emph{per-packet rate}.
+% Assuming a packet with size $p$ arrives at time $t_1$ and is followed by another packet (potentially from another flow) which arrives at $t_2$, we measure $\mathit{dt}=t_2-t_1$ for this packet.
+% Supposing this first packet spends time $s$ on the wire and assuming that the inter-packet gap $g$ is negligible compared to the length of a packet, then $\mathit{s} = \mathit{dt} - g \approx \mathit{dt}$.
+% This packet then has a point rate, $r$:
+% \begin{equation}
+%     r = \frac{p}{s} \approx \frac{p}{\mathit{dt}}
+% \end{equation}
+% \Cref{fig:pr-vs-slide} demonstrates how this timing information arises, contrasted with sliding-window rate measurements taken over a longer time period.
+% This assumes almost back-to-back traffic, which is realistic in our deployment environment, but to the best of our knowledge no programmable switches expose the timestamp at which the final bit of a packet has been ingested.
+% Such a timestamp would allow exact measurement of $s$.
+
+% % ?? we need to be clear about the unintuitive nature of these measurements, include a quick sketch proof which shows that the weighted average of a set of point rates is analytically identical to the sliding window rate/throughput taken over the same period of time.
+% While this is an interesting measure to associate with each packet, considering how best to view such rates in aggregate can be counter-intuitive.
+% Viewing these rates as time series data reveals interesting distributional characteristics which disagree starkly with our understanding of a flow's rate---for instance, clusters which suggest a different mean.
+% Suppose we have a set of measurement indices $C$ with no gaps captured between $t$ and $t'$, partitioned into flows $C = F_1 \cup \dots \cup F_p$.
+% To correctly combine a set of point measurements for a flow $F_i$ into an average rate $\overline{r}_{F_i}$, we compute:
+% \begin{equation}
+%     \overline{r}_{F_i} = \frac{\sum_{a \in F_i} \mathit{dt}_a r_a}{\sum_{c \in C} \mathit{dt}_c}.
+% \end{equation}
+% In the instance that only one flow is captured (\emph{i.e.}, $F_i = C$), this is a weighted average over point rates, using the $\mathit{dt}$ measured between each packet and the next packet in the same flow as its weight.
+% Similarly, this is analytically equivalent to the sliding-window rate measured over the same set of packets:
+% \begin{equation}
+%     \frac{\sum_{a \in F_i} \mathit{dt}_a r_a}{\sum_{a \in F_i} \mathit{dt}_a} \simeq \frac{\sum_{a \in F_i} p_a}{t' - t}.
+% \end{equation}
+% % \begin{proof}
+% % Given a set of contiguous measurements from the same flow $S \subseteq \mathbb{Z}$, admitting $p_s$, $r_s$, $\mathit{IAT}_s$ and $t_s$, the weighted average of point rates is then
+% % $$
+% % \overline{r}_S = \frac{\sum_{s \in S} \mathit{IAT}_s r_s}{\sum_{s \in S} \mathit{IAT}_s}
+% % $$
+% % The sliding-window average:
+% % $$
+% % \overline{r}_S = \frac{\sum_{s \in S} \mathit{IAT}_s r_s}{\sum_{s \in S} \mathit{IAT}_s}
+% % $$
+% % \end{proof}
+
+% We assume that inter-packet gaps will be negligible (\emph{i.e.}, that the link is never in a state of very low utilisation), due to typically high utilisation on a WAN.
+% % Similarly, we need to discuss the effects of selective monitoring or an abundance of UDP/ICMP traffic (which will distort $dt$s).
+% However, this assumption can be distorted if selective TCP flow monitoring is used, or if UDP/ICMP traffic is overabundant; both these scenarios create larger gaps between TCP packets of interest, inflating $g$ to the point where it is comparable in size to $s$.
+% This has an impact on our notion of per-packet rates, but not inter-arrival times or other such dependent metrics.
+% The effect is small on sliding window rates, particularly at larger window sizes.
+% ?? Justify. On paper, it looked like error term was O(1/n), O(g) for an n packet window.
+
+
+% \section{Inter-Arrival Time}
+
+% Having assigned each packet in a flow with a nanosecond-accurate timestamp ?? tbc
+
+\Cref{fig:tcp-hist-app} suggests that a notable use-case for this type of measurement is \emph{congestion control algorithm} (CCA) detection.
+In a TCP connection, each machine is free to choose the CCA it uses to send bytes, and thus how it responds to network congestion signals.
+This choice is local, and so is invisible to the other machine (and the network).
+In datacentre networks, operators choose these to ensure optimal behaviour.
+In a transit network or large WAN however, these hosts (and thus the CCAs in use) are outside the control of network operators, which introduces difficulties when CCA interactions lead to \emph{unfairness}.
+Consider the recent (and widespread) introduction of \emph{TCP BBR}~\cite{cardwell2016bbr}.
+\emph{BBR} is a delay/model-based CCA which converges on a fair share of bottleneck bandwidth by reducing its rate if the round-trip time increases, while periodically attempting to increase send rate to account for path/load changes.
+However, \emph{BBR} traffic can consume \SI{40}{\percent} of link capacity when multiplexed with loss-based CCAs, regardless of the number of competing flows~\cite{DBLP:conf/imc/WareMSS19}. 
+When ensuring fair transit to all flows, this is hardly a desirable outcome; in fact, it's one which may frustrate clients or violate SLAs.
+
+A curious property of \emph{BBR}'s algorithm which sets it apart from other variants is that packet transmission is \emph{timer-based}.
+\texttt{send(packet)}, as defined in the canonical algorithm, asks that on transmission of a packet, the sender should wait for the estimated time that packet would take to reach the recipient.
+For instance, at an estimated bottleneck bandwidth of \SI{8}{\mega\bit\per\second}, a \SI{1024}{\kilo\byte} packet would hold back the next packet in the flow until \SI{976.6}{\micro\second} had elapsed.
+When packet sizes remain similar this causes strongly periodic behaviour, while mode switches in the \emph{BBR} algorithm cause these periodic bands to shift up or down accordingly.
+This effect is stronger than in existing loss- and delay-based algorithms which remain intrinsically tied to the notion of a congestion window (where release of buffered packets follows the receipt of ACK messages).
+As a result, timing behaviour of past CCAs may be influenced by (the lack of) packet pacing, periodic components might be made noisier by jitter along the return path, or the behaviour of the receiver might add further noise.
+
+This high-level analysis of \emph{BBR} gives us a strong feature to use as the basis for classification: the \emph{inter-arrival times} (IATs) for each packet in a flow.
+We have two options for processing this for classification: we may use a compressed, fixed-size representation such as histograms to capture the aggregate distribution, or we may attempt to capture structural behaviour by using a variable-length stream of IATs.
+In many networks, the data and packet rate reduction offered by the former is required to make this possible.
+Indeed, in-switch aggregation has seen great success in aiding ML for training~\cite{DBLP:conf/isca/LiLYCSH19}, and direct execution~\cite{DBLP:conf/hotnets/XiongZ19}.
+We make use of the following standard classification algorithms on a fixed-size representation to attempt to single out the CCA in use:
+
+\begin{itemize}
+    \item \emph{$k$-Nearest Neighbours ($k$-NN)}. A simple and well-understood classifier which assigns labels based on the closest members of the training corpus (\ie, by the $L_2$ metric). Linear memory cost in amount of training data, and no training cost other than loading all data points, but capable of learning complex decision boundaries on fixed-length input.
+    
+    \item \emph{Convolutional Neural Networks (CNNs)}. A neural network approach which learns convolution kernels to classify fixed-length data, particularly when recognising spatial features. Memory cost is fixed for a given architecture irrespective of training data, with a high training cost.
+\end{itemize}
+% \fakepara{Long Short-Term Memory~\cite{DBLP:journals/neco/HochreiterS97} units (LSTMs)} A class of recurrent neural network used for stream classification, forecasting, and prediction of variable-length data. Memory cost is fixed, with longer training times (and more data required) than similarly sized CNNs.
+% Of these, we apply $k$-NN and CNNs to histograms of packet IATs, and LSTMS to raw IAT streams.
+
+When examining $k$-NN classifiers, we measured accuracy across choices of $k \in \left[2, 8\right]$.
+We found $k=2$ to be the most effective choice with our input data using the $L_2$ metric.
+Our CNN architecture is described in \cref{tab:cnn-arch}, using ReLu activation and $1 \times 1$ stride in convolutional layers unless stated otherwise.
+Training occurred over 5 epochs using the Adam optimiser with categorical cross-entropy as a loss metric, and a batch size of \num{64} histograms (\num{8} for full sequences due to the smaller data volume).
+For \emph{BBR vs.\ Cubic}, the complete model consists of \num{104898} 32-bit floating-point parameters (\SI{409.76}{\kibi\byte}), while the full classification task adds a further \num{130} parameters (\SI{0.51}{\kibi\byte}).
+
+\begin{table}
+    \centering
+    \caption{CNN architecture for \num{100}-entry histograms.}
+    \resizebox{0.7\linewidth}{!}{\begin{tabular}{@{}cccc@{}}\toprule
+        Layer & Nodes/Filters & Filter Size & Output Dimension \\ \midrule
+        Conv2D & 32 & $(3 \times 1)$ & $(98 \times 1 \times 32)$ \\
+        MaxPool & --- & $(2 \times 1)$ & $(49 \times 1 \times 32)$ \\
+        Conv2D & 64 & $(3 \times 1)$ & $(47 \times 1 \times 64)$ \\
+        MaxPool & --- & $(2 \times 1)$ & $(23 \times 1 \times 64)$ \\
+        Conv2D & 64 & $(3 \times 1)$ & $(21 \times 1 \times 64)$ \\
+        Flatten & --- & --- & \num{1344} \\
+        Dense & 64 & --- & \num{64} \\
+        Dense (Softmax) & $n_\mathit{classes}$ & --- & $n_\mathit{classes}$ \\
+        \bottomrule
+    \end{tabular}}
+    \label{tab:cnn-arch}
+    \vspace{-0.5cm}
+\end{table}

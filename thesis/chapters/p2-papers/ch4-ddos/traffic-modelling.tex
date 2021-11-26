@@ -1,0 +1,63 @@
+
+%In establishing...
+%
+%?? How will I structure this?
+%?? Motivation -> Model -> Results?
+%?? OR Use the results of the last section to springboard into here?
+
+%From what we have seen, it is difficult (or impossible) for trace-based or numerical simulations to correctly capture certain dynamics without an extraordinary amount of care or consideration.
+%As it turns out, 
+%Our goal is to briefly describe an environment which tests \emph{specific} behaviours to examine the \emph{specific} problems which have arisen during our testing of past approaches.
+We contribute network models built around live testing of reactive TCP and UDP traffic in an SDN-enabled environment, which is adaptable to arbitrary topologies, with an explicit focus on preserving their real-time dynamics in a way that trace-based evaluation cannot.
+First and foremost, we are interested in representative load and packet inter-arrival characteristics and in how these characteristics evolve in response to actions.
+We introduce these models because we are interested in capturing interactive, correlated back-and-forth exchanges associated with live HTTP traffic; mainly because of the particular interactions between the application-level dynamics, congestion awareness at the transport level and the nature of control signal used.
+%Naturally, this model is not perfect or representative for all traffic, yet it captures some of the behaviour which we expect will plague most legitimate TCP flows.
+%If need be, we expect the frequency or distribution of requests could be conditioned to match observations of real-world access patterns.
+
+%?? ANGLE: set up an environment to test \emph{specific} behaviours to examine \emph{specific} problems in past work. I make no claims that it is perfect or representative for all traffic, just for this (likely common) behaviour which I expect to plague almost all legit TCP flows.
+
+%?? Existing sims used for testing such applications reliant on traces, or not sophisticated enough to capture interactive, back-and-forth (correlated) behaviours---possibly discarded as second-hand effects by past work when these are so crucial given user traffic patterns (and the nature of the control signal we choose to enact).
+
+%?? Remember, the motivation is clear. We don't care so much that it is "representative" wrt a specific deployment location or network type. The whole purpose of this is that we aim to test specific behaviour which traces cannot replicate (i.e., correlated back-and-forth, dynamics introduced to congestion-aware protocols, ...)
+%?? If we need to, we can condition the distribution of requests according to statistics mined from an existing trace if reviewer number 2 needs that extra push to be convinced.
+
+\subsection{Network Design}
+We make use of a fully software-defined network, built using OpenFlow-aware switches in mininet alongside a controller based on \emph{Ryu} \cite{ryu}.
+All internal routers are primed with knowledge of the shortest path to each internal host, while new inbound flows register the ``way back'' for each hop used, to ensure consistent traffic conditions for each flow.
+If several ports offer different (equal-length) paths to a destination, a consistent random port is chosen from the flow-hash by an OpenFlow \emph{Group action} (in \emph{select} mode).
+If such information is lost, perhaps expiring due to inactivity, it suffices to forward an outbound packet on a random outbound port, as we assume that any external IP is reachable through any of the test network's egress ports (i.e., that it is not connected to any stub ASes).
+The controller is also responsible for computing how switches respond to ARP requests: this need arises due to the reliance upon Linux's networking stack for live applications, and wouldn't need to be considered for trace-based evaluation.
+%We make further use of the topology presented earlier (\cref{sec:topology}), noting that our architecture allows us to trivially extend and modify this if required.
+
+\subsection{TCP (HTTP) Traffic Model}\label{sec:tcp-http-traffic-model}
+%?? Legitimate traffic: TCP traffic (HTTP clients downloading web pages, dependent resources and files) with a mixture of lifetimes for each request.
+To model legitimate TCP traffic, server nodes run an nginx v1.10.3 HTTP daemon, serving statically generated web pages alongside various large files and binaries.
+Benign hosts run a simple libcurl-based application written in Rust, repeatedly requesting resources from the server.
+Hosts and clients both use TCP Cubic \cite{rfc8312}.
+Each host's download rate is limited to match the maximum bandwidth assigned to it, and requests several random files known to exist within a website, followed by any dependent resources for each (stylesheets, images, etc.) as a browser might.
+On completion, a host changes its IP to generate separate statistics per-flow, while minimising downtime.
+This presents a balanced distribution of flow duration and size, with large files included to model elephant flows.
+
+\subsection{UDP (Opus/VoIP) Traffic Model}\label{sec:udp-opus-traffic-model}
+VoIP traffic exhibits very different characteristics to the above model; packet arrivals are highly periodic due to real-time requirements, flows have a constant bitrate, and do not react substantially to lost packets.
+Interestingly, DDoS attack traffic is known to share many of these characteristics, offering an interesting detection problem.
+We present a VoIP traffic model\footnote{\url{https://github.com/FelixMcFelix/opus-voip-traffic}} based on Discord\footnote{\url{https://discord.gg}}, a freely-available messaging and VoIP platform geared toward gaming communities.
+We chose Discord as our prototype due to its publicly documented API, many open source bot frameworks, large user base, and due to the lack of models for Opus-encoded traffic.
+%?? Highly periodic, CBR
+
+Hosts send RTP traffic with Salsa20 encrypted payloads---\SI{20}{\milli\second} audio frames at \SI{96}{\kilo\bit\per\second}.
+We generate similar traffic at hosts by replaying anonymised traces gathered in general use and tabletop RPG servers; each trace contains only the size of each audio payload, entries denoting missed packets, and the duration of silent periods.
+We trim these silent periods to a maximum \SI{5}{\second} due to the lengthy talk/silence bursts introduced by users in RPG servers, and estimate the size of missed packets by taking an exponentially-weighted moving average over known sizes.
+Hosts punctuate audio frames with a 4-byte keepalive every \SI{5}{\second}.
+All traffic passes over a central server which groups hosts into rooms, and is forwarded to other participants; we do not replicate pre-call Websocket traffic which would be used for authentication.
+There is no peer-to-peer traffic---the server acts as a TURN relay for all hosts.
+%?? Reflective factor among \emph{authenticated hosts}.
+We find that each flow occupies an expected \SI{52.4}{\kilo\bit\per\second} upstream bandwidth.
+To match the target upload rate assigned to each host, it runs enough individual sessions to meet the target data rate.
+
+%?? Malicious traffic: UDP flood traffic (hping3, MTU-size packets, ). Why not min-size packets? Because the traffic generator gets in a horrible rut if I do so...
+\subsection{Attack Traffic Model}\label{sec:attack-traffic-model}
+Malicious traffic is generated by use of the \emph{hping3} program, generating UDP-flood traffic targeting random ports.
+We configure each instance of \emph{hping3} to generate ethernet MTU-sized packets (\SI{1500}{\byte}) with a random source and destination port towards a target server, and configure the output rate $r$ (in \si{\mega\bit\per\second}) by setting the inter-arrival time $t_{\mathit{attack}}=\frac{1500 \cdot 8}{r\cdot10^6}$.
+This fulfils certain characteristics of many types of amplification DDoS traffic: it is congestion-unaware \cite{DBLP:conf/ndss/Rossow14}, and packets are larger than the minimum frame size and identically-sized (e.g., NTP amplification traffic is fragmented at the application layer into \SI{482}{\byte} chunks \cite{cisco-ntp-amp}).
+We differ from NTP amplification in frame size so that inter-arrival times are larger, to keep emulation of the network feasible at high traffic rates.

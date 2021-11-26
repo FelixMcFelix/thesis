@@ -40,6 +40,8 @@
 \newcommand{\indfw}{\Indfw}
 \newcommand{\inring}{\textsc{In}}
 \newcommand{\outring}{\textsc{Out}}
+\newcommand{\seidr}{Sei\dh{}r}
+\newcommand{\seidrsafe}{Seidr}
 
 % Insight environment; pretty, but pretentious!
 \newcounter{insightc}
@@ -174,6 +176,21 @@
   {\stepcounter{refs}}
 \makeatother
 
+% These were emph'd in Seidr paper, no longer.
+\newcommand{\ie}{i.e.}
+\newcommand{\eg}{e.g.}
+\newcommand{\Ie}{I.e.}
+\newcommand{\Eg}{E.g.}
+
+% vertical dots command for diagrams
+\makeatletter
+\DeclareRobustCommand{\rvdots}{%
+  \vbox{
+    \baselineskip4\p@\lineskiplimit\z@
+    \kern-\p@
+    \hbox{.}\hbox{.}\hbox{.}
+}}
+\makeatother
 
 %
 % Below here are some default additions from Stephen Strowes's template.
