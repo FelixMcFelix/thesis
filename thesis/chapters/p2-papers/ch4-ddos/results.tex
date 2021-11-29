@@ -1,7 +1,7 @@
-We now examine the performance of our two new models (\emph{Instant}, \emph{Guarded}) as compared against existing RL work (\emph{Marl}) and {\color{revisiontext} \cbstart \emph{SPIFFY} under different traffic behaviour and topologies, varying the host-to-learner ratio $n$ and environment.
+We now examine the performance of our two new models (\emph{Instant}, \emph{Guarded}) as compared against existing RL work (\emph{Marl}) and\emph{SPIFFY} under different traffic behaviour and topologies, varying the host-to-learner ratio $n$ and environment.
 %?? Probably best just to look at top level stuff, and THEN a simplified comparison for each intended improvement (like banded rewards).
 %Additionally, we examine the performance effects of environmental characteristics and potential improvements: negative reinforcement, the case where one agent makes all decisions, and pre-training on individual features.
-We present the average rewards for all combinations of these factors in \crefrange{tab:av-vals}{tab:av-ecmp-vals}---providing a rough idea of expected performance, with the highest-performing model in bold and the best RL-based model \cbend underlined.}
+We present the average rewards for all combinations of these factors in \crefrange{tab:av-vals}{tab:av-ecmp-vals}---providing a rough idea of expected performance, with the highest-performing model in bold and the best RL-based model underlined.
 Average rewards take into account any portions of time that an agent allows illegal system states.
 Several plots augment this, illustrating peak performance or the amount of time which an agent requires to learn.
 
@@ -9,23 +9,17 @@ Several plots augment this, illustrating peak performance or the amount of time 
 	\centering
 	\caption{Average reward for combinations of model, host density and traffic class with a single destination.\label{tab:av-vals}}
 	
-	\cbstart
 	\resizebox{0.8\linewidth}{!}{
 		\expandableinput tables/marl/tnsm-tree-avg-reward-spiffy.tex
 	}
-	\cbend
-\vspace{-0.25cm}
 \end{table}
 \begin{table}
 	\centering
 	\caption{Average reward for combinations of model, host density and traffic class with multiple destinations.\label{tab:av-ecmp-vals}}
 	
-	\cbstart
 	\resizebox{0.8\linewidth}{!}{
 		\expandableinput tables/marl/tnsm-ecmp-avg-reward-spiffy.tex
 	}
-	\cbend
-\vspace{-0.5cm}
 \end{table}
 
 \subsection{Congestion-unaware traffic}
@@ -55,7 +49,6 @@ Several plots augment this, illustrating peak performance or the amount of time 
 \begin{figure}
 	\centering
 	\includegraphics[width=0.75\linewidth]{plots/marl/tnsm-udp-box-separate}
-	\vspace{-0.3cm}
 	\caption{
 		Online performance for Opus benign traffic in a single-destination network, multi-agent mode.
 %		Marl++ offers a marked improvement (a peak $\sim$\SI{30}{\percent} more benign traffic arrives unimpeded) at small $n$, and remains marginally ahead of its predecessor by $n=16$, though both have undergone a significant drop in effectiveness.
@@ -66,7 +59,6 @@ Several plots augment this, illustrating peak performance or the amount of time 
 %		?? REWORK/MAKE ACCURATE
 		\label{fig:udp-tree-box}
 	}
-\vspace{-0.5cm}
 \end{figure}
 
 %\begin{figure}
@@ -125,10 +117,8 @@ Interestingly, SPIFFY is unable to effectively protect constant bitrate traffic.
 %	}
 %\end{figure}
 \begin{figure}
-%	\vspace{-0.5cm}
 	\centering
 	\includegraphics[width=0.75\linewidth]{plots/marl/tnsm-tcp-box-single}
-	\vspace{-0.3cm}
 	\caption{
 		Online performance for HTTP benign traffic in a single-destination network, single-agent mode.
 		\emph{Instant} and \emph{Guarded} exhibit similar efficacy at $n=2$, protecting less traffic than Marl.
@@ -136,7 +126,6 @@ Interestingly, SPIFFY is unable to effectively protect constant bitrate traffic.
 		The longer tails of outliers typically indicate the longer training time the new models require---we observe that \emph{Guarded} typically has considerably lower variance once it has converged on a stable policy.
 		\label{fig:tcp-tree-box}
 	}
-\vspace{-0.6cm}
 \end{figure}
 %\begin{figure}
 %	\centering
@@ -150,9 +139,7 @@ Interestingly, SPIFFY is unable to effectively protect constant bitrate traffic.
 %\end{figure}
 \begin{figure}
 	\centering
-	\vspace{-0.8cm}
 	\includegraphics[width=0.75\linewidth]{plots/marl/tnsm-tcp-16-single}
-	\vspace{-0.35cm}
 	\caption{
 		Online performance of standard and single-agent models in a single-destination network with $n=16$ hosts per egress point, HTTP traffic.
 		At this level of host density, \emph{Guarded} reaches higher peak performance sooner and is considerably more consistent throughout the episode.
@@ -161,7 +148,6 @@ Interestingly, SPIFFY is unable to effectively protect constant bitrate traffic.
 %		With a single agent, Marl++ shows worse performance, while SPF improves significantly and continues to learn well past annealing $\epsilon \rightarrow 0$.
 		\label{fig:tcp-tree-16}
 	}
-%\vspace{-0.5cm}
 \end{figure}
 
 %\begin{figure}
@@ -217,7 +203,6 @@ The initial increase in traffic volume causes the steepest reduction in performa
 
 \begin{table}
 	\centering
-%	\vspace{-0.1cm}
 	\caption{Average reward versus attack volume.\label{tab:atk-vol}}
 \resizebox{0.45\linewidth}{!}{
 \begin{tabular}{@{}SSS@{}}
@@ -230,7 +215,6 @@ The initial increase in traffic volume causes the steepest reduction in performa
 	\bottomrule
 \end{tabular}
 }
-\vspace{-0.75cm}
 \end{table}
 
 \subsection{Computational Cost}

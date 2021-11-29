@@ -116,7 +116,7 @@ Benign hosts each occupied \SIrange{0}{1}{\mega\bit\per\second}, and hosts were 
 %Heuristic estimates of traffic legitimacy come with computational cost and couple the reward function to the accuracy of the estimator, hosts often show diversity in their own traffic patterns (perhaps being multi-modal), and it is known that TCP is the most used transport protocol for Internet traffic \cite{DBLP:conf/saint/ZhangDJC09}.
 %?? NEED TO VERIFY VOLUME OF CONGESTION-AWARE PROTOCOLS
 Malicious hosts each sent \SIrange{2.5}{6}{\mega\bit\per\second} when attacking UDP traffic, though this was increased to \SIrange{4}{7}{\mega\bit\per\second} when using TCP-like traffic (to meaningfully impact benign flows).
-Given $n$ and $\operatorname{P}(\mathit{malicious})$, we see an expected malicious bandwidth \numrange{1.27}{1.87} and \SIrange{2.03}{2.18}{$\! \times U_s$} respectively.
+Given $n$ and $\operatorname{P}(\mathit{malicious})$, we see an expected malicious bandwidth \numrange{1.27}{1.87} and \qtyrange{2.03}{2.18}{\times} $U_s$ respectively.
 %The expected fraction of $U_s$ consumed by each host is \SI{21.5}{\percent} for $n=2$, and \SI{2.84}{\percent} for $n=16$.
 For our choices of $n$ in both topologies, we observe $N_{\mathit{hosts}} \in \left\{24, 48, 96, 192\right\}$, and an expected number of malicious hosts $\mathbb{E}\left[N_{\mathit{attackers}}\right] \in \left\{9.6, 19.2, 38.4, 76.8\right\}$.
 For the largest choice of $n$, we see an expected total attack traffic $\mathbb{E}\left[V_{\mathit{attack}}\right] = 334.05$ and \SI{422.4}{\mega\bit\per\second} for Opus and HTTP traffic respectively.

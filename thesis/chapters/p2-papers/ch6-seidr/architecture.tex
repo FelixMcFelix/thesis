@@ -23,10 +23,8 @@ These limitations prohibit complex algorithms from being implemented, but allow 
 \begin{figure}
     \centering
     \resizebox{0.8\linewidth}{!}{\includegraphics{diagrams/seidr/dp-arch-diagram.pdf}}
-    \vspace{-0.25cm}
     \caption{\seidr{}'s integration with a PSA-compatible~\cite{p4-psa} dataplane.}
     \label{fig:arch}
-    \vspace{-0.5cm}
 \end{figure}
 
 % Let's show them a histogram datastructure would look like purely with registers and how would a P4 action populate it - pseudocode or P4 snippet would be nice.
@@ -52,7 +50,6 @@ To circumvent this, any packet which would complete a histogram is tagged for cl
 This truncated copy returns to \seidr{}'s table, where we enable the relevant headers, change L2/3 fields, and write out the histogram contents (\crefrange{algline:rewrite-start}{algline:rewrite-end}).
 The P4 deparser outputs the new protocol stack at egress, and transmits the histogram UDP packet into the network.
 Event-driven architecture proposals~\cite{DBLP:conf/hotnets/IbanezABM19} may allow a more natural means of packet generation.
-\vspace{-0.25cm}
 
 \begin{figure}
 \centering
@@ -87,7 +84,6 @@ Event-driven architecture proposals~\cite{DBLP:conf/hotnets/IbanezABM19} may all
 }
 \end{subfigure}
 \caption{P4 headers for \seidr{} configuration and histograms.}\label{fig:seidr-headers}
-\vspace{-0.5cm}
 \end{figure}
 
 \begin{algorithm}
@@ -121,10 +117,8 @@ owner $\leftarrow$ HistoOwner[h]\;
 }
 
 \caption{Histogram update and transmission.}\label{alg:measure}
-% \vspace{-0.25cm}
 \end{algorithm}
 
-\vspace{-0.25cm}
 In the event of hash collision (\cref{algline:owner-check}), we ignore packets outside of the tracked flow to ensure that data is accurate.
 As later processing and classification directly affect what decisions are made by operators or automatically taken by a policy (possibly leading to incorrect flow limits, QoS, \emph{etc.}), avoiding corruption/cross-contamination of operational data is paramount.
 To gain collision resistance, Robin Hood hashing could be used up to a maximum distance in the table, treating a zeroed owner as empty and an illegal source IP as a tombstone value.
@@ -163,7 +157,6 @@ Unless using stream-capable classifiers such as LSTMs~\cite{DBLP:journals/neco/H
 Increasing the bucket count requires new firmware installation, as many dataplane P4 implementations cannot allocate variable-length stores due to the lack of a dynamic allocator.
 
 \begin{figure}[t]
-    \vspace{-0.5cm}
     \centering
     \begin{subfigure}[t]{0.49\linewidth}
         \centering
@@ -179,7 +172,6 @@ Increasing the bucket count requires new firmware installation, as many dataplan
     \end{subfigure}
     \caption{Example dataplane histograms showing visible differences in inter-arrival times of selected TCP flavours. Our ML solutions are trained to programmatically identify such differences.}
     \label{fig:tcp-hist-app}
-    \vspace{-0.6cm}
 \end{figure}
 
 As an example of dataplane-generated histograms, \cref{fig:tcp-hist-app} shows the distribution of inter-arrival times between two TCP congestion control algorithms. The visible differences are programmatically identified using our ML algorithms.

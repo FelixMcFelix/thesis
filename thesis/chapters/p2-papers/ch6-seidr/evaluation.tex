@@ -57,19 +57,15 @@ Naturally, this is undesirable for many network deployments, where easy relocati
 \begin{figure}
     \centering
     \resizebox{0.7\linewidth}{!}{\includegraphics{plots/seidr/2class-results.pdf}}
-    \vspace{-0.25cm}
     \caption{Accuracy of $k$-NN and CNN classifiers when classifying \emph{BBR} and \emph{Cubic} TCP traffic from IAT histograms, trained  over various sequence lengths.}
     \label{fig:2c-results}
-    \vspace{-0.5cm}
 \end{figure}
 
 \begin{figure}
     \centering
     \resizebox{0.7\linewidth}{!}{\includegraphics{plots/seidr/4class-results.pdf}}
-    \vspace{-0.25cm}
     \caption{Accuracy of $k$-NN and CNN classifiers when classifying \emph{BBR}, \emph{Cubic}, \emph{Reno}, and \emph{Vegas} TCP traffic from IAT histograms, trained and tested on various sequence lengths.}
     \label{fig:4c-results}
-    \vspace{-0.5cm}
 \end{figure}
 
 \Cref{fig:4c-results} shows in the \emph{4-class} case that we observe a sharp loss in classification accuracy, peaking at \SI{59.5 +- 2}{\percent} for CNNs and \SI{64.5 +- 1.6}{\percent} for $k$-NN.
@@ -84,7 +80,6 @@ Note that \emph{4-class} $k$-NN experiments on all but full sequences required e
 While full-sequence $k$-NNs outperform all examined CNNs on this task (respective peak F1-scores \num{0.697} vs.\@ \num{0.486}), we observe that these reduce $\mathit{F1}_\mathit{BBR}$ from \num{0.935} to \num{0.810}.
 
 \begin{figure}
-    % \vspace{-0.5cm}
     \centering
     \begin{subfigure}[b]{0.49\linewidth}
     \centering
@@ -101,11 +96,9 @@ While full-sequence $k$-NNs outperform all examined CNNs on this task (respectiv
     }
     \label{fig:4c-cnn-conf-tc}
     \end{subfigure}
-    \vspace{-0.25cm}
     
     \caption{Confusion matrices for a CNN on the \emph{4-class} problem, \num{2000}-packet length sequences. Brighter entries along the diagonal indicate correct classifications. BBR remains easy to distinguish regardless of the rate limit mechanism, while Cubic is slightly more distinct for wire-limited traffic.}
     \label{fig:4c-cnn-conf}
-    \vspace{-0.6cm}
 \end{figure}
 
 We contrast our work with that of \textcite{DBLP:conf/icccn/HagosEYK18}, who employ CNNs to predict \emph{cwnd} size for any flow from its stream of bytes-in-flight measurements.
@@ -137,7 +130,6 @@ It is important, however, that this step be taken adaptively; this incurs higher
          \bottomrule
     \end{tabular}}
     \label{tab:train-test-times}
-    \vspace{-0.65cm}
 \end{table}
 
 We list typical test and training times for our problem formulations in \cref{tab:train-test-times}.
@@ -159,10 +151,8 @@ Otherwise, this requires pre-allocation of an entry for every possible hash valu
 \begin{figure}
     \centering
     \resizebox{0.95\linewidth}{!}{\includegraphics{plots/seidr/compression-v6.pdf}}
-    \vspace{-0.35cm}
     \caption{Compression ratio of \num{100}-bucket histograms and timestamp streams from raw packets on an IPv6 network. As sequence length increases, histograms provide more of an advantage in compression rate, being \SI{736.8}{$\times$} smaller than timestamp streams when analysing \num{2000}-packet sequences.}
     \label{fig:histo-compression}
-    \vspace{-0.65cm}
 \end{figure}
 
 % \begin{figure}
