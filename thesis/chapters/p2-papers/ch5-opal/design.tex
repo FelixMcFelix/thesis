@@ -2,6 +2,14 @@ Based on the design principles, problems, and potential solutions outlined throu
 At a high level, \approachshort{} is designed to use the auxiliary compute exposed by general SmartNIC devices to offer low-latency online learning, scaling according to available on-chip resources at build time.
 As the allocation of cores/chip area is set ahead of time by a framework or system administrator, \approachshort{}(-\Coopfw) agents enumerate themselves at runtime, during initialisation.
 
+?? Note worth having here (and the paper itself): past `parallel Sarsa'~\parencite{DBLP:conf/aamas/GroundsK07} means `learning from parallel agents' traces': OPaL enables this too to some extent!
+
+\begin{figure}
+	\centering
+	\includegraphics[keepaspectratio, width=0.85\linewidth]{diagrams/opal/arch-with-p4}
+	\caption{\approachshort{} brings low-latency, online reinforcement learning directly to the dataplane. SoC- and NetFPGA-based SmartNIC devices expose spare compute---making in-situ, asynchronous processing and learning possible alongside P4 dataplanes. Classical RL policy methods are the key to making this computationally feasible.\label{fig:netro-arch}}
+\end{figure}
+
 \begin{figure}
 	\centering
 	\begin{subfigure}{\linewidth}
@@ -199,6 +207,14 @@ This is essential for aggregation compared to the use of bounded message buffers
 %		\Let \emph{hit} = \emph{cfg}.get\_task(task)\;
 %	}
 \end{algorithm}
+
+\begin{figure}
+	\centering
+	\resizebox{0.67\linewidth}{!}{
+		\input{diagrams/opal/parallel-tilecode-intuit.tex}
+	}
+	\caption{Tile-coding: actions preferences are aggregated from \emph{disjoint} tile queries---a map-reduce problem. To update, gradients are simply the tiles activated during the forward pass with no aggregation.\label{fig:opal-par-tilecode}}
+\end{figure}
 
 \subsection{Reconfigurability}
 \approachshort{} allows policy design and algorithmic learning parameters to be changed at runtime using at most two control packets.

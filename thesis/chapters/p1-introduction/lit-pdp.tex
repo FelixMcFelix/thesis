@@ -49,6 +49,8 @@
 
 ?? Things like Lucid built on top of P4?~\parencite{DBLP:conf/sigcomm/SonchackLRW21}
 
+?? P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14} and \emph{programmable dataplane} (PDP) hardware~\parencite{DBLP:journals/micro/ZilbermanACM14, netronome-smartnic, xilinx-alveo, barefoot-intel}
+
 \section{Use Cases}
 
 ?? On-switch (Tofino) DDoS detection and defence \url{https://www.usenix.org/conference/usenixsecurity21/presentation/liu-zaoxing}
@@ -64,6 +66,8 @@ Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this
 \subsection{Network Telemetry}
 ?? Others (try to avoid DDN cases here).
 
+?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
+
 \subsection{Transport Layer Optimisation}
 ?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
 
@@ -72,6 +76,9 @@ Turns out that you can't just write it in P4, you need to co-design for the targ
 
 \subsection{KV Stores}
 NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
+
+\subsection{ML in PDP}
+?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
 
 \section{Hardware Designs}
 
