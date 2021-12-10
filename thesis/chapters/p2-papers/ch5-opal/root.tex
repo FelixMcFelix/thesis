@@ -1,35 +1,54 @@
 \chapter{In-network Reinforcement Learning}\label{chap:in-net-rl}
 As we have seen throughout \cref{chap:ddn}, \gls{acr:ddn} works---particularly those based on \gls{acr:rl} methods---have excellent promise in the control of many aspects of the network.
 However, there are several consistent features in the designs of the examples seen in the literature.
-In order to pursue more effective policies, we've seen a profusion of \gls{acr:drl} approaches, which are computationally intense to train and execute.
+In order to pursue more effective policies we've seen a profusion of \gls{acr:drl} approaches, which are computationally intense to train and execute.
 What this implies for the design of networks which host or apply \gls{acr:ddn} solutions is that system administrators must provision adequate compute hardware---either in commodity \glspl{acr:gpu} and \glspl{acr:cpu}, or more specialised accelerators---as well as network capacity sufficient to support the movement of operational data.
 These present significant sources of capital and operational expenditure, in addition to other challenges such as the space, power, and cooling requirements of such co-hosted infrastructure.
 
 How might these hardware and deployment constraints affect the operation of any \gls{acr:ddn} system, particularly in the case of online learning?
-Recalling our earlier discussion on asynchronous \gls{acr:rl} (\cref{fig:state-slip}), additional latency in the decision making process adversely affects both the training process and the effectiveness of any actions taken.
-This can arise from either the process of moving state and actions between their source, inference location, and final place of installation, or may originate from costlier function approximations such as larger \glspl{acr:nn}.
-Dedicated hosts are often required at present due to the prevalence of more complex \glspl{acr:nn}, yet doing so adds $\mathcal{O}{\left(\text{\si{\micro\second}}\right)}$ \gls{acr:pcie} delays to move data between the \gls{acr:nic} and \gls{acr:cpu}/\gls{acr:gpu}~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:conf/sigcomm/NeugebauerAZAL018}.
-Moreover, achieving reasonable model throughput (i.e., when line-rate inference is needed) requires significant batching on commodity hardware (harming latency)
-Dedicated accelerators such as \emph{BrainWave}~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18} can help somewhat here, and reduce batching (and thus tail latencies) by \qty{32}{\texttimes}---yet inference still takes $\mathcal{O}{\left(\text{\si{\milli\second}}\right)}$~\parencite{Duarte2019}.
-Even novel \gls{acr:dma} techniques such as \emph{GPUDirect}~\parencite{gpudirect} halve but do not eliminate such \gls{acr:pcie} transfers.
+Recalling our earlier discussion on asynchronous \gls{acr:rl} (\cref{fig:state-slip}), additional latency in the decision making process adversely affects both training and the effectiveness of any actions taken.
+This can arise from moving state and actions between their source, inference location, and final place of installation, or may originate from costlier function approximations such as larger \glspl{acr:nn}.
+Dedicated hosts are often required at present due to the prevalence of more complex \glspl{acr:nn}, yet doing so incurs $\mathcal{O}{\left(\text{\si{\micro\second}}\right)}$ \gls{acr:pcie} delays by moving data between the \gls{acr:nic} and \gls{acr:cpu}/\gls{acr:gpu}~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:conf/sigcomm/NeugebauerAZAL018}.
+Moreover, achieving reasonable model throughput such that line-rate inference can be provided requires significant batching on commodity hardware, harming latency and tail latencies of any inputs.
+Dedicated accelerators such as \emph{BrainWave}~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18} can help somewhat here, and reduce batching (and thus tail latencies) by \qty{32}{\texttimes} compared to \gls{acr:gpu} acceleration---yet inference still takes $\mathcal{O}{\left(\text{\si{\milli\second}}\right)}$~\parencite{Duarte2019}.
+Even novel \gls{acr:dma} techniques such as \emph{GPUDirect}~\parencite{gpudirect} halve but do not eliminate \gls{acr:pcie} transfers.
 
 %?? Given all this, why not move this stuff to the dataplane? Offline is answered, online isn't.
 %?? Probably contextualise with ``as we've already covered...''
 
-In parallel, the recent advances we've examined in \gls{acr:pdp} hardware and the P4 ecosystem benefit us in two ways: on one hand they have produced many novel, openly available fine-grained traffic measurement techniques that can be installed in our routing infrastructure and controlled with ease; while on the other, their enhanced compute capabilities have been instrumental in achieving low-latency, line-rate \gls{acr:ml} inference.
+In parallel, the recent advances we've examined in \gls{acr:pdp} hardware and the P4 ecosystem benefit us in two ways.
+On one hand they have produced many novel, openly available fine-grained traffic measurement techniques that can be installed in our routing infrastructure and controlled with ease.
+On the other, their enhanced compute capabilities have been instrumental in achieving low-latency, line-rate \gls{acr:ml} inference.
 From a \gls{acr:ddn} design perspective, these benefits are strongly connected; not only can we eliminate latency incurred due to batching and steering, but we can also act on per-packet or per-flow state which might be too costly to transport across the network.
 In this sense, \gls{acr:pdp} hardware allows us to move the entire monitoring and analysis stack (including \gls{acr:ml} inference) into the dataplane itself, and have it evolve to incorporate new approaches by changing out the set of tables that packets must traverse and associated actions.
 In addition, P4's control plane makes it easy to select which flows or packets are monitored in a live network\sidenote{This is an important constraint, as state collection typically demands bytes of space in the register file per measured flow. Equivalently, if inference isn't fast enough to meet timing at a per-packet rate without pipeline stalls then this reduces performance degradation on \gls{acr:soc}-type \glspl{acr:nic}.} and potentially allow control over traffic at the decision site.
-While these state-of-the-art approaches can exploit on-device state to provide reactive insight, the missing piece of the puzzle is learning and updating these ML analyses online without deferring to another machine in the network.
-Training these models online and in-network is an exciting (and challenging) lacuna in the field that \emph{has yet to be addressed by the community}.
-If we can bring online learning \emph{to the dataplane}, then we can take advantage of rich, local state while minimising these latencies (and their impact on the learned policy).
-This would also make it easy to train and prototype agent designs which can learn \emph{as the environment evolves}, or when there is too little data to model and simulate a problem.
 
-?? Integrate into above
-?? Mention the good state we can get and how tricky it might be to move off...
-?? Even across device classes, no \gls{acr:fpu} unless on \gls{acr:fpga}
-?? need to train offline, THEN port.
-?? Data formats question well-considered... but online not solved feasibly from algorithms point of view (til now)
+While these state-of-the-art approaches can exploit on-device state to offer reactive control based on device-only state, the missing piece of the puzzle is learning and updating these analyses online without deferring to another machine in the network.
+While we have already examined how resource-constrained devices in general use bespoke data formats to make inference and learning possible (\cref{sec:numerical-representations-for-embedded-ml}), \glspl{acr:fpu} are excluded from the designs of all \gls{acr:pdp} device classes as they are entirely surplus to traffic processing\sidenote{\gls{acr:fpga}-based SmartNICs are an exception, where the designer may simply include their own \gls{acr:fpu} if that they have sufficient area.}.
+As a result the current state of the art, as we have examined it, requires that any \gls{acr:ml} model must be completely trained offline before conversion to some \gls{acr:pdp}-friendly format, such as \glspl{acr:bnn} or a string of \glspl{acr:mat}.
+While the question of data formats is well-considered, training these models online \emph{and} in-network has not been solved from algorithmic perspective---\glspl{acr:dnn} and their like are at odds with this goal as backpropagation is too expensive, and storage of minibatches and replay buffers is at odds with the limited memory and resources afforded to network hardware.
+If we can bring online learning to the dataplane, then we can take advantage of rich, local state while minimising state-action latencies as in-network \gls{acr:ml} does, while also reducing their impact on the learned policy.
+This would also make it easier to train and prototype agent designs which can learn as the network environment evolves, or enable live training in testbeds and production networks when there is too little data to model and simulate a problem.
+
+The work presented in this chapter considers how online \gls{acr:rl} can be made possible in \gls{acr:pdp} hardware, and is based upon \citetitle{DBLP:conf/conext/SimpsonP21}~\parencite{DBLP:conf/conext/SimpsonP21} and ?? NOMS?.
+Through \cref{sec:opal-design}, I discuss and justify the data formats which are necessary to allow both inference and learning in reasonable timescales on \gls{acr:pdp} hardware.
+Additionally, I also investigate how to make best use of common architectural features of SmartNIC hardware---primarily their high count of low clock-rate cores---to act and learn at low latency based on locally acquired state, without affecting packet forwarding performance.
+By considering efficient, parallelisable function approximation alongside these data format choices, the novel wait-free \emph{ParSa} algorithm can then be described.
+This complete design is termed \approachshort---\approach.
+I then present and describe how \approachshort{} is realised on Netronome SmartNIC hardware, including the use of platform-specific primitives and more tailored work allocation strategies (\cref{sec:opal-impl}).
+\Cref{sec:opal-evaluation} then evaluates this implementation in depth: I investigate its throughput and latency characteristics on \gls{acr:rl} policies of varying sizes, show the resource demands of the system, and investigate performance as the compute resources allocated to \approachshort{} are varied.
+Although this is a fundamentally different task from other \gls{acr:pdp}-\gls{acr:ml} tasks, I compare task execution costs against the state of the art for similarly sized inputs.
+Crucially, this includes an investigation of how cross-traffic carried by a co-hosted P4 dataplane are affected under various degrees of additional \gls{acr:rl} load.
+Having demonstrated its operational characteristics, I then describe how \approachshort{} might integrate with state-of-the-art \gls{acr:pdp} applications to implement the \gls{acr:rl}-based \gls{acr:ddos} prevention system described in \cref{chap:ddos-rl} rather than a \gls{acr:vnf} deployment, and comment on how operators may make best use of different \approachshort{} agents within their networks (\cref{sec:opal-potential-integrations}).
+Finally, I summarise the findings of this chapter \cref{sec:opal-summary}.
+
+%\begin{itemize}
+%	\item An analysis of why in-NIC RL is needed and best-placed to interact with the network, made feasible by classical RL methods and quantisation (\cref{sec:opal-motivation}),
+%	\item \emph{\approachshort{}}: a general-purpose in-NIC RL agent which scales with allocated device resources to meet latency or throughput demands of network traffic analysis (\cref{sec:opal-design}),
+%	\item \emph{ParSa}, a wait-free, parallel, online RL algorithm to accelerate tile-coded policy inference and updates (\cref{alg:parsa}),
+%	\item In-depth evaluation of how \approachshort{} affects carried dataplane traffic, performs under different policy sizes (simple/complex state), and improves on explicit offloading with a \qty{15}{\times} latency reduction compared to commodity hardware (\qty{21}{\times} for 99.99\nthscript{th} tail latencies) and an order of magnitude improvement in online throughput (\cref{sec:opal-evaluation}).
+%	\item A description of how \approachshort{} would integrate with state-of-the-art PDP applications to perform fully in-NIC, fast, automated DDoS mitigation (\cref{sec:opal-potential-integrations}).
+%\end{itemize}
 
 %Indeed, the examples 
 %The promise of PDP hardware is that we can move the entire monitoring and analysis stack \emph{into the dataplane itself, and have it evolve to incorporate new approaches}.
@@ -44,53 +63,46 @@ This would also make it easy to train and prototype agent designs which can lear
 %If we can bring online learning \emph{to the dataplane}, then we can take advantage of rich, local state while minimising these latencies (and their impact on the learned policy).
 %This would also make it easy to train and prototype agent designs which can learn \emph{as the environment evolves}, or when there is too little data to model and simulate a problem.
 
-?? batching needed to hit throughput => latency.
+%?? batching needed to hit throughput => latency.
+%
+%?? PDP stuff : more capable now, extra state
+%?? What are their limits?
 
-?? PDP stuff : more capable now, extra state
-?? What are their limits?
+% ?? IDEA: now say "we do it in network"
 
-An interesting way to work around these constraints is to...
-?? IDEA: now say "we do it in network"
+% Consider then the 
 
-Consider then the 
+% ?? Explain why we might want to push RL even further down the stack than the sort of vNF-based approach we just looked at.
+% ?? Material/equipment costs/space/power
+% ?? Added latency by crossling busses.
+% ?? Enables just training? Perhaps not in deployment, but on real testbed systems.
 
-?? Explain why we might want to push RL even further down the stack than the sort of vNF-based approach we just looked at.
-?? Material/equipment costs/space/power
-?? Added latency by crossling busses.
-?? Enables just training? Perhaps not in deployment, but on real testbed systems.
+% ?? After explaining general applicability, relate back to e.e. marl-ddos wrt extra hardware or whatever.
 
-?? After explaining general applicability, relate back to e.e. marl-ddos wrt extra hardware or whatever.
+% ?? run through the motivation and challenges
 
-?? run through the motivation and challenges
+% ??
 
-??
+% ?? On data formats, we must...
 
-To enable \emph{online in-NIC learning}, we return to \emph{classical} RL methods and models.
-In particular, we focus on tile-coding with one-step temporal-difference learning algorithms such as Sarsa.
-%These choices have important benefits for in-NIC execution.
-These functions do not require batches of inputs to learn in a stable way, negating the memory needed to store experience replays, and have simple update and inference logic.
-Tile-coding in particular admits many optimisations, being an embarrassingly parallel problem.
-Using fixed-point arithmetic, we solve the lack of floating-point support in PDP hardware \emph{and} enable new optimisations.
-Moreover, the P4 dataplane can offer runtime control over which flows/packets are monitored.
-Finally, the choice of single-step algorithms (as opposed to $n$-step or Monte Carlo methods) bounds the amount of per-trace state required for online learning to just the last state-action pair, safeguarding the limited memory of the target devices.
-We also design our solution to operate as closely as possible to the P4 pipeline to use and learn from per-packet state, but outside of the main packet path to prevent packet stalls.
+% An interesting way to work around these constraints is to...
 
-The question we investigate is: can online RL be brought to the dataplane by returning to these computationally simpler methods, to act on locally extracted state?
-Can it be made more efficient \emph{by dataplane hardware}?
-Through this work, \approachshort{}, we can comfortably answer ``yes'' on both counts.
-In particular, we exploit how SmartNIC devices often expose general-purpose compute to provide path-adjacent, on-chip RL in the dataplane (\cref{fig:netro-arch}).
-As many of these devices have engineering and development histories which predate P4, general compute beyond P4's limits~\parencite{p4-psa} is surprisingly common.
-By executing on spare compute units, we prevent packet stalling and offer quick runtime reconfigurability.
+% To enable \emph{online in-NIC learning}, we return to \emph{classical} RL methods and models.
+% In particular, we focus on tile-coding with one-step temporal-difference learning algorithms such as Sarsa.
+% %These choices have important benefits for in-NIC execution.
+% These functions do not require batches of inputs to learn in a stable way, negating the memory needed to store experience replays, and have simple update and inference logic.
+% Tile-coding in particular admits many optimisations, being an embarrassingly parallel problem.
+% Using fixed-point arithmetic, we solve the lack of floating-point support in PDP hardware \emph{and} enable new optimisations.
+% Moreover, the P4 dataplane can offer runtime control over which flows/packets are monitored.
+% Finally, the choice of single-step algorithms (as opposed to $n$-step or Monte Carlo methods) bounds the amount of per-trace state required for online learning to just the last state-action pair, safeguarding the limited memory of the target devices.
+% We also design our solution to operate as closely as possible to the P4 pipeline to use and learn from per-packet state, but outside of the main packet path to prevent packet stalls.
 
-?? Redo.
-The work presented in this chapter is based upon \cite{opal-poster}, \citetitle{opal-poster}.
-\begin{itemize}
-	\item An analysis of why in-NIC RL is needed and best-placed to interact with the network, made feasible by classical RL methods and quantisation (\cref{sec:opal-motivation}),
-	\item \emph{\approachshort{}}: a general-purpose in-NIC RL agent which scales with allocated device resources to meet latency or throughput demands of network traffic analysis (\cref{sec:opal-design}),
-	\item \emph{ParSa}, a wait-free, parallel, online RL algorithm to accelerate tile-coded policy inference and updates (\cref{alg:parsa}),
-	\item In-depth evaluation of how \approachshort{} affects carried dataplane traffic, performs under different policy sizes (simple/complex state), and improves on explicit offloading with a \qty{15}{\times} latency reduction compared to commodity hardware (\qty{21}{\times} for 99.99\nthscript{th} tail latencies) and an order of magnitude improvement in online throughput (\cref{sec:opal-evaluation}).
-	\item A description of how \approachshort{} would integrate with state-of-the-art PDP applications to perform fully in-NIC, fast, automated DDoS mitigation (\cref{sec:opal-potential-integrations}).
-\end{itemize}
+% The question we investigate is: can online RL be brought to the dataplane by returning to these computationally simpler methods, to act on locally extracted state?
+% Can it be made more efficient \emph{by dataplane hardware}?
+% Through this work, \approachshort{}, we can comfortably answer ``yes'' on both counts.
+% In particular, we exploit how SmartNIC devices often expose general-purpose compute to provide path-adjacent, on-chip RL in the dataplane (\cref{fig:netro-arch}).
+% As many of these devices have engineering and development histories which predate P4, general compute beyond P4's limits~\parencite{p4-psa} is surprisingly common.
+% By executing on spare compute units, we prevent packet stalling and offer quick runtime reconfigurability.
 
 % \section{Preliminaries: RL for in-network computation}\label{sec:opal-motivation}
 % \input{chapters/p2-papers/ch5-opal/prelims.tex}
@@ -113,7 +125,7 @@ The work presented in this chapter is based upon \cite{opal-poster}, \citetitle{
 \section{Related Work}
 \input{chapters/p2-papers/ch5-opal/related.tex}
 
-\section{Conclusion}
+\section{Summary}\label{sec:opal-summary}
 We have presented \emph{\approachshort{}}, bringing \emph{online reinforcement learning} to the dataplane.
 \approachshort{} has shown how classical RL techniques make online learning possible by simplifying update logic and enabling parallel processing.
 In-\gls{acr:nic} use of these algorithms enabled a \qtyrange{15}{21}{\times} reduction in median--\num{99.99}\nthscript{th} inference times and order of magnitude improvement in online learning throughput compared to host offloading.

@@ -4,11 +4,57 @@ As the allocation of cores/chip area is set ahead of time by a framework or syst
 
 ?? Note worth having here (and the paper itself): past `parallel Sarsa'~\parencite{DBLP:conf/aamas/GroundsK07} means `learning from parallel agents' traces': OPaL enables this too to some extent!
 
+\subsection{Interaction Model}
+
 \begin{figure}
 	\centering
 	\includegraphics[keepaspectratio, width=0.85\linewidth]{diagrams/opal/arch-with-p4}
-	\caption{\approachshort{} brings low-latency, online reinforcement learning directly to the dataplane. SoC- and NetFPGA-based SmartNIC devices expose spare compute---making in-situ, asynchronous processing and learning possible alongside P4 dataplanes. Classical RL policy methods are the key to making this computationally feasible.\label{fig:netro-arch}}
+	\caption[\approachshort{}'s off-path interaction model with respect to a co-hosted P4 dataplane.]{\approachshort{} brings low-latency, online reinforcement learning directly to the dataplane. SoC- and NetFPGA-based SmartNIC devices expose spare compute---making in-situ, asynchronous processing and learning possible alongside P4 dataplanes. Classical RL policy methods are the key to making this computationally feasible. ?? REDO\label{fig:netro-arch}}
 \end{figure}
+
+?? 
+
+?? need to scale w/ available compute resources.
+
+?? Old, salesman-y.
+We also design our solution to operate as closely as possible to the P4 pipeline to use and learn from per-packet state, but outside of the main packet path to prevent packet stalls.
+
+In particular, we exploit how SmartNIC devices often expose general-purpose compute to provide path-adjacent, on-chip RL in the dataplane (\cref{fig:netro-arch}).
+As many of these devices have engineering and development histories which predate P4, general compute beyond P4's limits~\parencite{p4-psa} is surprisingly common.
+By executing on spare compute units, we prevent packet stalling and offer quick runtime reconfigurability.
+
+\subsection{Data Format}
+
+?? data format selection vs alternatives
+?? explain why can't update MATs easily.
+
+?? Old, salesman-y.
+Using fixed-point arithmetic, we solve the lack of floating-point support in PDP hardware \emph{and} enable new optimisations.
+
+\subsection{Algorithm}
+
+?? algo selection
+
+?? old, salesman-y
+To enable \emph{online in-NIC learning}, we return to \emph{classical} RL methods and models.
+In particular, we focus on tile-coding with one-step temporal-difference learning algorithms such as Sarsa.
+%These choices have important benefits for in-NIC execution.
+These functions do not require batches of inputs to learn in a stable way, negating the memory needed to store experience replays, and have simple update and inference logic.
+Finally, the choice of single-step algorithms (as opposed to $n$-step or Monte Carlo methods) bounds the amount of per-trace state required for online learning to just the last state-action pair, safeguarding the limited memory of the target devices.
+
+\begin{figure}
+	\centering
+	\resizebox{0.67\linewidth}{!}{
+		\input{diagrams/opal/parallel-tilecode-intuit.tex}
+	}
+	\caption[A visualisation of how tile-coding can be split into subtasks as a map-reduce problem.]{Tile-coding: actions preferences are aggregated from \emph{disjoint} tile queries---a map-reduce problem. To update, gradients are simply the tiles activated during the forward pass with no aggregation. ?? REDO\label{fig:opal-par-tilecode}}
+\end{figure}
+
+?? proof of map-reduceness?
+
+aa
+
+\subsection{Paper version}
 
 \begin{figure}
 	\centering
@@ -207,14 +253,6 @@ This is essential for aggregation compared to the use of bounded message buffers
 %		\Let \emph{hit} = \emph{cfg}.get\_task(task)\;
 %	}
 \end{algorithm}
-
-\begin{figure}
-	\centering
-	\resizebox{0.67\linewidth}{!}{
-		\input{diagrams/opal/parallel-tilecode-intuit.tex}
-	}
-	\caption{Tile-coding: actions preferences are aggregated from \emph{disjoint} tile queries---a map-reduce problem. To update, gradients are simply the tiles activated during the forward pass with no aggregation.\label{fig:opal-par-tilecode}}
-\end{figure}
 
 \subsection{Reconfigurability}
 \approachshort{} allows policy design and algorithmic learning parameters to be changed at runtime using at most two control packets.
