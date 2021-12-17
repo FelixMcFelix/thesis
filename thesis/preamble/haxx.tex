@@ -192,23 +192,6 @@
 }}
 \makeatother
 
-% TEMPORARY FIX
-% Microtype v3.0a is broken for `book` class.
-\makeatletter
-\long\def\MT@prot@l#1{%
-  \MT@get@prot{#1}{left}%
-  \leavevmode
-  #1}
-\def\MT@prot@group@@{%
-    \catcode`\\=0
-    \catcode`\^^M=10
-    \makeatletter
-    {\expandafter\MT@prot@l\expandafter
-      {\expandafter\scantokens\expandafter{\the\MT@toks\noexpand}}}%
-  \endgroup}
-\makeatother
-% TEMPORARY FIX
-
 %
 % Below here are some default additions from Stephen Strowes's template.
 %
