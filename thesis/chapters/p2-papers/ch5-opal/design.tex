@@ -1,12 +1,27 @@
-Based on the design principles, problems, and potential solutions outlined throughout \cref{sec:opal-motivation}, we present our design for an in-NIC, task-independent, online reinforcement learning system---\emph{\approachshort{} (\approach)}.
+Based on the design principles and problems outlined above, I present my design for an in-\gls{acr:nic}, task-independent, online \gls{acr:rl} system---\emph{\approachshort{} (\approach)}.
 At a high level, \approachshort{} is designed to use the auxiliary compute exposed by general SmartNIC devices to offer low-latency online learning, scaling according to available on-chip resources at build time.
-As the allocation of cores/chip area is set ahead of time by a framework or system administrator, \approachshort{}(-\Coopfw) agents enumerate themselves at runtime, during initialisation.
+Its design is based on meeting the following constraints:
+\begin{description}
+	\item[Low state-action latency.] \gls{acr:rl} \gls{acr:ddn} applications incur $\mathcal{O}\left(\unit{\milli\second}\right)$ latencies due to a combination of expensive function approximation, batching, state steering, and \gls{acr:pcie} handoffs. Ideally, to keep pace with packet rates upwards of \qty{40}{\giga\bit\per\second} we require inference or state-action latencies around $\mathcal{O}\left(\unit{\nano\second}\right)$ or $\mathcal{O}\left(\unit{\micro\second}\right)$. This would enable fine-grained operation on traffic, particularly latency-sensitive control problems. Where possible, this should correspond to increased throughput to better enable the processing of line-rate traffic.
+	
+	\item[Effectively employ parallelism.] As discussed in \cref{chap:nets}, SmartNIC devices often contain large numbers of slower cores without \glspl{acr:fpu}. As such, to achieve strong latency or throughput bounds we must employ and design algorithms which are both computationally cheap (forbidding \gls{acr:dnn} backpropagation) and parallelisable. Crucially, this also allows users to scale up or down their resource costs to dedicate as many or few cores as needed to meet desired latency or throughput targets.
+	
+	\item[Use on-device state without stalling packets.] In spite of the above performance goals, at larger policy sizes it becomes more likely that the inference and update steps of an \gls{acr:rl} algorithm will violate packet or pipeline timing constraints. However, we need access to state from the dataplane to preserve the low-latency constraint. Thus, an in-\gls{acr:nic} \gls{acr:rl} agent must interact with but not execute on the main packet path.
+	
+	\item[Reconfigurable.] To simplify deployment as network operators' needs change, an \approachshort{} \gls{acr:rl} agent must be able to be easily repurposed at runtime---i.e., without recompilation and installation of firmware or \gls{acr:fpga} designs. While this includes complete model changes, the most useful aspect would be the ability to swap between online and offline modes of operation to increase decision throughput. Moreover, we aim to make use of the control-plane for easier selection of target flows.
+	
+	\item[Minimise resource use.] Due to the resource-constrained nature of \gls{acr:pdp} hardware, applications and packet pipelines have highly limited \gls{acr:tcam}-accelerated and high-speed memory (e.g., $\mathcal{O}\left(\unit{\kibi\byte}\right)$). As such, storing replay buffers is infeasible, as are \gls{acr:rl} algorithms which require such buffers for stable learning. This is amplified when learning a shared policy from several flows concurrently.\sidenote{This consideration has historically been labelled as parallel \gls{acr:rl}~\parencite{DBLP:conf/aamas/GroundsK07}, not to be confused with the multicore/parallel algorithms we are also interested in.}
+	
+%	\item[High throughput?] Blah blah blah.
+%	
+%	\item[Several flows?] Blah blah blah.
+\end{description}
 
-?? Need mention of what aspects I shall cover.
+To meet these constraints, \approachshort{} operates alongside a co-hosted P4 dataplane in a SmartNIC, running asynchronously with respect to the packet forwarding path, with its full interaction model given by \cref{sec:opal-sys-model}.
+To achieve both inference and learning I employ fixed-point $Q$ numbers as the main data format, and justify this against data formats in other embedded environments (\cref{sec:opal-data-format}).
+Classical \gls{acr:rl} algorithms and function approximation schemes---semi-gradient Sarsa and tile coding (\cref{sec:tile-code,sec:demo-rl-sarsa})---enable learning under the memory and computational constraints of \gls{acr:pdp} hardware. This considers different parallel processing strategies, as well as the conversion to a wait-free algorithm enabled by using $Q$ numbers as the primary data format (\cref{sec:opal-algorithm}).
 
-?? Note worth having here (and the paper itself): past `parallel Sarsa'~\parencite{DBLP:conf/aamas/GroundsK07} means `learning from parallel agents' traces': OPaL enables this too to some extent!
-
-\subsection{Interaction Model}
+\subsection{Interaction and System Model}\label{sec:opal-sys-model}
 
 \begin{figure}
 	\centering
@@ -15,44 +30,68 @@ As the allocation of cores/chip area is set ahead of time by a framework or syst
 %	\approachshort{} brings low-latency, online reinforcement learning directly to the dataplane. SoC- and NetFPGA-based SmartNIC devices expose spare compute---making in-situ, asynchronous processing and learning possible alongside P4 dataplanes. Classical RL policy methods are the key to making this computationally feasible. ?? REDO
 \end{figure}
 
-?? 
-
-?? need to scale w/ available compute resources.
-
-?? need to not stall.
-
-?? Old, salesman-y.
-We also design our solution to operate as closely as possible to the P4 pipeline to use and learn from per-packet state, but outside of the main packet path to prevent packet stalls.
-
-In particular, we exploit how SmartNIC devices often expose general-purpose compute to provide path-adjacent, on-chip RL in the dataplane (\cref{fig:netro-arch}).
-As many of these devices have engineering and development histories which predate P4, general compute beyond P4's limits~\parencite{p4-psa} is surprisingly common.
-By executing on spare compute units, we prevent packet stalling and offer quick runtime reconfigurability.
-
-\Cref{fig:netro-arch,fig:single-and-parallel} outline our design and implementation on Netronome SmartNIC hardware in pursuit of this goal: unused device resources beyond the P4-PSA spec \emph{can and should be used} to drive asynchronous environmental control.
-We explain relevant NFP architectural details later in \cref{sec:netronome-platform-fundamentals}.
-\approachshort{} communicates with the packet pipeline of a P4 dataplane via \texttt{extern} plugins using \inring{} (state, configuration) and \outring{} (action) messages (\cref{fig:netro-arch}).
-Internally, \approachshort{} either has all its cores act independently (\cref{fig:single-and-parallel:single}) or cooperate to solve each task (\cref{fig:single-and-parallel:parallel})---with different latency-throughput benefits (\cref{sec:action-and-update-computation}).
-We open-source our firmware and control programs for the benefit of the community.\sidenote{\url{https://github.com/FelixMcFelix/pdp-rl-paper}}
-Moving beyond the Netronome platform, we describe how our architecture may be adapted and improved on by bespoke hardware or FPGA-based deployment.
+%?? 
+%
+%?? need to scale w/ available compute resources.
+%
+%?? need to not stall.
+%
+%?? Old, salesman-y.
 
 \approachshort{} is a general, task-independent framework for in-network, online training and execution of \emph{any reinforcement learning agent design} using classical methods.
 \approachshort{} is agnostic to the meaning of state vectors it receives as inputs and the actions it produces, which are employed by other functional units or the dataplane.
 However, in-NIC/in-network execution specifically benefits packet-, flow-, and network-level learning, control, and optimisation tasks.
+\approachshort{} meets the above goals by operating as a system which exists \emph{in parallel} to a co-hosted P4 dataplane.
+\Cref{fig:netro-arch} describes and demonstrates the requisite interaction model; state extraction (i.e., flow telemetry collection and processing) occurs in the ingress and egress \glspl{acr:mat} of the P4 dataplane.
+The packet pipeline of a P4 dataplane then communicates with \approachshort{} via \texttt{extern} plugins using \inring{} (state, configuration) messages to reconfigure the agent or request inference, and \outring{} (action) messages which carry output state-action pairs for the environment to make use of.
+The protocol formats of these messages are explained below.
+To deploy this design, we require a platform-specific implementation of \approachshort{} itself and the \inring{}/\outring{} ring interaction mechanisms---exploiting how SmartNIC devices often expose general-purpose compute.
+As many of these devices have engineering and development histories which predate P4, such general compute beyond the P4 \gls{acr:psa}'s limits~\parencite{p4-psa} is surprisingly common.
+This then provides path-adjacent, on-chip \gls{acr:rl} in the dataplane.
 
-\approachshort{} runs on one or more cores of a SmartNIC to convert fixed-point state measurements from the environment into a stream of actions using a stored policy.
-As an example, this might be to map flow state and performance measurements into a queueing priority for future packets from that flow, or to compute and apply a rate limit to preserve quality of service.
+\approachshort{} itself runs on one or more cores of a SmartNIC to convert state measurements of a known size from the environment into a stream of actions using a stored policy.
+I discuss how it scales with additional compute as part of \cref{sec:opal-algorithm}.
+%As an example, this might be to map flow state and performance measurements into a queueing priority for future packets from that flow, or to compute and apply a rate limit to preserve quality of service.
 These dedicated cores are then responsible for processing requests, computing actions, and updating the underlying policy in real time.
-Combined with reward measurements, this policy can then be updated or trained from scratch entirely on the NIC, acting as a fully online RL agent.
-An input state vector \emph{always} induces an action and, if desired, updates the policy using either an included reward or one retrieved from memory according to a (configurable) key placed alongside the state.
-This allows for simultaneous control and learning over independent systems by the same agent (i.e., optimising several flows with their own reward measures, such as DDoS mitigation in an AS where each next-hop AS might have their own `health' metric).
+Combined with reward measurements, this policy can then be updated or trained from scratch entirely on the \gls{acr:nic}, acting as a fully online \gls{acr:rl} agent.
+An input state vector \emph{always} induces an action and, if online learning is desired, updates the policy using either an included reward or one retrieved from memory according to a key placed alongside the state.
+This allows for simultaneous control and learning over independent systems by the same agent (i.e., optimising several flows with their own reward measures, such as \gls{acr:ddos} mitigation in an \gls{acr:as} where each next-hop \gls{acr:as} might have their own health metric).
+Configuration messages may be provided over either the data or control-planes, where the P4 control plane may be used to provide access control over which machines or ports may send such commands.
+
+%?? How does this meet the above requirements?
+By executing on spare compute units, this design prevents packet stalling as required by moving longer-running compute out of the packet path, and can scale with cores made available at compile-time to improve latency and throughput.
+By operating as closely as possible to the P4 pipeline, \approachshort{} uses and learns from per-packet state with minimal added latency (avoiding \gls{acr:pcie} transfers and batching as required), while imposing minimal impact on carried traffic for both bump-in-the-wire deployments and at end-points.
+Moreover, the presence of the P4 dataplane allows easier inclusion of existing P4 traffic measurement and state extraction techniques, such as those covered in \cref{chap:nets}.
+
+
+%unused device resources beyond the P4-PSA spec \emph{can and should be used} to drive asynchronous environmental control
+
+%\Cref{fig:netro-arch,fig:single-and-parallel} outline our design and implementation on Netronome SmartNIC hardware in pursuit of this goal: unused device resources beyond the P4-PSA spec \emph{can and should be used} to drive asynchronous environmental control.
+%We explain relevant NFP architectural details later in \cref{sec:netronome-platform-fundamentals}.
+%\approachshort{} communicates with the packet pipeline of a P4 dataplane via \texttt{extern} plugins using \inring{} (state, configuration) and \outring{} (action) messages (\cref{fig:netro-arch}).
+%Internally, \approachshort{} either has all its cores act independently (\cref{fig:single-and-parallel:single}) or cooperate to solve each task (\cref{fig:single-and-parallel:parallel})---with different latency-throughput benefits (\cref{sec:action-and-update-computation}).
+%We open-source our firmware and control programs for the benefit of the community.
+%Moving beyond the Netronome platform, we describe how our architecture may be adapted and improved on by bespoke hardware or FPGA-based deployment.
 
 %However, high-speed data networks impose inviolable per-packet deadlines.
 
-To protect traffic throughput and allow effective deployment in as many environments as possible, \approachshort{} places RL execution on-chip, \emph{but off the main packet path}, communicating and running parallel to the main P4 dataplane.
-As shown in \cref{fig:netro-arch}, this asynchrony allows coexistence with P4 programs, and imposes minimal impact on carried traffic for both bump-in-the-wire deployments and at end-points.
-For instance, in the default deployment of a P4 packet processing pipeline on Netronome NFP chips several cores go unused (as does spare area on an FPGA design), making this paradigm possible.
+%To protect traffic throughput and allow effective deployment in as many environments as possible, \approachshort{} places RL execution on-chip, \emph{but off the main packet path}, communicating and running parallel to the main P4 dataplane.
+%As shown in \cref{fig:netro-arch}, this asynchrony allows coexistence with P4 programs, and imposes minimal impact on carried traffic for both bump-in-the-wire deployments and at end-points.
+%For instance, in the default deployment of a P4 packet processing pipeline on Netronome NFP chips several cores go unused (as does spare area on an FPGA design), making this paradigm possible.
 
-\subsection{Data Format}
+\paragraph{Message formats.}
+?? Properly explain state/trace selection
+
+\begin{minted}{rust}
+pub enum HiThere {
+    A(),
+    B(),
+}
+
+let ggg = 0;
+\end{minted}
+
+\subsection{Data Format}\label{sec:opal-data-format}
 %?? data format selection vs alternatives
 To implement online learning such as in \gls{acr:rl}, we require a data type which allows us to perform numerical computation without an \gls{acr:fpu}---principally, to compute the values in action preference lists.
 Moreover, to achieve online learning we require a format which is both fast to work with (to minimise processing latencies), and suited to represent gradients and temporal difference values i.e., incremental changes to stored policy weights.
@@ -80,11 +119,13 @@ However, directly modifying these match tables from within the device itself is 
 On Netronome NFP hardware in particular, rule updates \emph{must} be applied by the co-hosted controller machine, as tables are reliant on the optimised DCFL~\parencite{DBLP:conf/infocom/TaylorT05} data format.
 In addition to the prohibitive complexity of building this data structure on-device, its construction requires knowledge of the entire rule set (and cannot be incrementally updated).
 
-\subsection{Algorithm}
+\subsection{Algorithm}\label{sec:opal-algorithm}
 
 ?? algo selection
 
 ?? Need to discuss compute strategies; coop vs parallel here.
+
+?? Note worth having here (and the paper itself): past `parallel Sarsa'~\parencite{DBLP:conf/aamas/GroundsK07} means `learning from parallel agents' traces': OPaL enables this too to some extent!
 
 ?? old, salesman-y
 To enable \emph{online in-NIC learning}, we return to \emph{classical} RL methods and models.

@@ -11,9 +11,14 @@
 
 %https://tex.stackexchange.com/questions/309980/parsing-underscores-in-urls-from-mendeley
 \DeclareSourcemap{ % Used when .bib/Bibliography is compiled, not when document is
-    \maps{
+    \maps[overwrite]{
         \map{ % Replaces '{\_}', '{_}' or '\_' with just '_'
             \step[fieldsource=url,
+                  match=\regexp{\{\\\_\}|\{\_\}|\\\_},
+                  replace=\regexp{\_}]
+        }
+        \map{ % Replaces '{\_}', '{_}' or '\_' with just '_'
+            \step[fieldsource=doi,
                   match=\regexp{\{\\\_\}|\{\_\}|\\\_},
                   replace=\regexp{\_}]
         }

@@ -1,6 +1,14 @@
 We implement \approachshort{} on... ?? Netronome...
 ?? What else do we cover.
 
+?? As the allocation of cores/chip area is set ahead of time by a framework or system administrator, \approachshort{}(-\Coopfw) agents enumerate themselves at runtime, during initialisation.
+
+?? We open-source our firmware and control programs for the benefit of the community.
+Moving beyond the Netronome platform, we describe how our architecture may be adapted and improved on by bespoke hardware or FPGA-based deployment.
+
+?? \approachshort{} communicates with the packet pipeline of a P4 dataplane via \texttt{extern} plugins using \inring{} (state, configuration) and \outring{} (action) messages (\cref{fig:netro-arch}).
+Internally, \approachshort{} either has all its cores act independently (\cref{fig:single-and-parallel:single}) or cooperate to solve each task (\cref{fig:single-and-parallel:parallel})---with different latency-throughput benefits (\cref{sec:action-and-update-computation}).
+
 \subsection{Action and Update Computation}\label{sec:action-and-update-computation}
 \approachshort{} applies the insights of \textcite{DBLP:journals/firai/TravnikMSP18} to minimise action latency; an action is computed, sent out into the environment, and only then is the underlying policy updated.
 Using one of the below strategies chosen at compile time, a state vector is tile coded, converted into action probabilities, and an action is chosen.
@@ -51,6 +59,9 @@ This is truer still when moving from the moderately fine-grained control of clas
 Ordinarily, the marshalling of requests, responses, and shared data access can incur significant overheads.
 On-chip execution and the nature of action preference computation allow us to use lockless atomic aggregation, removing the overheads of explicit messaging/packetisation.
 Moreover, adjacent functional units/cores often have special-purpose shared registers or share a small fast cache to accelerate communication.
+
+?? \cref{fig:single-and-parallel}
+Internally, \approachshort{} either has all its cores act independently (\cref{fig:single-and-parallel:single}) or cooperate to solve each task (\cref{fig:single-and-parallel:parallel})---with different latency-throughput benefits (\cref{sec:action-and-update-computation}).
 
 \begin{figure}
 	\centering
