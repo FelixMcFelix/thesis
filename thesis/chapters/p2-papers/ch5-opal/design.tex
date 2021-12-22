@@ -114,25 +114,34 @@ This is naturally at odds with the design and goals of \gls{acr:pdp} hardware, a
 Software floating-point emulation has historically required \qtyrange{10}{30}{\times} more cycles to perform compared to hardware \glspl{acr:fpu}~\parencite{DBLP:conf/arith/IordacheT03}, which is incompatible with our need for low-latency and high-throughput processing.
 While the added dynamic range would be useful in this application, performance is a primary goal.
 
-\gls{acr:pdp} hardware excels in matching behaviours to network packets using \glspl{acr:mat}, potentially giving us a high-performance method to apply actions into the network.
+\gls{acr:pdp} hardware excels in applying actions to network packets using \glspl{acr:mat}, potentially giving us a high-performance method to install inferred actions within the network.
 However, directly modifying these match tables from within the device itself is neither feasible nor safe.
 On Netronome NFP hardware in particular, rule updates \emph{must} be applied by the co-hosted controller machine, as tables are reliant on the optimised DCFL~\parencite{DBLP:conf/infocom/TaylorT05} data format.
 In addition to the prohibitive complexity of building this data structure on-device, its construction requires knowledge of the entire rule set (and cannot be incrementally updated).
+I instead suggest in general that \texttt{extern}s or datapath stages which apply \gls{acr:rl} actions to packets should maintain a small store of state-action pairs, and periodically send these back to the controller for batch installation.
+This ensures that the majority of installed rules exhibit accelerated performance, while preventing installation delay on the newest decisions.
 
 \subsection{Algorithm}\label{sec:opal-algorithm}
-
-?? algo selection
-
-?? Need to discuss compute strategies; coop vs parallel here.
-
-?? Note worth having here (and the paper itself): past `parallel Sarsa'~\parencite{DBLP:conf/aamas/GroundsK07} means `learning from parallel agents' traces': OPaL enables this too to some extent!
-
-?? old, salesman-y
-To enable \emph{online in-NIC learning}, we return to \emph{classical} RL methods and models.
-In particular, we focus on tile-coding with one-step temporal-difference learning algorithms such as Sarsa.
+%?? algo selection
+%
+%?? Need to discuss compute strategies; coop vs parallel here.
+%
+%?? Introduce tile coding and whatever as the soln first for compute complexity etc.
+%
+%?? old, salesman-y
+To enable online in-\gls{acr:nic} learning in spite of the computational limits of \gls{acr:pdp} hardware, we return to \emph{classical} RL methods and models.
+In particular, we focus on tile coding with one-step temporal-difference learning algorithms such as Sarsa, which were discussed and explained earlier (\cref{sec:tile-code} and \cref{sec:demo-rl-sarsa}).
 %These choices have important benefits for in-NIC execution.
 These functions do not require batches of inputs to learn in a stable way, negating the memory needed to store experience replays, and have simple update and inference logic.
+Moreover, gradient computation is identical to the forward pass and has no dependency on the current parameter values $\wvec{}$, potentially allowing hit tiles to be stored to accelerate the next update step.
 Finally, the choice of single-step algorithms (as opposed to $n$-step or Monte Carlo methods) bounds the amount of per-trace state required for online learning to just the last state-action pair, safeguarding the limited memory of the target devices.
+
+As for how to take advantage of the multicore nature of SmartNICs, there are two strategies worth considering.
+Suppose we have $n$ cores.
+The first strategy is that we simply have each core work independently.
+For instance, when dealing with a stream of input state vectors according to \approachshort{}'s interaction model, we may serve each arrived vector to a free core---this then tile codes the state against every tiling, produces an output action, and then updates the policy as required (\cref{alg:tile-code,eqn:sg-sarsa}).
+Intuitively, this produces an $n$~\unit{\times} throughput improvement assuming there are no bottlenecks at either the input and output queues or mutual exclusion around shared data.
+However, this offers no reduction to the processing time of any individual element---and so the state-action latency is not reduced as desired.
 
 \begin{figure}
 	\centering
@@ -142,9 +151,39 @@ Finally, the choice of single-step algorithms (as opposed to $n$-step or Monte C
 	\caption[A visualisation of how tile-coding can be split into subtasks as a map-reduce problem.]{Tile-coded function approximation can be considered as a map-reduce problem during both the inference and update steps. Action preferences are aggregated from \emph{disjoint} tile queries, where each tile hit contains a list of action values to add to $\mathbf{a}$. Checking or updating each tiling is thus a separate task. As all candidate lists are disjoint between tasks, updating hit tiles requires no control over concurrent accesses---furthermore, it requires no final aggregation step.\label{fig:opal-par-tilecode}}
 \end{figure}
 
-?? proof of map-reduceness?
+To effect this, we must consider instead a second strategy: how several cores may work together to complete an individual inference or update operation.
+Consider that tile coding computes individual hits against a set of tilings to produce a sparse boolean feature vector, which we'll denote $\mathbf{x}$, and refer to the set of all its non-zero indices by $H$.
+Without loss of generality, suppose we have two tilings $t_1$ and $t_2$, with a number of tiles $|t_1|$ and $|t_2|$ in each respectively (such that $\dim{\mathbf{x}}=|t_1|+|t_2|$).
+For notational simplicity, let each entry of an agent's policy data $\wvec{}$ be a vector of length $A$ (i.e., choosing between $A$ discrete actions).
+A state vector will produce exactly one hit in each tiling, having indices $h_1\in[0,|t_1|)$ and $h_2\in[|t_1|,|t_2|)$, without overlap.
+The final action preference list is given by \cref{eqn:lin-approx}, which we can specialise further:
+$$
+\mathbf{a} = \wvec{}^{\top} \mathbf{x} = \wvec{}\left[h_1\right] + \wvec{}\left[h_2\right] = \sum_{h\in{}H}\wvec{}\left[h\right]
+$$
+As a result, tile coded Sarsa may be subdivided into several distinct computations whose results are added together as a final aggregation step.
+Crucially, we have shown that memory regions of each tiling have no overlap with one another by construction.
+Each memory address may be visited and owned by exactly one task---hence, there is no concurrent access to policy values---and so no locks are required to protect each region of the policy.
+\Cref{fig:opal-par-tilecode} demonstrates this process visually.
 
-aa
+When updating the policy we need only monitor the number of completed tasks rather perform than a final aggregation step.
+To see this, we specialise Sarsa's update step (\cref{eqn:sg-sarsa-update}) using our list of hit indices $H$.
+After centrally computing a \gls{acr:td} value $\delta_t$ using $\mathbf{x}$ and a subsequent $\mathbf{x}'$, the action $a$ invoked by $\mathbf{x}$, and a learning rate $\alpha$, we update the policy values involved in the previous decision (using Python slice notation for simplicity):
+\begin{align*}
+\wvec{}\left[:,a\right] := \wvec{}\left[:,a\right] + \alpha\delta_t \mathbf{x}\\
+\therefore~\wvec{}\left[h_1,a\right] := \wvec{}\left[h_1,a\right] + \alpha\delta_t,\\
+\therefore~\wvec{}\left[h_2,a\right] := \wvec{}\left[h_2,a\right] + \alpha\delta_t.
+\end{align*}
+and so on for all $h \in H$ when we have an arbitrary number of tilings.
+Thus, using the above knowledge that concurrent accesses to any parts of the policy cannot occur, an \gls{acr:rl} update divides into subtasks without locking in much the same fashion. 
+
+The aggregation step still risks becoming a bottleneck during inference; if individual preference lists are passed back as discrete messages, then this requires explicitly iterating over and summing all such lists.
+While this may be performed by a dedicated worker thread or core in parallel to the other disaggregated inference tasks, this involves additional costs in every such task for \texttt{memcpy} operations toward a message buffer.
+Consider again that \approachshort{} targets \gls{acr:pdp} hardware: without a dynamic memory allocator, this buffer has bounded length and so risks causing head-of-line blocking for all other tasks.
+However, encoding our values using a fixed-point representation allows us to employ atomic instructions to remove the aggregate step, thus producing a wait-free algorithm.
+Recall that the aggregation step involves \emph{only additions}, that atomic fetch-add instructions are commonly offered on many machine architectures,\sidenote{While other datatypes such as \mintinline{rust}{f32} can technically support atomic operations on many platforms, outside of specialised \gls{acr:gpu} environments such as CUDA these invoke non-trivial performance costs due to cache and register placement restrictions.} and that fixed-point addition is exactly integer addition.
+As a result, the final action preference list my be allocated once and atomically added to by all workers.
+Moreover, if extra care is required to prevent numeric overflows or ensure saturation, then any worker may locally verify whether the fetched value and summand would invoke an overflow.
+Alternately, an implementor may simply enforce upper and lower bounds on each action value to prevent positive or negative overflow.
 
 \begin{algorithm}
 	\caption{ParSa---\emph{Par}allel \emph{Sa}rsa\label{alg:parsa}}
@@ -220,3 +259,7 @@ aa
 %		\Let \emph{hit} = \emph{cfg}.get\_task(task)\;
 %	}
 \end{algorithm}
+
+?? Run through algo. \Cref{alg:parsa}
+?? Task allocations per core are deployment-specific. and impl detail (but I cover this) Why? Different tasks have different complexity.
+?? mention that theoretical worse than just adding more cores due to message passing costs, memfence, compiler reordering etc.

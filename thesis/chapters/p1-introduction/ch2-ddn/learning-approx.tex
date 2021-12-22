@@ -90,8 +90,8 @@ Note that $\acvalblank$ is completely arbitrary, and may be any differentiable a
 We can then update $\wvec{}$ over time as follows:
 \begin{subequations}
 	\begin{gather}
-		\delta_t = r_{t+1} + \gamma \acval{s_{t+1}}{a_{t+1}}{\wvec{t}} - \acval{s_t}{a_t}{\wvec{t}},\\
-		\wvec{t+1} = \wvec{t} + \alpha \delta_t \nabla{\acval{s_t}{a_t}{\wvec{t}}},
+		\delta_t = r_{t+1} + \gamma \acval{s_{t+1}}{a_{t+1}}{\wvec{t}} - \acval{s_t}{a_t}{\wvec{t}},\label{eqn:sg-sarsa-td}\\
+		\wvec{t+1} = \wvec{t} + \alpha \delta_t \nabla{\acval{s_t}{a_t}{\wvec{t}}},\label{eqn:sg-sarsa-update}
 	\end{gather}%
 	\label{eqn:sg-sarsa}%
 	where $\delta_t$ is known as the \gls{acr:td} error. $\alpha\in\left(0,1\right)$ defines the learning rate (governing the policy stability), with $\gamma$ defined as in the \gls{acr:mdp} formulation.
