@@ -197,7 +197,7 @@ Alternately, an implementor may simply enforce upper and lower bounds on each ac
 	\SetKwProg{minion}{Function \emph{Minion}}{}{end}
 	\SetKwProg{tilecode}{Function \emph{TileCode}}{}{end}
 	
-	\tcc{Given message passing mechanisms \emph{scatter} and \emph{recv}, quantised arithmetic functions $Q_\mathit{mul}$ and TileCode, and omitting schedule/config/precache updates.}
+	\tcc{Given message passing mechanisms \emph{scatter} and \emph{recv}, an input request stream \inring{}, an output action stream \outring{}, quantised arithmetic functions $Q_\mathit{mul}$ and TileCode, and omitting schedule/config/precache/reward updates.}
 	\tcc{\emph{cfg}.$\alpha$, \emph{cfg}.$\gamma$ are hyperparameters affecting the significance of each update and the degree of forward-planning, respectively.}
 	
 	\Enum Par \{ Act(\emph{state}), Upd(\emph{delta, action, state}) \}\;
@@ -205,33 +205,33 @@ Alternately, an implementor may simply enforce upper and lower bounds on each ac
 	
 	\Let \emph{values}: [AtomicI32; \emph{cfg.n\_actions}] = \{0\}\;
 	\Let \emph{acks}: AtomicI32 = 0\;
-	\parsa{id, schedule}{
-		\uIf{id==0}{
+	\parsa{id, schedule}{\label{alg:parsa:par}
+		\uIf{id==0}{\label{alg:parsa:parctl-start}
 			\ForAll{state\_pkt \In \inring{}}{
 				Ctl(\emph{state\_pkt})\;
 			}
-		}
-		\Else{
+		}\label{alg:parsa:parctl-end}
+		\Else{\label{alg:parsa:parminion-start}
 			\While{true}{Minion(\emph{schedule}[$\mathit{id}- 1$], recv())\;}
-		}
+		}\label{alg:parsa:parminion-end}
 	}
 
 	\control{state}{
-		\emph{values, acks} = \{0\}, scatter(Par::Act(\emph{state}))\;
-		acquire slot for \outring, copy \emph{state} into slot\;
-		\Await acks == \emph{cfg.n\_minions}\;
-		\Let \emph{action} = argmax(\emph{values})\;
-		write \emph{action} into \outring{} slot, enqueue\;
+		\emph{values, acks} = \{0\}, scatter(Par::Act(\emph{state}))\;\label{alg:parsa:parctl-act}
+		acquire slot for \outring, copy \emph{state} into slot\;\label{alg:parsa:parctl-preprep}
+		\Await acks == \emph{cfg.n\_minions}\;\label{alg:parsa:parctl-await1}
+		\Let \emph{action} = argmax(\emph{values})\;\label{alg:parsa:parctl-acchoose}
+		write \emph{action} into \outring{} slot, enqueue\;\label{alg:parsa:parctl-acemit}
 		\If{cfg.online}{
-			\Let \emph{((l\_state, l\_act, l\_val), found\_s)} = \emph{cfg}.lookup\_state\_from\_key(\emph{state})\;
-			\Let \emph{(reward, found\_r)} = \emph{cfg}.lookup\_reward\_from\_key(\emph{state})\;
+			\Let \emph{((l\_state, l\_act, l\_val), found\_s)} = \emph{cfg}.lookup\_state\_from\_key(\emph{state})\;\label{alg:parsa:parctl-checkstate}
+			\Let \emph{(reward, found\_r)} = \emph{cfg}.lookup\_reward\_from\_key(\emph{state})\;\label{alg:parsa:parctl-checkreward}
 			\If{found\_s \&\& found\_r}{
-				\Let $\delta_t$ = $\mathit{reward} + Q_\mathit{mul}$(\emph{cfg}.$\gamma$, \emph{values}[\emph{action}]) $-$ \emph{l\_val}\;
-				$\delta_t$ = $Q_\mathit{mul}$(\emph{cfg}.$\alpha$, $\delta_t$)\;
-				\emph{acks} = 0, scatter(Par::Upd($\delta_t$, \emph{l\_act}, \emph{l\_state}))\;
-				\Await acks == \emph{cfg.n\_minions}\;
+				\Let $\delta_t$ = $\mathit{reward} + Q_\mathit{mul}$(\emph{cfg}.$\gamma$, \emph{values}[\emph{action}]) $-$ \emph{l\_val}\;\label{alg:parsa:parctl-td1}
+				$\delta_t$ = $Q_\mathit{mul}$(\emph{cfg}.$\alpha$, $\delta_t$)\;\label{alg:parsa:parctl-td2}
+				\emph{acks} = 0, scatter(Par::Upd($\delta_t$, \emph{l\_act}, \emph{l\_state}))\;\label{alg:parsa:parctl-update}
+				\Await acks == \emph{cfg.n\_minions}\;\label{alg:parsa:parctl-await2}
 			}
-			\emph{cfg}.store\_state(\emph{state}, \emph{action}, \emph{values}[\emph{action}])\;
+			\emph{cfg}.store\_state(\emph{state}, \emph{action}, \emph{values}[\emph{action}])\;\label{alg:parsa:parctl-store}
 		}
 	}
 
@@ -239,20 +239,20 @@ Alternately, an implementor may simply enforce upper and lower bounds on each ac
 		\Switch{msg}{
 		\uCase{Par::Act(\emph{s})}{
 			\ForAll{task \In tasks}{
-				\Let \emph{hit} = TileCode(\emph{s}, \emph{task})\;
-				\For{i \In [0..cfg.n\_actions)}{
+				\Let \emph{hit} = TileCode(\emph{s}, \emph{task})\;\label{alg:parsa:parminion-acthit}
+				\For{i \In [0..cfg.n\_actions)}{\label{alg:parsa:parminion-liststart}
 					\emph{values}[\emph{i}].atomic\_add(\emph{policy}[\emph{hit}][\emph{i}])\;
-				}
+				}\label{alg:parsa:parminion-listend}
 			}
 		}
 		\uCase{Par::Upd($\delta$, \emph{a}, \emph{s})}{
 			\ForAll{task \In tasks}{
-				\Let \emph{hit} = TileCode(\emph{s}, \emph{task})\;
-				\emph{policy}[\emph{hit}][\emph{a}] += $\delta$\;
+				\Let \emph{hit} = TileCode(\emph{s}, \emph{task})\;\label{alg:parsa:parminion-acthit2}
+				\emph{policy}[\emph{hit}][\emph{a}] += $\delta$\; \label{alg:parsa:parminion-update}
 			}
 		}
 		}
-		\emph{acks}.atomic\_add(1)\;
+		\emph{acks}.atomic\_add(1)\;\label{alg:parsa:parminion-lastack}
 	}
 
 %	\tilecode{state, task}{
@@ -260,6 +260,40 @@ Alternately, an implementor may simply enforce upper and lower bounds on each ac
 %	}
 \end{algorithm}
 
-?? Run through algo. \Cref{alg:parsa}
-?? Task allocations per core are deployment-specific. and impl detail (but I cover this) Why? Different tasks have different complexity.
-?? mention that theoretical worse than just adding more cores due to message passing costs, memfence, compiler reordering etc.
+Parallelising the \gls{acr:rl} process among processes in this way thus requires tight coupling between the function approximation and \gls{acr:rl} update algorithm.
+The combination of all of these elements forms the basis of \emph{ParSa}---parallel Sarsa (\cref{alg:parsa}).
+To match the deployment environment of SmartNIC devices, ParSa is presented such that each worker thread operates in an infinite loop to await and process requests delivered over a message channel \inring{}, and produce a stream of outputs on \outring{}.
+We first assume that every process knows its own index---\emph{id}---and that a \emph{schedule} has been precomputed to divide individual tilings among cores as tasks (\cref{alg:parsa:par}).
+This careful division is important; an individual tiling may contain several dimensions, and by recalling \cref{alg:tile-code} it is obvious that tilings with a higher dimension count require more iterations and are thus more expensive to infer.
+As such, a schedule is required to produce the most balanced workload between worker threads\sidenote{Work stealing or other parallelisation strategies are not suitable choices for work balancing in tile-coded Sarsa for several reasons. These include the computational simplicity of individual tasks, the predictable compute cost of any such task, and the relative cost of \gls{acr:ipc} required to pass cached state between workers.}.
+However, this is a deployment-specific implementation detail, as in addition to raw task costs an effective scheduler must account for, e.g., cache size limits and physical/logical core differences.
+I present an allocator tailored to Netronome hardware later in \cref{alg:parsa-schedule}.
+A single worker thread, designated as the \emph{controller}, then receives and processes state vectors from the environment (\crefrange{alg:parsa:parctl-start}{alg:parsa:parctl-end}), while the remaining threads---\emph{minions}---retrieve a broadcast message of type \emph{Par} to apply over their prescheduled task set (\crefrange{alg:parsa:parminion-start}{alg:parsa:parminion-end}).
+
+The \emph{Ctl} procedure directs tasks to minion threads, manages storage of execution traces, and computes the policy adjustments prescribed by the Sarsa \gls{acr:td} value.
+Applying the insights of \textcite{DBLP:journals/firai/TravnikMSP18} to minimise action latency, an action is computed and sent out into the environment---and only then is the underlying policy updated.
+For each input state, the controller thread zeroes out the shared aggregation space, where \emph{values} holds the aggregated action preference list and \emph{acks} contains the count of terminated minion threads.
+An \emph{Act} request is then sent to all minion threads using (\cref{alg:parsa:parctl-act}).
+While the minions produce the action preference list asynchronously, the control thread then requests an output message slot and prepares it by copying the state into the requisite buffer (\cref{alg:parsa:parctl-preprep}).\sidenote{In principle, the controller thread may also act as another minion after this step, between scatter and recv calls, subject to code store limits.}
+Once every thread has marked its termination, the values of each action given the input state are located in \emph{values} (\cref{alg:parsa:parctl-await1}).
+The index of the largest value is then taken to be the given action, though this may be trivially modified for $\epsilon$-greedy selection (\cref{alg:parsa:parctl-acchoose}), which is then placed into the output message and returned to the environment (\cref{alg:parsa:parctl-acemit}).
+When online learning is enabled, the control thread checks for a reward signal and prior state-action-value tuple according to the configured trace selection scheme from \cref{sec:opal-sys-model} (\crefrange{alg:parsa:parctl-checkstate}{alg:parsa:parctl-checkreward}).
+If a match is found, it computes and reduces by $\alpha$ the Sarsa \gls{acr:td} value $\delta_t$ (\crefrange{alg:parsa:parctl-td1}{alg:parsa:parctl-td2}), before passing this adjustment and the prior state action pair to minion threads to perform the update step (\crefrange{alg:parsa:parctl-update}{alg:parsa:parctl-await2}).
+The newest state-action-value tuple is then stored (\cref{alg:parsa:parctl-store}).
+
+The \emph{Minion} procedure processes a single request to retrieve and aggregate, or update, the action values learned for an input state over some subset \emph{tasks}.
+All minion threads cover the complete set of tilings between themselves.
+In the case that action inference is requested, the policy hit index is computed using the state against each tiling in this thread's task list (\cref{alg:parsa:parminion-acthit}).
+As described above, each action value is atomically added to its matching position in the shared preference list \emph{values} (\crefrange{alg:parsa:parminion-liststart}{alg:parsa:parminion-listend}).
+Once all subtasks have been completed, this thread's completion is recorded (\cref{alg:parsa:parminion-lastack}).
+When an update is requested, all tile hit indices are recomputed (\cref{alg:parsa:parminion-acthit2}), and an adjustment $\delta$ is added to the selected action in each case (\cref{alg:parsa:parminion-update}).
+While it is apparent that the indices of hit tiles may also be locklessly sent back and stored as part of the execution trace---i.e., by adding an extra value slot per task---the number of subtasks often far exceeds the count values in a state vector.
+As a result, this results in a larger \texttt{memcpy} in \emph{Ctl} (the serial portion of ParSa), and as such it is more efficient to recompute hit indices in the update step.
+
+%?? mention that theoretical worse than just adding more cores due to message passing costs, memfence, compiler reordering etc., size of serial portion, number of constituent tasks. (could split to indiv actions, but need stupid cores for feasible.)
+As required, this new algorithm scales with increasing processor counts to reduce both the inference and update costs incurred by a single state vector.
+This lowers the state-action latency and produces a corresponding increase to throughput in tandem.
+However, the factor of speedup is \emph{worse} than $n$~\unit{\times}, and exhibits diminishing returns in terms of core count---for instance due to the cost of \texttt{memcpy}s and arithmetic in the serial \emph{Ctl}, message passing costs at the broadcast and receive steps, and any memory fences or reorderings caused by the compiler due to atomic arithmetic.
+This is bounded again by the number of subtasks which can be generated for a given policy.
+While I use tile granularity here, this may be extended to individual actions at the cost of significant repetition of work and \gls{acr:ipc} overheads dominating.
+Since these aspects are platform-dependent, this behaviour can only be shown empirically as I do in \cref{sec:opal-evaluation}.\sidenote{?? Can I get a more precise cref here?!}

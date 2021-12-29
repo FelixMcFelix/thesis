@@ -123,6 +123,11 @@ Due to the lack of dynamic memory allocation on PDP hardware, and to simplify va
 As a consequence, tiling space requirements scale exponentially with dimension count, and so higher-dimension tilings must be placed in larger (and slower) memory regions.
 As a result, in many architectures policy parameters are split across such regions, giving different access and compute costs to different tasks.
 
+\begin{algorithm}
+	\caption{Task scheduling for ParSa\label{alg:parsa-schedule}}
+	\tcc{?? Please fill me out.}
+\end{algorithm}
+
 We use a simple first-fit work placement algorithm run in \approachshort{}, placing the largest work item into the least loaded thread of the least loaded core (as the NFP uses hardware threads).
 Each work item is a separate \emph{tiling} over a list of dimensions, noting that many such tilings may be grouped into a set (using different offsets for smoother coverage of the state space).
 The cost of any work item (from its dimension count and memory location) was empirically measured offline, and we weigh the total cost per core based on the number of minion threads available.
