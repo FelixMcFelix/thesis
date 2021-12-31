@@ -1,0 +1,14 @@
+\chapter{Netronome NFP Architectural Details}
+\label{adx:nfp-arch}
+
+As we implement this work on Netronome NFP SmartNICs, it is necessary to explain their basics.
+These \emph{system-on-a-chip} (SoC) devices achieve scalable packet processing through sheer parallelism.
+Most of the chip is composed of \emph{microengines} (MEs), grouped into \emph{islands} of 4 or 12 MEs.
+All 12-ME islands are used by a default P4 pipeline.
+Each ME has \numrange{4}{8} \emph{contexts} (hardware threads) which share a code store.
+%Contexts and MEs may send one another numbered signals, and MEs have a small \emph{next-neighbour} register file for passing values in one direction to the next ME on the same island.
+%MEs run a proprietary instruction set, compiled to via a \emph{(Micro-)C} compiler.
+Beyond registers, the platform implements an explicit memory hierarchy scaling in size, location, and access cost:
+$\text{LMEM (ME)} < \text{CLS (Island)} < \text{CTM} < \text{IMEM (Chip)} < \text{EMEM}$.
+
+?? Fill this out in more detail.

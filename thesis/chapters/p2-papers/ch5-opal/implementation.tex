@@ -1,4 +1,15 @@
-We implement \approachshort{} on... ?? Netronome...
+\approachshort{} is implemented as a collection of programs targetting the Netronome \gls{acr:nfp} family of SmartNICs, using a mixture of the proprietary Micro-C language and P4.
+As I implement this work on Netronome NFP SmartNICs, it is necessary to explain some of their basics.
+These \gls{acr:soc} devices achieve scalable packet processing through sheer parallelism.
+Most of the chip is composed of \glspl{acr:me}---physical cores---grouped into \emph{islands} of 4 or 12 \glspl{acr:me}.
+All 12-\gls{acr:me} islands are used by a default P4 pipeline, while 
+Each \gls{acr:me} has \numrange{4}{8} \emph{contexts} (hardware threads) which share a code store.
+%Contexts and MEs may send one another numbered signals, and MEs have a small \emph{next-neighbour} register file for passing values in one direction to the next ME on the same island.
+%MEs run a proprietary instruction set, compiled to via a \emph{(Micro-)C} compiler.
+Beyond registers, the platform implements an explicit memory hierarchy scaling in size, location, and access cost:
+$$\text{LMEM (ME)} < \text{CLS (Island)} < \text{CTM} < \text{IMEM (Chip)} < \text{EMEM}$$
+Interested readers will find more in-depth detail presented in \cref{adx:nfp-arch}.
+
 ?? What else do we cover.
 
 ?? As the allocation of cores/chip area is set ahead of time by a framework or system administrator, \approachshort{}(-\Coopfw) agents enumerate themselves at runtime, during initialisation.
@@ -8,8 +19,40 @@ We implement \approachshort{} on... ?? Netronome...
 ?? We open-source our firmware and control programs for the benefit of the community.
 Moving beyond the Netronome platform, we describe how our architecture may be adapted and improved on by bespoke hardware or FPGA-based deployment.
 
+?? Need to explain mem splits/policy storage.
+
 ?? \approachshort{} communicates with the packet pipeline of a P4 dataplane via \texttt{extern} plugins using \inring{} (state, configuration) and \outring{} (action) messages (\cref{fig:netro-arch}).
 Internally, \approachshort{} either has all its cores act independently (\cref{fig:single-and-parallel:single}) or cooperate to solve each task (\cref{fig:single-and-parallel:parallel})---with different latency-throughput benefits (\cref{sec:action-and-update-computation}).
+
+\subsection{Runtime Initialisation}
+?? Core enumeration etc here.
+
+\subsection{Policy Storage}
+Taking advantage of the non-uniform memory architecture in \gls{acr:nfp} hardware, \approachshort{} splits its policy across the CLS, CTM and IMEM memory regions.
+This arises both from necessity, and in the pursuit of runtime performance.
+
+Firstly, policy data is stored densely, as the nature of embedded programming means that all required memory must be statically allocated.
+As such, the program must reserve enough memory at compile time to contain \emph{any policy}.
+While this does not rule out sparse storage, this would introduce a lookup overhead when finding the memory address of each tile's data (as well as at-rest storage costs for, e.g., a hash table).
+The price in memory has already been paid for storage of a full policy, and so a dense strategy simplifies lookup by assigning a fixed (and easily computed) array index to each tiling set.
+
+Secondly, recalling that a worker must retrieve an action preference list for each tile, we aim to minimise the latency of each memory access as part of our overall performance goal.
+Ideally, this would mean placing the entirety of the policy into CLS, but there is insufficient space to do so.\sidenote{CLS is the lowest-latency memory region which is practically usable: LMEM is dedicated mostly to program state which spills from the register file, and cannot be accessed across \gls{acr:me} boundaries.}
+Suppose we've chosen $k=$~\num{32} for our fixed-point format, thus each action value occupies \qty{4}{\byte}.
+Given $a$ action values, $d$ dimensions in a tiling, $s$ tilings in a set, and $t$ tiles per dimension, that tiling then occupies $4asd^t$\unit{\byte} of memory---its cost scaling exponentially with the count of input dimensions.
+Consider the \emph{Instant} agent design of \cref{chap:ddos-rl}: the largest tiling set chooses $a=10$, $d=4$, $s=8$ and $t=6$, and thus requires \qty{1280}{\kibi\byte}.
+This alone exceeds the \qty{64}{\kibi\byte} of CLS available per island.
+Worse still, we must include enough space to store \emph{any} tiling set below the maximum parameters.
+If we do not differentiate between tiling sets according to dimension count, then for \emph{Instant}'s \num{17} tilings we require \qty{21.25}{\mebi\byte}.
+
+As we cannot fit a whole multidimensional policy into CLS, we can only maximise the proportion of the policy which is placed into these smaller regions.
+The solution then is to explicitly partition the policy's storage across these memory regions according to maximum dimension count; i.e., assigning tiling sets having $d\le1$ to CLS, $d\le2$ to CTM, and $d\le4$ to IMEM.
+These specific limits are arbitrarily picked to match \emph{Instant}/\emph{Guarded} as before, but can be customised at compile time subject to resource limits.
+This increases the proportion of accesses maed to lower-latency memory.
+Moreover, these memory regions are accessible to all \glspl{acr:me} on the same island, and with increased access cost for remote islands.
+
+\paragraph{Parallels in other platforms}
+?? FPGA memory regions.
 
 \subsection{Action and Update Computation}\label{sec:action-and-update-computation}
 \approachshort{} applies the insights of \textcite{DBLP:journals/firai/TravnikMSP18} to minimise action latency; an action is computed, sent out into the environment, and only then is the underlying policy updated.
@@ -40,11 +83,13 @@ It transpired that cacheing this data placed a larger \texttt{memcpy} in the ser
 Additionally, we do not use bitshifts in place of division operations in our implementation, due to the strict limits that power-of-two tile widths place upon policy design.
 
 \subsection{Agent-Environment Communication}\label{sec:agent-environment-communication}
-\approachshort{} uses \emph{multiple-producer/multiple-consumer} (MPMC) messaging channels to communicate with other elements; be they P4 programs on the packet path, or other on-chip analysis and control modules.
+\approachshort{} uses \gls{acr:mpmc} messaging channels to communicate with other elements; be they P4 programs on the packet path, or other on-chip analysis and control modules.
 Through these channels a system \emph{pushes} state vectors, reward measures, and setup packets as inputs, and \emph{pulls} a stream of state-action pairs as outputs.
 This allows decisions to be made asynchronously---preventing packet stalling---and allowing many RL agents to be used if desired.
 The key insight of this mechanism is that on-chip reward/state signals enjoy first-class support in the same manner as packets from the P4 dataplane, allowing agents to act on environmental signals from other on-NIC/chip asynchronous processes or the controller.
 As such, \approachshort{} can receive input from P4 \texttt{extern}s or other, dedicated off-path flow state measurement applications.
+
+?? Explain the design of EMEM ring buffers.
 
 Our implementation uses platform-specific IPC (\emph{EMEM ring buffers}) with hardware signalling on work arrival to achieve this.
 As PDP hardware lacks dynamic memory allocation, P4 pipeline threads request buffers for packet payloads using a shared freelist to enable state/configuration/policy data handover.
@@ -67,19 +112,30 @@ Internally, \approachshort{} either has all its cores act independently (\cref{f
 
 \begin{figure}
 	\centering
-	\begin{subfigure}{\linewidth}
-		\centering
-		\includegraphics[keepaspectratio, width=0.78\linewidth]{diagrams/opal/ind}
-		\caption{\Indfw{} (offline throughput-optimal). \emph{Workers} independently pull commands from (and push actions to) the environment, locking policy access for updates.\label{fig:single-and-parallel:single}}
-	\end{subfigure}
-
-	\begin{subfigure}{\linewidth}
-		\centering
-		\includegraphics[keepaspectratio, width=0.8\linewidth]{diagrams/opal/coop}
-		\caption{\Coopfw{} (online-optimal). A single \emph{controller} delegates RL computation and updates to many \emph{minion} threads, who operate on independent subtasks.\label{fig:single-and-parallel:parallel}}
-	\end{subfigure}
-	\caption{\approachshort{}'s compute strategies scale to fit device capacity according to either latency or throughput needs.\label{fig:single-and-parallel}}
+	\includegraphics[keepaspectratio, width=\linewidth]{diagrams/opal/ind}
+	\caption[Architectural diagram for \approachshort{}'s \Indfw{} firmware design.]{The \Indfw{} firmware design implements the first parallelism strategy discussed in \cref{sec:opal-algorithm}, where each thread \emph{independently} performs tile coded inference and Sarsa \gls{acr:rl} updates. \emph{Workers} each pull commands from (and push actions to) the environment over the \inring{} and \outring{} channels. To maintain consistency between all workers, configuration, policy data, and state-reward trajectory data must be guarded by read-write locks. During inference, workers acquire a shared read lock around, e.g., policy data. As a result, \Indfw{} optimises throughput for an \emph{offline} agent, but as policy updates require an exclusive write lock around many parameters, only a single worker may perform an \gls{acr:rl} update at any time.\label{fig:single-and-parallel:single}}
 \end{figure}
+\begin{figure}
+	\centering
+	\includegraphics[keepaspectratio, width=\linewidth]{diagrams/opal/coop}
+	\caption[Architectural diagram for \approachshort{}'s \Coopfw{} firmware design.]{The \Coopfw{} firmware design implements the second parallelism strategy discussed in \cref{sec:opal-algorithm} (ParSa, \cref{alg:parsa}), where each thread \emph{cooperates}  on tile coded inference and \gls{acr:rl} policy updates. A single \emph{controller} thread interfaces with the environment over the \inring{} and \outring{} channels, and then delegates RL computation and updates to many \emph{minion} threads, who operate on independent subtasks. These messages are moved between \glspl{acr:me} using specialised next-neighbour registers. The first context of each physical core is responsible for placing this message into shared scratch, notifying the other contexts on its \gls{acr:me}, and forwarding the message to remaining \glspl{acr:me} on the island. This design minimises state-action latency, but crucially maximises \emph{online} throughput by having no mutually exclusive data access.\label{fig:single-and-parallel:parallel}}
+\end{figure}
+
+%\begin{figure}
+%	\centering
+%	\begin{subfigure}{\linewidth}
+%		\centering
+%		\includegraphics[keepaspectratio, width=0.78\linewidth]{diagrams/opal/ind}
+%		\caption{\Indfw{} (offline throughput-optimal). \emph{Workers} independently pull commands from (and push actions to) the environment, locking policy access for updates.\label{fig:single-and-parallel:single}}
+%	\end{subfigure}
+%
+%	\begin{subfigure}{\linewidth}
+%		\centering
+%		\includegraphics[keepaspectratio, width=0.8\linewidth]{diagrams/opal/coop}
+%		\caption{\Coopfw{} (online-optimal). A single \emph{controller} delegates RL computation and updates to many \emph{minion} threads, who operate on independent subtasks.\label{fig:single-and-parallel:parallel}}
+%	\end{subfigure}
+%	\caption{\approachshort{}'s compute strategies scale to fit device capacity according to either latency or throughput needs.\label{fig:single-and-parallel}}
+%\end{figure}
 
 %?? reduce below and make take-homes more generic if possible
 
@@ -128,6 +184,14 @@ As a result, in many architectures policy parameters are split across such regio
 \begin{algorithm}
 	\caption{Task scheduling for ParSa\label{alg:parsa-schedule}}
 	\tcc{?? Please fill me out.}
+	\SetKw{Let}{let}
+	\SetKw{Enum}{enum}
+	\SetKw{In}{in}
+	\SetKw{Await}{await}
+	\SetKw{Const}{const}
+	\SetKwProg{sched}{Function \emph{Schedule}}{}{end}
+	\sched{input}{
+	}
 \end{algorithm}
 
 We use a simple first-fit work placement algorithm run in \approachshort{}, placing the largest work item into the least loaded thread of the least loaded core (as the NFP uses hardware threads).
