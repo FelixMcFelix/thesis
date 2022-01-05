@@ -183,14 +183,59 @@ As a result, in many architectures policy parameters are split across such regio
 
 \begin{algorithm}
 	\caption{Task scheduling for ParSa\label{alg:parsa-schedule}}
-	\tcc{?? Please fill me out.}
+	\tcc{Assume we have a list \emph{ME\_CTXS}, which contains one entry for each included \gls{acr:me} counting the number of its usable contexts, totalling \emph{N\_CTXS}. Also, assume we know the average cost of a task in each memory region, \emph{MEM\_COSTS}.}
 	\SetKw{Let}{let}
 	\SetKw{Enum}{enum}
+	\SetKw{Struct}{struct}
 	\SetKw{In}{in}
 	\SetKw{Await}{await}
+	\SetKw{Return}{return}
+	\SetKw{Forkw}{for}
 	\SetKw{Const}{const}
+	\Struct Cost \{ \emph{cost}, \emph{n\_items}, \emph{max\_items} \}\;
 	\SetKwProg{sched}{Function \emph{Schedule}}{}{end}
-	\sched{input}{
+	\sched{work\_items}{
+		\Let \emph{out} = vec![vec![]; \emph{N\_CTXS}]\;
+		\Let \emph{alloc\_sz} = \emph{work\_items}.len() $\div$ \emph{N\_CTXS}\;
+		\Let \emph{alloc\_spill} = \emph{work\_items}.len() \% \emph{N\_CTXS}\;
+		\Let \emph{me\_costs} = [Cost \{ 0, 0, 0 \}; \emph{ME\_CTXS}.len()]\;
+		\Let \emph{ctx\_costs} = [Cost \{ 0, 0, \emph{alloc\_sz} \}; \emph{ME\_CTXS}.len()]\;
+		\For{\emph{ctx} \In \emph{ctx\_costs}[..\emph{alloc\_spill}]}{
+			\emph{ctx.max\_items} += 1\;
+		}
+		\For{\emph{ctx} \In \emph{ctx\_costs}}{
+			\Let \emph{penalise\_early\_ctx} = \emph{ME\_CTXS}[\emph{me\_id}(\emph{ctx})] - \emph{local\_ctx\_id}(\emph{ctx}) - 1\;
+			\emph{me\_costs}[\emph{me\_id}(\emph{ctx})]\emph{.max\_items} += \emph{ctx.max\_items}\;
+			\emph{ctx.cost} = \emph{penalise\_early\_ctx}\;
+			\emph{me\_costs}[\emph{me\_id}(\emph{ctx})]\emph{.cost} += \emph{ctx.cost}\;
+		}
+		\tcp{Sort MEs by cost / \emph{ME\_CTXS}[\emph{me}], breaking ties on largest id.}
+		\Let \emph{me\_heap} = \emph{min\_heap}(\emph{me\_costs})\;
+		\tcp{Sort CTXs by cost, breaking ties on smallest id.}
+		\Let \emph{ctx\_heaps} = [\emph{min\_heap}(\emph{ctx\_costs}[\emph{first\_ctx}(\emph{me})..\emph{ME\_CTXS}[me]]) \Forkw \emph{me \In 0..\emph{ME\_CTXS}.len()}]\;
+		\For{item \In work\_items.reverse()}{
+			\Let \emph{me} = find\_min(\emph{me\_heap})\;
+			\Let \emph{ctx} = find\_min(\emph{ctx\_heaps}[\emph{me}])\;
+			\emph{me.n\_items} += 1\;
+			\emph{ctx.n\_items} += 1\;
+			\uIf{me.n\_items $\ge$ me.max\_items}{
+				\emph{me\_heap}.remove(\emph{me})\;
+			}
+			\Else{
+				\emph{me.cost} += \emph{MEM\_COSTS}[\emph{item.region}]\;
+				\emph{me\_heap}.rebalance()\;
+			}
+			\uIf{ctx.n\_items $\ge$ ctx.max\_items}{
+				\emph{ctx\_heaps}[\emph{me}].remove(\emph{ctx})\;
+			}
+			\Else{
+				\emph{ctx.cost} += \emph{MEM\_COSTS}[\emph{item.region}]\;
+				\emph{ctx\_heaps}[\emph{me}].rebalance()\;
+			}
+			
+			\emph{out}[\emph{ctx}].push(\emph{item})\;
+		}
+		\Return{\emph{out}}
 	}
 \end{algorithm}
 
