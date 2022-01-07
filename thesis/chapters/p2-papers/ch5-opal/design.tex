@@ -21,6 +21,10 @@ To meet these constraints, \approachshort{} operates alongside a co-hosted P4 da
 To achieve both inference and learning I employ fixed-point $Q$ numbers as the main data format, and justify this against data formats in other embedded environments (\cref{sec:opal-data-format}).
 Classical \gls{acr:rl} algorithms and function approximation schemes---semi-gradient Sarsa and tile coding (\cref{sec:tile-code,sec:demo-rl-sarsa})---enable learning under the memory and computational constraints of \gls{acr:pdp} hardware. This considers different parallel processing strategies, as well as the conversion to a wait-free algorithm enabled by using $Q$ numbers as the primary data format (\cref{sec:opal-algorithm}).
 
+Bringing \approachshort{} to \gls{acr:pdp} \emph{switches} such as the Tofino would be difficult, if not impossible as they closely match the P4 \gls{acr:psa}, leaving no spare general-purpose compute units.
+Taking inspiration from real-time programming, a potential solution might be to divide \gls{acr:rl} processing across several packets (i.e., computing a portion of the preference list each time) until further work would delay outbound transmission.
+This would introduce new issues in concurrent access, work splitting, and altered timescales for learning: we leave their treatment to future work.
+
 \subsection{Interaction and System Model}\label{sec:opal-sys-model}
 
 \begin{figure}
@@ -174,6 +178,7 @@ On Netronome \gls{acr:nfp} hardware in particular, rule updates \emph{must} be a
 In addition to the prohibitive complexity of building this data structure on-device, its construction requires knowledge of the entire rule set (and cannot be incrementally updated).
 I instead suggest in general that \texttt{extern}s or datapath stages which apply \gls{acr:rl} actions to packets should maintain a small store of state-action pairs, and periodically send these back to the controller for batch installation.
 This ensures that the majority of installed rules exhibit accelerated performance, while preventing installation delay on the newest decisions.
+Platforms such as Intel Tofino greatly simplify this, where Tofino Native Architecture intrinsics such as \emph{Action Profiles/Selects} allow a P4 action to be chosen based on a register value (i.e., an \gls{acr:rl} action).
 
 \subsection{Algorithm}\label{sec:opal-algorithm}
 %?? algo selection
@@ -320,6 +325,7 @@ The combination of all of these elements forms the basis of \emph{ParSa}---paral
 To match the deployment environment of SmartNIC devices, ParSa is presented such that each worker thread operates in an infinite loop to await and process requests delivered over a message channel \inring{}, and produce a stream of outputs on \outring{}.
 We first assume that every process knows its own index---\emph{id}---and that a \emph{schedule} has been precomputed to divide individual tilings among cores as tasks (\cref{alg:parsa:par}).
 This careful division is important; an individual tiling may contain several dimensions, and by recalling \cref{alg:tile-code} it is obvious that tilings with a higher dimension count require more iterations and are thus more expensive to infer.
+To give some context on the number of tasks ParSa is expected to perform, a policy sized to match the agent designs from \cref{chap:ddos-rl} with one bias tile and \num{16} sets of \num{8} tilings creates \num{129} work items.
 As such, a schedule is required to produce the most balanced workload between worker threads\sidenote{Work stealing or other parallelisation strategies are not suitable choices for work balancing in tile-coded Sarsa for several reasons. These include the computational simplicity of individual tasks, the predictable compute cost of any such task, and the relative cost of \gls{acr:ipc} required to pass cached state between workers.}.
 However, this is a deployment-specific implementation detail, as in addition to raw task costs an effective scheduler must account for cache size limits and physical/logical core differences, to give some examples.
 I present an allocator tailored to Netronome hardware later in \cref{alg:parsa-schedule}.
@@ -334,6 +340,7 @@ Once every thread has marked its termination, the values of each action given th
 The index of the largest value is then taken to be the chosen action, though this may be trivially modified to account for $\epsilon$-greedy selection (\cref{alg:parsa:parctl-acchoose}), which is then placed into the output message and returned to the environment (\cref{alg:parsa:parctl-acemit}).
 When online learning is enabled, the control thread checks for a reward signal and prior state-action-value tuple according to the configured trace selection scheme from \cref{sec:opal-sys-model} (\crefrange{alg:parsa:parctl-checkstate}{alg:parsa:parctl-checkreward}).
 If a match is found, it computes and reduces by $\alpha$ the Sarsa \gls{acr:td} value $\delta_t$ (\crefrange{alg:parsa:parctl-td1}{alg:parsa:parctl-td2}), before passing this adjustment and the prior state action pair to the minion threads to perform the update step (\crefrange{alg:parsa:parctl-update}{alg:parsa:parctl-await2}).
+Modification to other single-step algorithms such as \emph{Q-learning} would be simple, requiring only changes to the computation of $\delta_t$.
 The newest state-action-value tuple is then stored (\cref{alg:parsa:parctl-store}).
 
 The \emph{Minion} procedure processes a single request to retrieve and aggregate, or update, the action values learned for an input state over some subset of the policy tilings, \emph{tasks}.

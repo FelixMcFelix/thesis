@@ -10,24 +10,15 @@ Beyond registers, the platform implements an explicit memory hierarchy scaling i
 $$\text{LMEM (ME)} < \text{CLS (Island)} < \text{CTM} < \text{IMEM (Chip)} < \text{EMEM}$$
 Interested readers will find more in-depth detail presented in \cref{adx:nfp-arch}.
 
-?? What else do we cover.
+This section covers how policy data is stored in \approachshort{} to make best use of the above memory hierarchy (\cref{sec:policy-storage}), and how cores and other resources are applied to implement both parallelism strategies described above (\cref{sec:action-and-update-computation}).
+I further detail how \approachshort{} implements the \inring{} and \outring{} rings on \gls{acr:nfp} hardware (\cref{sec:agent-environment-communication}).
+Through \cref{sec:intra-agent-communication}, I discuss and introduce the design of efficient work-passing and aggregation mechanisms on \gls{acr:nfp} hardware required to enable the \emph{ParSa} algorithm.
+\Cref{sec:reconfigurability} describes how \approachshort{} may be configured at compile time and during runtime.
+%\Cref{sec:reconfigurability} describes how \approachshort{} may be configured at compile time and during runtime, as well as presenting its control plane protocol.
+Finally, I detail the scheduler used to partition tile coding tasks between available worker threads in \cref{sec:work-allocation}.
 
-?? As the allocation of cores/chip area is set ahead of time by a framework or system administrator, \approachshort{}(-\Coopfw) agents enumerate themselves at runtime, during initialisation.
 
-?? Need protocol diagrams? Need to explain reduced epsilon stuff (i.e., time-based).
-
-?? We open-source our firmware and control programs for the benefit of the community.
-Moving beyond the Netronome platform, we describe how our architecture may be adapted and improved on by bespoke hardware or FPGA-based deployment.
-
-?? Need to explain mem splits/policy storage.
-
-?? \approachshort{} communicates with the packet pipeline of a P4 dataplane via \texttt{extern} plugins using \inring{} (state, configuration) and \outring{} (action) messages (\cref{fig:netro-arch}).
-Internally, \approachshort{} either has all its cores act independently (\cref{fig:single-and-parallel:single}) or cooperate to solve each task (\cref{fig:single-and-parallel:parallel})---with different latency-throughput benefits (\cref{sec:action-and-update-computation}).
-
-\subsection{Runtime Initialisation}
-?? Core enumeration etc here.
-
-\subsection{Policy Storage}
+\subsection{Policy Storage}\label{sec:policy-storage}
 Taking advantage of the non-uniform memory architecture in \gls{acr:nfp} hardware, \approachshort{} splits its policy across the CLS, CTM and IMEM memory regions.
 This arises both from necessity, and in the pursuit of runtime performance.
 
@@ -39,7 +30,7 @@ The price in memory has already been paid for storage of a full policy, and so a
 Secondly, recalling that a worker must retrieve an action preference list for each tile, we aim to minimise the latency of each memory access as part of our overall performance goal.
 Ideally, this would mean placing the entirety of the policy into CLS, but there is insufficient space to do so.\sidenote{CLS is the lowest-latency memory region which is practically usable: LMEM is dedicated mostly to program state which spills from the register file, and cannot be accessed across \gls{acr:me} boundaries.}
 Suppose we've chosen $k=$~\num{32} for our fixed-point format, thus each action value occupies \qty{4}{\byte}.
-Given $a$ action values, $d$ dimensions in a tiling, $s$ tilings in a set, and $t$ tiles per dimension, that tiling then occupies $4asd^t$\unit{\byte} of memory---its cost scaling exponentially with the count of input dimensions.
+Given $a$ action values, $d$ dimensions in a tiling, $s$ tilings in a set, and $t$ tiles per dimension, that tiling then occupies $4asd^t$~\unit{\byte} of memory---its cost scaling exponentially with the count of input dimensions.
 Consider the \emph{Instant} agent design of \cref{chap:ddos-rl}: the largest tiling set chooses $a=10$, $d=4$, $s=8$ and $t=6$, and thus requires \qty{1280}{\kibi\byte}.
 This alone exceeds the \qty{64}{\kibi\byte} of CLS available per island.
 Worse still, we must include enough space to store \emph{any} tiling set below the maximum parameters.
@@ -48,52 +39,74 @@ If we do not differentiate between tiling sets according to dimension count, the
 As we cannot fit a whole multidimensional policy into CLS, we can only maximise the proportion of the policy which is placed into these smaller regions.
 The solution then is to explicitly partition the policy's storage across these memory regions according to maximum dimension count; i.e., assigning tiling sets having $d\le1$ to CLS, $d\le2$ to CTM, and $d\le4$ to IMEM.
 These specific limits are arbitrarily picked to match \emph{Instant}/\emph{Guarded} as before, but can be customised at compile time subject to resource limits.
-This increases the proportion of accesses maed to lower-latency memory.
+This increases the proportion of accesses made to lower-latency memory.
 Moreover, these memory regions are accessible to all \glspl{acr:me} on the same island, and with increased access cost for remote islands.
 
 \paragraph{Parallels in other platforms}
-?? FPGA memory regions.
+This tiered division of policy regions applies to other device classes as well.
+For instance, \gls{acr:fpga} devices have a similar hierarchy between \glspl{acr:lut}, block \gls{acr:ram}, \gls{acr:sram} and \gls{acr:dram}.
 
 \subsection{Action and Update Computation}\label{sec:action-and-update-computation}
-\approachshort{} applies the insights of \textcite{DBLP:journals/firai/TravnikMSP18} to minimise action latency; an action is computed, sent out into the environment, and only then is the underlying policy updated.
-Using one of the below strategies chosen at compile time, a state vector is tile coded, converted into action probabilities, and an action is chosen.
-This is then written out to the environment as in \cref{sec:agent-environment-communication}.
-If online learning is enabled, \approachshort{} then checks an internal hashmap for a previous state-action pair matching the current instruction source, and if found then the policy is updated.
-Updates are computed using \emph{single-step semi-gradient Sarsa}~\cite[pp. \numrange{217}{221}]{RL2E}, though modification to support other single-step methods would be trivial.
-The new state- or tiles-action pair is then written into storage.
-\approachshort{} can be configured to automatically select values of the input state vector as keys for state and reward storage.
+%\approachshort{} applies the insights of \textcite{DBLP:journals/firai/TravnikMSP18} to minimise action latency; an action is computed, sent out into the environment, and only then is the underlying policy updated.
+%Using one of the below strategies chosen at compile time, a state vector is tile coded, converted into action probabilities, and an action is chosen.
+%This is then written out to the environment as in \cref{sec:agent-environment-communication}.
 
-Two firmware models govern how the compute-heavy parts of these tasks (action selection, policy updates) are carried out:
+%If online learning is enabled, \approachshort{} then checks an internal hashmap for a previous state-action pair matching the current instruction source, and if found then the policy is updated.
+%Updates are computed using \emph{single-step semi-gradient Sarsa}~\cite[pp. \numrange{217}{221}]{RL2E}, though modification to support other single-step methods would be trivial.
+%The new state- or tiles-action pair is then written into storage.
+%\approachshort{} can be configured to automatically select values of the input state vector as keys for state and reward storage.
+
+\begin{figure}
+	\centering
+	\includegraphics[keepaspectratio, width=\linewidth]{diagrams/opal/ind}
+	\caption[Architectural diagram for \approachshort{}'s \Indfw{} firmware design.]{The \Indfw{} firmware design implements the first parallelism strategy discussed in \cref{sec:opal-algorithm}, where each thread \emph{independently} performs tile coded inference and Sarsa \gls{acr:rl} updates. \emph{Workers} each pull commands from (and push actions to) the environment over the \inring{} and \outring{} channels. To maintain consistency between all workers, configuration, policy data, and state-reward trajectory data must be guarded by read-write locks. During inference, workers acquire a shared read lock around, e.g., policy data. As a result, \Indfw{} optimises throughput for an \emph{offline} agent, but as policy updates require an exclusive write lock around many parameters, only a single worker may perform an \gls{acr:rl} update at any time.\label{fig:single-and-parallel:single}}
+\end{figure}
+\begin{figure}
+	\centering
+	\includegraphics[keepaspectratio, width=\linewidth]{diagrams/opal/coop}
+	\caption[Architectural diagram for \approachshort{}'s \Coopfw{} firmware design.]{The \Coopfw{} firmware design implements the second parallelism strategy discussed in \cref{sec:opal-algorithm} (ParSa, \cref{alg:parsa}), where each thread \emph{cooperates}  on tile coded inference and \gls{acr:rl} policy updates. A single \emph{controller} thread interfaces with the environment over the \inring{} and \outring{} channels, and then delegates RL computation and updates to many \emph{minion} threads, who operate on independent subtasks. These messages are moved between \glspl{acr:me} using specialised next-neighbour registers. The first context of each physical core is responsible for placing this message into shared scratch, notifying the other contexts on its \gls{acr:me}, and forwarding the message to remaining \glspl{acr:me} on the island. This design minimises state-action latency, but crucially maximises \emph{online} throughput by having no mutually exclusive data access.\label{fig:single-and-parallel:parallel}}
+\end{figure}
+
+I implement both parallelism strategies described in \cref{sec:opal-algorithm}, each as a separate firmware model governing how the compute-heavy parts of these tasks (action selection, policy updates) are carried out:
 \begin{description}
 	\item[\Indfw{} (\cref{fig:single-and-parallel:single})] Separate threads listen for new states, and each performs its work sequentially. Computing an action list requires a \emph{read lock} on the policy. If an update occurs, the core requests a \emph{write lock} before updating, greatly limiting online throughput. \emph{Tile lists} are stored for update computation.
 	\item[\Coopfw{} (\cref{fig:single-and-parallel:parallel,alg:parsa})] Threads cooperate on processing state vectors, minimising latency. \emph{Minion} threads have a fixed list of work items, while a \emph{controller} thread sends compute/update commands before awaiting worker completion. Work items are disjoint, requiring no policy locks. \emph{State vectors} are stored for update computation.
 \end{description}
+Both designs interact with the environment using the \gls{acr:mpmc} channels described in \cref{sec:agent-environment-communication}.
+\Coopfw{} also employs carefully optimised communication between workers and runtime enumeration (\cref{sec:intra-agent-communication}).
+
 Each offers a different point of optimisation; if updates are disabled, then the \indfw{} model can maximise throughput, while the \coopfw{} model is designed to minimise decision latency and needs no locks to update the policy (increasing \emph{online learning} throughput).
 These correspond to only executing a trained policy and actively (re-)training a policy, respectively.
 %ParSa is described here at a high level, as an algorithm suited for \emph{any multiprocessor environment}.
 %We omit the simple logic for $\epsilon$-greedy action selection (which we implement), and note that modification to other single-step algorithms such as \emph{Q-learning} would be trivial.
 %We detail our communication primitives in \cref{sec:intra-agent-communication}, and our work scheduling strategy in \cref{sec:work-allocation}, eliding the details of tile-coding as they are well-understood.
 %In general it is also possible for the \emph{Ctl} task to act as an additional \emph{Minion} in its parallel sections; we were limited here by code store requirements on the NFP.
-Latency and throughput, as in many networked systems, have different effects upon RL agents according to their design and target problem.
-Higher RL throughput is a necessity for per-flow or per-packet applications, which can require high decision-per-second rates even after combining state measurements received from the environment, such as flow control in DDoS prevention.
+Latency and throughput, as in many networked systems, have different effects upon \gls{acr:rl} agents according to their design and target problem.
+Higher \gls{acr:rl} throughput is a necessity for per-flow or per-packet applications, which can require high decision-per-second rates even after combining state measurements received from the environment, such as flow control in \gls{acr:ddos} prevention.
 Equally, lower latency affords an agent finer-grained control and learning of a problem, being able to react sooner to new information (e.g., device state in a routing optimisation problem, or queue depth when trying to enforce packet pacing).
 
-Paradoxically, we found that in the general \emph{ParSa} algorithm it was more efficient \emph{to do more work} by having each worker recompute its tile subset from a stored state.
-It transpired that cacheing this data placed a larger \texttt{memcpy} in the serial section, whose size did not scale at all with bit depth.
-Additionally, we do not use bitshifts in place of division operations in our implementation, due to the strict limits that power-of-two tile widths place upon policy design.
+In both cases, the configuration data struct holds a cache of adjusted minima, maxima, tile widths, and shift amounts for each tiling.
+As this data resides in nearby CLS, this offers a reliable way to accelerate inference and updates all constituent threads.
+Once a \coopfw{} minion receives its task set, it pre-computes each task's memory tiling tier, the index of that task's tiling set, and internal index in the set of that same task, accelerating lookup of these parameters from task indices.
+\Indfw{}, when learning online, additionally caches the full hit tile list as part of the execution trace, as its cost is far smaller than inference---in \Coopfw, it is paradoxically cheaper for each worker to simply repeat the tile coding over its task subset.
 
-?? Redo this part.
+Although not covered directly in \cref{alg:parsa}, adaptation to support $\epsilon$-greedy action selection requires an additional consideration for slowly-annealed epsilon values.
+If $\epsilon$ is reduced by an amount smaller in magnitude than the current number of fractional bits can represent, then we instead reduce $\epsilon$ by the smallest valid amount every $T$ decisions.
+
+%Paradoxically, we found that in the general \emph{ParSa} algorithm it was more efficient \emph{to do more work} by having each worker recompute its tile subset from a stored state.
+%It transpired that cacheing this data placed a larger \texttt{memcpy} in the serial section, whose size did not scale at all with bit depth.
+%Additionally, we do not use bitshifts in place of division operations in our implementation, due to the strict limits that power-of-two tile widths place upon policy design.
 
 \subsection{Agent-Environment Communication}\label{sec:agent-environment-communication}
 \approachshort{} uses \gls{acr:mpmc} messaging channels to communicate with other elements; be they P4 programs on the packet path, or other on-chip analysis and control modules.
-Through these channels a system \emph{pushes} state vectors, reward measures, and setup packets as inputs, and \emph{pulls} a stream of state-action pairs as outputs.
+%Through these channels a system \emph{pushes} state vectors, reward measures, and setup packets as inputs, and \emph{pulls} a stream of state-action pairs as outputs.
 This allows decisions to be made asynchronously---preventing packet stalling---and allowing many RL agents to be used if desired.
-The key insight of this mechanism is that on-chip reward/state signals enjoy first-class support in the same manner as packets from the P4 dataplane, allowing agents to act on environmental signals from other on-NIC/chip asynchronous processes or the controller.
+The key insight of this mechanism is that on-chip reward and state signals enjoy first-class support in the same manner as packets from the P4 dataplane, allowing agents to act on environmental signals from other on-NIC/chip asynchronous processes or the controller.
 As such, \approachshort{} can receive input from P4 \texttt{extern}s or other, dedicated off-path flow state measurement applications.
 
-Our implementation uses platform-specific \gls{acr:ipc}---\emph{EMEM ring buffers}---as the basis for \gls{acr:mpmc} communication.
+Our implementation uses platform-specific \gls{acr:ipc}---\emph{EMEM ring buffers}---as the basis for \gls{acr:mpmc} communication over the \inring{} and \outring{} rings.
 These are \gls{acr:nfp}-intrinsic primitives which allow an arbitrary number of listener threads to await the arrival of any work item using hardware signalling.
-While this signally and delivery is specially hardware-accelerated, this comes at a cost of strict message body size limits; unfortunately this falls short of the maximum state-action pair size, let alone arbitrary policy packet payloads.
+While this signalling and delivery is specially hardware-accelerated, this comes at a cost of strict message body size limits; unfortunately this falls short of the maximum state-action pair size, let alone arbitrary policy packet payloads.
 To work around this \approachshort{} maintains a freelist of byte slices for both the \inring{} and \outring{} channels, while EMEM ring messages themselves carry lengths and pointers received from the freelist alongside any preliminary parse data.
 As \gls{acr:pdp} hardware lacks dynamic memory allocation, large buffers are allocated at compile time with many fixed-size slices; \inring{}'s buffer slots are sized to hold \gls{acr:mtu}-size packets, while \outring{}'s slots hold enough bytes to store the largest possible state-action pair.
 The \approachshort{} controller with the lowest index locks each of these lists and populates it using all contained slices, from which point any other thread in the SmartNIC may lock the structure to request or return a valid message pointer.
@@ -115,19 +128,12 @@ On-chip execution and the nature of action preference computation allow us to us
 Moreover, adjacent functional units/cores often have special-purpose shared registers or share a small fast cache to accelerate communication.
 These capabilities underlie the design of the broadcast and aggregate primitives required by \emph{Parsa} shown to some extent by \cref{fig:single-and-parallel:parallel}.
 
+While I describe here how \approachshort{} is optimised to enable the most efficient division of work, communication, and aggregation, these add per-task overheads in both the serial and parallel portions.
+Even in wait-free algorithms, this requires a minimum number of workers to improve upon the latency bounds of a serial approach.
+I investigate the exact worker count requirements imposed to break even or improve upon single-threaded execution in \cref{sec:results}.
+
 %?? \cref{fig:single-and-parallel}
 %Internally, \approachshort{} either has all its cores act independently (\cref{fig:single-and-parallel:single}) or cooperate to solve each task (\cref{fig:single-and-parallel:parallel})---with different latency-throughput benefits (\cref{sec:action-and-update-computation}).
-
-\begin{figure}
-	\centering
-	\includegraphics[keepaspectratio, width=\linewidth]{diagrams/opal/ind}
-	\caption[Architectural diagram for \approachshort{}'s \Indfw{} firmware design.]{The \Indfw{} firmware design implements the first parallelism strategy discussed in \cref{sec:opal-algorithm}, where each thread \emph{independently} performs tile coded inference and Sarsa \gls{acr:rl} updates. \emph{Workers} each pull commands from (and push actions to) the environment over the \inring{} and \outring{} channels. To maintain consistency between all workers, configuration, policy data, and state-reward trajectory data must be guarded by read-write locks. During inference, workers acquire a shared read lock around, e.g., policy data. As a result, \Indfw{} optimises throughput for an \emph{offline} agent, but as policy updates require an exclusive write lock around many parameters, only a single worker may perform an \gls{acr:rl} update at any time.\label{fig:single-and-parallel:single}}
-\end{figure}
-\begin{figure}
-	\centering
-	\includegraphics[keepaspectratio, width=\linewidth]{diagrams/opal/coop}
-	\caption[Architectural diagram for \approachshort{}'s \Coopfw{} firmware design.]{The \Coopfw{} firmware design implements the second parallelism strategy discussed in \cref{sec:opal-algorithm} (ParSa, \cref{alg:parsa}), where each thread \emph{cooperates}  on tile coded inference and \gls{acr:rl} policy updates. A single \emph{controller} thread interfaces with the environment over the \inring{} and \outring{} channels, and then delegates RL computation and updates to many \emph{minion} threads, who operate on independent subtasks. These messages are moved between \glspl{acr:me} using specialised next-neighbour registers. The first context of each physical core is responsible for placing this message into shared scratch, notifying the other contexts on its \gls{acr:me}, and forwarding the message to remaining \glspl{acr:me} on the island. This design minimises state-action latency, but crucially maximises \emph{online} throughput by having no mutually exclusive data access.\label{fig:single-and-parallel:parallel}}
-\end{figure}
 
 %\begin{figure}
 %	\centering
@@ -164,15 +170,82 @@ Each context writes back to a single shared block of memory in CLS, performing a
 The controller thread checks these whenever it is notified of task completion by a hardware signal fired after the acknowledgement counter is aggregated.
 This is essential for aggregation compared to the use of bounded message buffers, which caused significant head-of-line blocking.
 
-?? And NOW discuss bargain-bucket \gls{acr:simd}!
+%?? And NOW discuss bargain-bucket \gls{acr:simd}!
+It is worth noting that CLS supports only \qtylist{32;64}{\bit} atomic arithmetic, and the native \gls{acr:nfp} register width is \qty{32}{\bit}.
+As a result, lower bit depth tile representations (\qtylist{8;16}{\bit}) ultimately resolve to \qty{32}{\bit} atomic arithmetic.
+Is there a way to take advantage of this to gain additional throughput for these tile widths?
+That is, to find a bit-packing strategy which enables multiple additions to be performed in a single atomic operation as a makeshift form of \gls{acr:simd}?
+While this is doable, the main issue is that additions are performed on signed data in effectively an unsigned way, as the carry between arbitrary bit pairs cannot be disabled.
+\emph{Unsigned} overflows are a common occurrence when operating on signed data in this manner\sidenote{Recall that \mintinline{rust}{-1i8}$\rightarrow$\mintinline{rust}{0i8} is also \mintinline{rust}{0xffu8}$\rightarrow$\mintinline{rust}{0x00u8}. As we can reasonably expect individual tile preferences for each action to oscillate between positive and negative, each sign change will trigger an usigned overflow.}: na\"{i}ve packing will cause the sign changes of adjacent computations to `bleed into' adjacent fields.
+In the non-atomic case a single packing bit suffices between any pair of values, all of which may be masked out in a single \gls{acr:alu} operation.
+In the atomic case, $n$~\unit{\bit} padding fields allow at most $2^n-1$ additions from separate tasks without clearing.
+Having \num{136} tasks and \num{31} workers we require at least \qty{8}{\bit} padding to elide all atomic clears, or \qty{5}{\bit} if every addition is followed by a test-clear operation on all padding bits.
+\Cref{fig:bb-simd} shows the packing layouts in a \qty{64}{\bit} field which maximise theoretical throughput---\qtyrange{4}{5}{\times} for \qty{8}{\bit} and \qty{3}{\times} for \qty{16}{\bit}.
+%The effectiveness of this scheme is examined in \cref{sec:wtf}.
+Unfortunately, as related in \cref{sec:opal-evaluation}, this adds a consistent \qty{10}{\percent} latency overhead to tile coded inference due to the additional non-atomic \gls{acr:alu} operations needed to pack the input data.
+This be useful on other platforms where atomic operations \emph{are} much more expensive, or \gls{acr:alu} use is cheaper.
+
+\begin{figure}
+	\centering
+	\begin{bytefield}{32}
+		\bitheader{0,7,8,15,16,23,24,31} \\
+		\bitbox{16}[]{\mintinline{rust}{i16}$_0$} &
+		\bitbox{8}[bgcolor=bitscratch]{} &
+		\bitbox{8}[]{\mintinline{rust}{i16}$_1$} \\
+		\bitbox{8}[]{...\mintinline{rust}{i16}$_1$} &
+		\bitbox{8}[bgcolor=bitscratch]{} &
+		\bitbox{16}[]{\mintinline{rust}{i16}$_2$}
+	\end{bytefield}
+
+	\vspace{1em}
+	\begin{bytefield}{32}
+		\bitheader{0,7,8,15,16,23,24,31} \\
+		\bitbox{8}[bgcolor=bitscratch]{} &
+		\bitbox{8}[]{\mintinline{rust}{i8}$_0$} &
+		\bitbox{8}[bgcolor=bitscratch]{} &
+		\bitbox{8}[]{\mintinline{rust}{i8}$_1$} \\
+		\bitbox{8}[bgcolor=bitscratch]{} &
+		\bitbox{8}[]{\mintinline{rust}{i8}$_2$} &
+		\bitbox{8}[bgcolor=bitscratch]{} &
+		\bitbox{8}[]{\mintinline{rust}{i8}$_3$}
+	\end{bytefield}
+
+	\vspace{1em}
+	\begin{bytefield}{32}
+		\bitheader{0,3,4,5,6,10,11,12,16,17,18,19,23,24,25,29,30,31} \\
+		\bitbox{4}[bgcolor=bitscratch]{} &
+		\bitbox{8}[]{\mintinline{rust}{i8}$_0$} &
+		\bitbox{5}[bgcolor=bitscratch]{} &
+		\bitbox{8}[]{\mintinline{rust}{i8}$_1$} &
+		\bitbox{5}[bgcolor=bitscratch]{} &
+		\bitbox{2}[]{\mintinline{rust}{i8}$_2$} \\
+		\bitbox{6}[]{...\mintinline{rust}{i8}$_2$} &
+		\bitbox{5}[bgcolor=bitscratch]{} &
+		\bitbox{8}[]{\mintinline{rust}{i8}$_3$} &
+		\bitbox{5}[bgcolor=bitscratch]{} &
+		\bitbox{8}[]{\mintinline{rust}{i8}$_4$}
+	\end{bytefield}
+	\caption[Bit-packing layouts for emulated SIMD addition using atomics.]{Bit-packing layouts within a \qty{64}{\bit} integer required to emulate \gls{acr:simd} addition using atomics. Packing requirements prevent the ideal \qtylist{4;8}{\times} throughput gain for \qtylist{16;8}{\bit} data we'd expect from hardware \gls{acr:simd}. These layouts achieve \qtylist{3;4;5}{\times} \gls{acr:alu} throughput, where the latter \mintinline{rust}{i8} layout requires an explicit atomic clear after every addition.\label{fig:bb-simd}}
+\end{figure}
+
+\paragraph{Initialisation}
+Any aggregation step requires us to first know the total number of workers.
+This can vary under the number of \glspl{acr:me} running \approachshort{}, the number of contexts assigned to each if CLS/CTM usage is required for another application, and because future designs may also introduce workers on other islands.
+This allocation of cores or chip area is set ahead of time by a framework or system administrator, thus \approachshort{}-\Coopfw{} agents enumerate themselves at runtime, during initialisation.
+To determine this, at startup the controller thread writes its own number of contexts into the first preference list entry, and passes on a message to its next neighbour.
+Each \emph{minion++} then adds to this its own number of contexts, and forwards the message to the next \gls{acr:me} in turn.
+The last \emph{minion++} worker then increments the acknowledgement counter by 1.
+This count is then propagated back out to all contexts, acknowledged and awaited (for, e.g., local workset computation).
 
 \paragraph{Parallels in other platforms}
-?? How on FPGA: shared bus for all recipients to speed up broadcast?
-, which can be factored into designs on other platforms like NetFPGA
+On other \gls{acr:soc} SmartNICs, we assume that similar \gls{acr:mpmc} communication channels and direct core-to-core messaging are possible under similar constraints---i.e., that a true broadcast primitive is not available.
+If the platform includes true message broadcast then implementation is simple.
+More specialised targets such as \gls{acr:fpga}-based solutions may include an explicit bus between the controller and all minion \glspl{acr:fu} to provide this in the most efficient manner possible.
+On NetFPGA, the writeback step can make use of native-width adders matching the tile data format, providing hardware \gls{acr:simd} acceleration as required.
 
 \begin{table}
 	\centering
-	\caption[IPC messaging costs on NFP hardware.]{Median \gls{acr:ipc} messaging costs on \gls{acr:nfp} hardware for \qty{4}{\byte} payloads. Of these, only EMEM rings can be used between islands, while nearest neighbour registers have placement constraints.}\label{tab:nfp-ipc-costs}
+	\caption[IPC messaging costs on NFP hardware.]{Median \gls{acr:ipc} messaging costs on \gls{acr:nfp} hardware for \qty{4}{\byte} payloads, measured over \num{65536} trials. Of these, only EMEM rings can be used between islands, while nearest neighbour registers have strict placement and access constraints. These one-way delays are measured by halving the \gls{acr:rtt} between two cores, or subtracting a return reflector write cost for next-neighbour registers due to their access limits.}\label{tab:nfp-ipc-costs}
 	\begin{tabular}{@{}ccS[table-format=4.3]S[table-format=4.3]@{}}
 		\toprule \gls{acr:ipc} mechanism & Cross-island support & \multicolumn{1}{c}{Cycles} & \multicolumn{1}{c}{Time (\unit{\nano\second})}\\
 		\midrule Next-neighbour registers & \xmark & 24.0 & 20.0\\
@@ -199,26 +272,24 @@ This is essential for aggregation compared to the use of bounded message buffers
 %Similarly, our next neighbour work notification scheme ($\sim$\qty{20}{\nano\second} latency per relayed message) was examined against \emph{reflector} and \emph{work queue} IPC mechanisms (\qtylist{58;126}{\nano\second} per messaged core).
 %These slower messages can be used in theory to skip ahead into longer ME chains.
 
-\subsection{Reconfigurability}
-\approachshort{} allows policy design and algorithmic learning parameters to be changed at runtime using at most two control packets.
+\subsection{Reconfigurability}\label{sec:reconfigurability}
+\approachshort{} allows policy design and learning parameters to be changed at runtime using at most two control packets.
 For instance, design changes are useful at the end of learning (moving from online to offline), or when trying to train a new policy for another problem from the same vantage point.
 Parameter changes are useful when an online agent must become more (or less) adaptive to new data (i.e., after detecting a changepoint in traffic).
-This extends to policy data, which may be imported from a pre-trained model via such packets and exported via PCIe to the host machine.
-Some aspects must be chosen at compile time; bit depth, \Coopfw/\Indfw, and maximum policy/tiling/state sizes---these govern core operation or allocated memory.
+This extends to policy data, which may be imported from a pre-trained model via such packets and exported via \gls{acr:pcie} to the host machine.
+Some aspects must be chosen at compile time; bit depth, parallelism strategy via \Coopfw/\Indfw, and maximum policy, tiling, or state sizes---these govern core operation or pre-allocated memory.
 Choosing a bit depth of \qtylist[list-pair-separator = { or }]{16;8}{\bit} halves/quarters policy memory costs, allowing more complex problems to be modelled using more dimensions or fine-grained tiles.
 
-In our implementation, configuration packets are carried over \gls{acr:udp} and signalled to the P4 parser using a reserved (pool 2~\parencite{rfc2474}) \gls{acr:dscp} value as used by \textcite{DBLP:conf/isca/LiLYCSH19}.
+In this implementation, configuration packets are carried over \gls{acr:udp} and signalled to the P4 parser using a reserved pool 2 \gls{acr:dscp}~\parencite{rfc2474} value, similarly to \textcite{DBLP:conf/isca/LiLYCSH19}.
 While this mainly automates parser generation, it also allows for configuration to be received from only trusted hosts (over the dataplane if needed) via P4 rules.
 Our control packet generation library and evaluation frameworks which build upon it are written in Rust.
+
+%?? Need protocol diagrams?
 
 %Runtime reconfiguration and interaction occur via the control and/or dataplane: the ease of use of the P4 pipeline's match-action tables and custom protocol parsers, combined with the dedicated input pipe to the NIC's controller (the host machine), allow these to be cleanly separated or combined as needed.
 %Bit depth of quantised measurements/preferences, maximum policy sizes, and parallelisation strategy may be configured at compile time.
 
 \subsection{Work Allocation}\label{sec:work-allocation}
-Due to the lack of dynamic memory allocation on PDP hardware, and to simplify value lookups, policies cannot be stored sparsely.
-As a consequence, tiling space requirements scale exponentially with dimension count, and so higher-dimension tilings must be placed in larger (and slower) memory regions.
-As a result, in many architectures policy parameters are split across such regions, giving different access and compute costs to different tasks.
-
 \begin{algorithm}
 	\caption{Task scheduling for ParSa\label{alg:parsa-schedule}}
 	\tcc{Assume we have a list \emph{ME\_CTXS}, which contains one entry for each included \gls{acr:me} counting the number of its usable contexts, totalling \emph{N\_CTXS}. Also, assume we know the average cost of a task in each memory region, \emph{MEM\_COSTS}.}
@@ -277,12 +348,20 @@ As a result, in many architectures policy parameters are split across such regio
 	}
 \end{algorithm}
 
-We use a simple first-fit work placement algorithm run in \approachshort{}, placing the largest work item into the least loaded thread of the least loaded core (as the NFP uses hardware threads).
-Each work item is a separate \emph{tiling} over a list of dimensions, noting that many such tilings may be grouped into a set (using different offsets for smoother coverage of the state space).
-The cost of any work item (from its dimension count and memory location) was empirically measured offline, and we weigh the total cost per core based on the number of minion threads available.
+We use a simple first-fit work placement algorithm, \cref{alg:parsa-schedule}, run in \approachshort{}-\Coopfw{} whenever a full configuration is installed.
+This places the largest work item into the least loaded minion context of the least loaded \gls{acr:me}, and assigns an equal number of tasks among all \glspl{acr:me} where possible.
+Each work item is a separate \emph{tiling} over a list of dimensions, where it can be reasonably assumed that these items are sorted by dimension count---thus, the reversed work list places the most computationally expensive tasks first.
+The approximate cost of any work item according to its dimension count and memory location was empirically measured offline and fed back into ther scheduler---a mean \qtylist{5.2;6.2;9.7;11.0}{\micro\second} for bias (0D), CLS (1D), CTM ($\le$2D) and IMEM ($\le$4D) tilings respectively.
+Finally, we weigh the total cost per core based on the number of minion threads available.
 This weighting specifically accounts for the controller thread on the first core.
-Work allocation and cached per-item data are recomputed when policy configuration is installed or changed.
+To work around some fairly opaque waking behaviour between contexts on each \gls{acr:me}, this scheduler applies a small penalty to minion contexts with a lower internal ID.
+
 Naturally, for $n$ tilings and $m$ threads this procedure is $\mathcal{O}{\left(n\log{m}\right)}$: two find/update min operations into binary heaps per tiling, storing $m/8$ and $\le8$ costs respectively.
+As an implementation detail, given that number of \glspl{acr:me} is small we may replace their minheap with a list to reduce the setup overhead.
+This also enables us to compare $\textit{cost}_i \times \textit{ME\_CTXs}\left[\textit{best}\right] \le \textit{cost}_\textit{best} \times \textit{ME\_CTXs}\left[i\right]$ rather than repeatedly apply fixed-point division.
+%$\textit{cost}_i \times \textit{ME\_CTXs}\left[\textit{best}\right]$
+
+%?? Redo and fully explain.
 
 %\subsection{Variable Quantisation Bit Depth}
 %At compile-time, \approachshort{} can be configured to use \qtylist[list-final-separator = { or }]{32;16;8}{\bit} values in input states and its internal policies.
@@ -302,31 +381,17 @@ Naturally, for $n$ tilings and $m$ threads this procedure is $\mathcal{O}{\left(
 %
 %Can changes in trained policy be used to transfer to a more complex function approximator elsewhere?
 
-\subsection{Limitations}\label{sec:limitations}
-Unfortunately, direct rule installation into P4 tables from the SmartNIC itself is not, in general, possible.
-To achieve line-rate match-action table lookup, platforms like NFP use accelerated datastructures (e.g., DCFL~\parencite{DBLP:conf/infocom/TaylorT05}) which must be computed by the controller over the \emph{entire rule set}.
-Even through \texttt{extern}s, directly adding new rules is neither feasible nor safe.
-We instead suggest on NFP chips that \texttt{extern}s or datapath stages which apply RL actions to packets should maintain a small store of state-action pairs, and periodically send these back to the controller for batch installation.
-This ensures that the majority of installed rules exhibit accelerated performance, while preventing installation delay on the newest decisions.
-Platforms such as Intel Tofino greatly simplify this, with Tofino Native Architecture intrinsics such as \emph{Action Profiles/Selects} allowing a P4 action to be chosen based on a register value (i.e., an RL action).
-
 %As is expected of parallel algorithms, efficient division of work, communication, and aggregation add per-task overheads in both the serial and parallel portions.
-Efficient division of work, communication, and aggregation add per-task overheads in both the serial and parallel portions.
-Even in wait-free algorithms, this requires a minimum number of workers to improve upon the latency bounds of a serial approach.
-We investigate the exact worker count requirements imposed to break even or improve upon single-threaded execution in \cref{sec:results}.
 
-\subsection{Targeting other device classes}
-While this design caters to Netronome devices, many aspects have clear analogues in other SmartNICs, such as the NetFPGA SUME.
-For instance, additional off-path functional units can serve as workers, like the floating-point adders used by \textcite{DBLP:conf/isca/LiLYCSH19}.
-Rather than general-purpose IPC, \approachshort{} would be hard-wired between internal workers and to the P4$\rightarrow$NetFPGA~\parencite{DBLP:conf/fpga/IbanezBMZ19} actions that interface with it.
-%Further optimisations arise from this model: a NetFPGA design would be able to replicate and optimise further on this concept of dedicated, low-latency communication between functional units.
-As we show later, using a bit depth below the native word size reduces overall efficiency.
-%This reduces overall efficiency even though considerably fewer reads are made.
-We expect an FPGA design would allow this to match the desired bit depth and enable the SIMD-like optimisations we discuss without creative and costly bit-stuffing.
 
-Bringing \approachshort{} to PDP switches such as the Tofino is difficult as they closely match the P4-PSA, leaving no spare general-purpose compute units.
-Taking inspiration from real-time programming, a potential solution is to divide RL processing across several packets (i.e., computing a portion of the preference list each time) until further work would delay outbound transmission.
-This would introduce new issues in concurrent access, work splitting, and altered timescales for learning: we leave their treatment to future work.
+%\subsection{Targeting other device classes}
+%While this design caters to Netronome devices, many aspects have clear analogues in other SmartNICs, such as the NetFPGA SUME.
+%For instance, additional off-path functional units can serve as workers, like the floating-point adders used by \textcite{DBLP:conf/isca/LiLYCSH19}.
+%Rather than general-purpose IPC, \approachshort{} would be hard-wired between internal workers and to the P4$\rightarrow$NetFPGA~\parencite{DBLP:conf/fpga/IbanezBMZ19} actions that interface with it.
+%%Further optimisations arise from this model: a NetFPGA design would be able to replicate and optimise further on this concept of dedicated, low-latency communication between functional units.
+%As we show later, using a bit depth below the native word size reduces overall efficiency.
+%%This reduces overall efficiency even though considerably fewer reads are made.
+%We expect an FPGA design would allow this to match the desired bit depth and enable the SIMD-like optimisations we discuss without creative and costly bit-stuffing.
 
 %While specifics of this design cater to Netronome devices, many aspects have clear analogues in NICs of similar form-factor, such as the NetFPGA SUME platform.
 %For instance, other cores can be introduced by designing additional off-path functional units,  like the floating-point adders used by \textcite{DBLP:conf/isca/LiLYCSH19}.
