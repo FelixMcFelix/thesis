@@ -53,6 +53,12 @@
 
 ?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
 
+\fakepara{PDP design for asynchronous compute}
+\emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} places a routing fabric between distinct packet/data processing elements \emph{in a SmartNIC}.
+Such designs would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded ME relationships.
+Event-driven versions of P4 have been suggested~\parencite{DBLP:conf/hotnets/IbanezABM19}.
+Timer events and device state changes would empower in-network RL use-cases, signalling timesteps for RL agents or new, effective, fine-grained sources of input state.
+
 \section{Use Cases}
 
 ?? On-switch (Tofino) DDoS detection and defence \url{https://www.usenix.org/conference/usenixsecurity21/presentation/liu-zaoxing}
@@ -64,6 +70,9 @@ iSwitch~\cite{DBLP:conf/isca/LiLYCSH19} uses programmable switches to combine mo
 Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this is properly explained in the PDP seciton: source is `report-yr2.tex'.}
 
 ?? Taurus moved out of representations section~\parencite{DBLP:journals/corr/abs-2002-08987}
+
+?? A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
+?? \emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
 
 \subsection{Network Telemetry}
 ?? Others (try to avoid DDN cases here).

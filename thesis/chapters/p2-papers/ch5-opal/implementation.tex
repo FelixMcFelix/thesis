@@ -130,7 +130,7 @@ These capabilities underlie the design of the broadcast and aggregate primitives
 
 While I describe here how \approachshort{} is optimised to enable the most efficient division of work, communication, and aggregation, these add per-task overheads in both the serial and parallel portions.
 Even in wait-free algorithms, this requires a minimum number of workers to improve upon the latency bounds of a serial approach.
-I investigate the exact worker count requirements imposed to break even or improve upon single-threaded execution in \cref{sec:results}.
+I investigate the exact worker count requirements imposed to break even or improve upon single-threaded execution in \cref{sec:opal-results-inference}.
 
 %?? \cref{fig:single-and-parallel}
 %Internally, \approachshort{} either has all its cores act independently (\cref{fig:single-and-parallel:single}) or cooperate to solve each task (\cref{fig:single-and-parallel:parallel})---with different latency-throughput benefits (\cref{sec:action-and-update-computation}).
@@ -181,7 +181,7 @@ In the non-atomic case a single packing bit suffices between any pair of values,
 In the atomic case, $n$~\unit{\bit} padding fields allow at most $2^n-1$ additions from separate tasks without clearing.
 Having \num{136} tasks and \num{31} workers we require at least \qty{8}{\bit} padding to elide all atomic clears, or \qty{5}{\bit} if every addition is followed by a test-clear operation on all padding bits.
 \Cref{fig:bb-simd} shows the packing layouts in a \qty{64}{\bit} field which maximise theoretical throughput---\qtyrange{4}{5}{\times} for \qty{8}{\bit} and \qty{3}{\times} for \qty{16}{\bit}.
-%The effectiveness of this scheme is examined in \cref{sec:wtf}.
+%The effectiveness of this scheme is examined in \cref{f}.
 Unfortunately, as related in \cref{sec:opal-evaluation}, this adds a consistent \qty{10}{\percent} latency overhead to tile coded inference due to the additional non-atomic \gls{acr:alu} operations needed to pack the input data.
 This be useful on other platforms where atomic operations \emph{are} much more expensive, or \gls{acr:alu} use is cheaper.
 
@@ -273,7 +273,7 @@ On NetFPGA, the writeback step can make use of native-width adders matching the 
 %These slower messages can be used in theory to skip ahead into longer ME chains.
 
 \subsection{Reconfigurability}\label{sec:reconfigurability}
-\approachshort{} allows policy design and learning parameters to be changed at runtime using at most two control packets.
+\approachshort{} allows policy design and learning parameters to be changed at runtime using at most two control packets.\sidenote{Packet formats are related through \cref{adx:opal-proto}.}
 For instance, design changes are useful at the end of learning (moving from online to offline), or when trying to train a new policy for another problem from the same vantage point.
 Parameter changes are useful when an online agent must become more (or less) adaptive to new data (i.e., after detecting a changepoint in traffic).
 This extends to policy data, which may be imported from a pre-trained model via such packets and exported via \gls{acr:pcie} to the host machine.
@@ -282,7 +282,7 @@ Choosing a bit depth of \qtylist[list-pair-separator = { or }]{16;8}{\bit} halve
 
 In this implementation, configuration packets are carried over \gls{acr:udp} and signalled to the P4 parser using a reserved pool 2 \gls{acr:dscp}~\parencite{rfc2474} value, similarly to \textcite{DBLP:conf/isca/LiLYCSH19}.
 While this mainly automates parser generation, it also allows for configuration to be received from only trusted hosts (over the dataplane if needed) via P4 rules.
-Our control packet generation library and evaluation frameworks which build upon it are written in Rust.
+The control packet generation library and evaluation frameworks which build upon it are written in Rust.
 
 %?? Need protocol diagrams?
 
@@ -348,13 +348,13 @@ Our control packet generation library and evaluation frameworks which build upon
 	}
 \end{algorithm}
 
-We use a simple first-fit work placement algorithm, \cref{alg:parsa-schedule}, run in \approachshort{}-\Coopfw{} whenever a full configuration is installed.
+I use a simple first-fit work placement algorithm, \cref{alg:parsa-schedule}, run in \approachshort{}-\Coopfw{} whenever a full configuration is installed.
 This places the largest work item into the least loaded minion context of the least loaded \gls{acr:me}, and assigns an equal number of tasks among all \glspl{acr:me} where possible.
 Each work item is a separate \emph{tiling} over a list of dimensions, where it can be reasonably assumed that these items are sorted by dimension count---thus, the reversed work list places the most computationally expensive tasks first.
 The approximate cost of any work item according to its dimension count and memory location was empirically measured offline and fed back into ther scheduler---a mean \qtylist{5.2;6.2;9.7;11.0}{\micro\second} for bias (0D), CLS (1D), CTM ($\le$2D) and IMEM ($\le$4D) tilings respectively.
-Finally, we weigh the total cost per core based on the number of minion threads available.
+Finally, this scheduler weighs the total cost per core based on the number of minion threads available.
 This weighting specifically accounts for the controller thread on the first core.
-To work around some fairly opaque waking behaviour between contexts on each \gls{acr:me}, this scheduler applies a small penalty to minion contexts with a lower internal ID.
+To work around some fairly opaque waking behaviour between contexts on each \gls{acr:me}, I apply a small penalty to minion contexts with a lower internal ID.
 
 Naturally, for $n$ tilings and $m$ threads this procedure is $\mathcal{O}{\left(n\log{m}\right)}$: two find/update min operations into binary heaps per tiling, storing $m/8$ and $\le8$ costs respectively.
 As an implementation detail, given that number of \glspl{acr:me} is small we may replace their minheap with a list to reduce the setup overhead.

@@ -125,10 +125,12 @@ Finally, I summarise the findings of this chapter \cref{sec:opal-summary}.
 \section{Potential Integrations}\label{sec:opal-potential-integrations}
 \input{chapters/p2-papers/ch5-opal/ddos-integration.tex}
 
-\section{Related Work}
-\input{chapters/p2-papers/ch5-opal/related.tex}
+%\section{Related Work}
+%\input{chapters/p2-papers/ch5-opal/related.tex}
 
 \section{Summary}\label{sec:opal-summary}
+?? Please rewrite me to be thesis-y, not sales-y.
+
 We have presented \emph{\approachshort{}}, bringing \emph{online reinforcement learning} to the dataplane.
 \approachshort{} has shown how classical RL techniques make online learning possible by simplifying update logic and enabling parallel processing.
 In-\gls{acr:nic} use of these algorithms enabled a \qtyrange{15}{21}{\times} reduction in median--\num{99.99}\nthscript{th} inference times and order of magnitude improvement in online learning throughput compared to host offloading.
@@ -138,3 +140,5 @@ Our throughput-optimal design, \Indfw{}, improves upon these metrics with \emph{
 
 In future, we aim to examine the performance of individual applications driven by \approachshort---both classical and \gls{acr:drl}-based---and how a NetFPGA implementation can offer further latency and throughput improvements.
 A promising avenue here would be to investigate constant transfer learning between online \approachshort{} agents and high-throughput offline function approximators such as \glspl{acr:bnn}.
+
+?? We stress that none of the other approaches listed here (or that we have seen) tackle the issue of \emph{online learning and control} in-network---we believe \approachshort{} has broken new ground in this regard.

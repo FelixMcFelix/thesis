@@ -276,7 +276,7 @@ Alternately, an implementer may simply enforce upper and lower bounds on each ac
 		}\label{alg:parsa:parminion-end}
 	}
 
-	\control{state}{
+	\control{state}{\label{alg:parsa:parctl-begin}
 		\emph{values, acks} = \{0\}, scatter(Par::Act(\emph{state}))\;\label{alg:parsa:parctl-act}
 		acquire slot for \outring, copy \emph{state} into slot\;\label{alg:parsa:parctl-preprep}
 		\Await acks == \emph{cfg.n\_minions}\;\label{alg:parsa:parctl-await1}
