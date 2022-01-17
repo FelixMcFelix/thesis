@@ -10,6 +10,7 @@ Specific quantities, particularly around memory sizes or core counts, refer to t
 \paragraph{Core layout.}
 The Netronome NFP-6480 offers \num{112} cores, or \glsxtrfullpl{acr:me}, on which arbitrary programs may be run.
 Cores are clustered into physical groups, termed \emph{islands}, each containing 4 or 12 \glspl{acr:me}.
+There are 7 islands of each size.
 Each \gls{acr:me} runs a single code store and operates at \qty{1.2}{\giga\hertz}, and all 12-\gls{acr:me} islands are used by a default P4 pipeline.
 %How many islands?
 %Some islands specialised.
@@ -30,20 +31,20 @@ These signals may be fired by other \glspl{acr:me}, contexts, or by the memory u
 \gls{acr:nfp} devices support a proprietary assembler language, and a variant of the C programming language termed \emph{MicroC}.
 This constitutes C with some additions, including an explicit memory model tailored towards this device, signalling and signal datatypes, and agressive inlining capabilities.
 P4 programs may be compiled to target the \gls{acr:nfp}, at which point they are compiled into a selection of MicroC programs installed across most available islands.
-Accordingly, P4 \texttt{extern}s resolve to MicroC programs which are arbitrarily defined and included by the programmer.
+Accordingly, P4 \texttt{extern}s resolve to MicroC functions which are arbitrarily defined and included by the programmer.
 
 \section{Memory}
 \Cref{tab:nfp-adx-mem} outlines the primary memory regions available, organised in terms of memory cost (where all registers are equal).
 As above, these register files are split among all contexts at compile time.
 Xfer registers are not usable outside of their purpose as holding space for the source and destination for I/O operations (and are visible to other \glspl{acr:me} and memory units).
 Next-neighbour registers allow very fast writes between adjacent \glspl{acr:me} in an island.
-These allow \glspl{acr:me} to communicate in one of two orders: \emph{chain} (0$\rightarrow$1$\rightarrow\dots\rightarrow$6$\rightarrow$7), and alternate (0$\rightarrow$2$\rightarrow\dots\rightarrow$5$\rightarrow$7).
+These allow \glspl{acr:me} to communicate in one of two orders: \emph{chain} (0$\rightarrow$1$\rightarrow\dots\rightarrow$6$\rightarrow$7), and \emph{alternate} (0$\rightarrow$2$\rightarrow\dots\rightarrow$5$\rightarrow$7).
 Note that this communication is unidirectional and does not form a cycle.
 Additionally, this functionality may be disabled on a per-\gls{acr:me} basis to provide additional register space.
 
 Memories outside of EMEM are small in line with the typical expectations surrounding resource-limited environments like \gls{acr:pdp} hardware.
 While almost all per-island or shared memories may be accessed from remote islands, cross-island accesses are more expensive and are typically avoided.
-\Textcite[p.~30]{langlet-ml-netronome} relates his own measurements of these costs, save for EMEM Cache which is allocated and accessed---to the best of my knowledge---entirely by the compiler.
+\Textcite[p.~30]{langlet-ml-netronome} relates his own measurements of these costs, save for EMEM Cache which is allocated and accessed solely---to the best of my knowledge---by the compiler.
 My understanding is that these are primarily occupied by \gls{acr:cam}-accelerated lookups via the provided hashtable primitives.
 
 \begin{table}
