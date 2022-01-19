@@ -38,7 +38,7 @@ Accordingly, P4 \texttt{extern}s resolve to MicroC functions which are arbitrari
 As above, these register files are split among all contexts at compile time.
 Xfer registers are not usable outside of their purpose as holding space for the source and destination for I/O operations (and are visible to other \glspl{acr:me} and memory units).
 Next-neighbour registers allow very fast writes between adjacent \glspl{acr:me} in an island.
-These allow \glspl{acr:me} to communicate in one of two orders: \emph{chain} (0$\rightarrow$1$\rightarrow\dots\rightarrow$6$\rightarrow$7), and \emph{alternate} (0$\rightarrow$2$\rightarrow\dots\rightarrow$5$\rightarrow$7).
+These allow \glspl{acr:me} to communicate in one of two orders: \emph{chain} (0$\rightarrow$1$\rightarrow$2$\rightarrow$3), and \emph{alternate} (0$\rightarrow$2$\rightarrow$1$\rightarrow$3).
 Note that this communication is unidirectional and does not form a cycle.
 Additionally, this functionality may be disabled on a per-\gls{acr:me} basis to provide additional register space.
 

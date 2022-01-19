@@ -27,7 +27,7 @@ I propose placing such monitors in the P4 dataplane, existing on-chip alongside 
 The required global state (load measures from network paths) must still come from elsewhere in the network; this is now the element at highest risk of becoming stale, but the least likely to vary significantly in response to individual actions.
 
 The \emph{Guarded} design as I present it uses theoretical ``ground truth'' rewards, whose correct implementation and designs were left as an open challenge. 
-I posit that INDDoS~\parencite{tnms-ddos-victim-ident}, which uses Count-min Sketches to estimate \gls{acr:ddos} victim cardinality, could be an effective reward function source---i.e., using the number of detected victims as a loss value.
+I posit that INDDoS~\parencite{DBLP:journals/tnsm/DingSPCS21}, which uses Count-min Sketches to estimate \gls{acr:ddos} victim cardinality, could be an effective reward function source---i.e., using the number of detected victims as a loss value.
 
 \paragraph{Integrating \approachshort}
 Before each monitoring action, we require that the table hosting this hybrid solution polls \approachshort{}'s \outring{} ring for any generated actions.

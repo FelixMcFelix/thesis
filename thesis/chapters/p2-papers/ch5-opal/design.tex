@@ -91,7 +91,8 @@ Moreover, each may require its own reward value depending on the nature of the \
 \begin{description}
 	\item[Shared.] A single \gls{acr:rl} trajectory or reward value is held. The reward value must be periodically updated using dedicated reward packets.
 	\item[Field.] A given field of the input state vector is used as the lookup key (e.g., in a hash table) for either the trajectory or reward value. For instance, this may be a packet's flow hash or source \gls{acr:ip}. The reward value must be periodically updated as above.
-	\item[Value.] A given field of the input state vector is directly used as the reward value. The installed policy can use or ignore this field as needed.
+	\item[Value.] A given field of the input state vector is used as in \emph{Field}, but is not hashed for lookup.
+%	\item[Value.] A given field of the input state vector is directly used as the reward value. The installed policy can use or ignore this field as needed. ?? This would have actually been useful...
 \end{description}
 
 \paragraph{Policy constraints.}

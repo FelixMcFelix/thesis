@@ -1,6 +1,183 @@
 \chapter{OPaL Control Protocol}
 \label{adx:opal-proto}
 
-?? Bytefield diagrams
+\approachshort{}'s control protocol is carried within \gls{acr:udp} packets.
+Its presence is signalled to the P4 control plane by setting the \gls{acr:dscp} field of the \gls{acr:ip} header to \mintinline{rust}{0b000011}, though in practice this decision choice is fairly arbitrary and only serves to allow for easy detection and filtering in the network without impacting valid user choices of more common fields such as UDP port number.
 
-?? Fill this out in more detail.
+Firstly, we choose a fixed-point representation type at compile time, setting \mintinline{rust}{type Tile} $\in$ \{\mintinline{rust}{i8}, \mintinline{rust}{i16}, \mintinline{rust}{i32}\}.
+These and any other numeric types are stored in big-endian format.
+To minimise packet size, it is assumed that the sender is aware of the datatype employed by the target \approachshort{} agent.
+Any fields marked with a $\star$ are of type \mintinline{rust}{Tile} and scale according to \mintinline{c}{sizeof(Tile)} (affecting the offset of all subsequent fields).
+Any fields marked with a $\diamondsuit$ are of type \mintinline{rust}{Tile} and are zero-padded to \qty{4}{\byte}.
+Packet diagrams display these layouts assuming that quantised numbers are \qty{4}{\byte} wide.
+
+\paragraph{Configuration.}
+Configuration of \approachshort{} is managed using two classes of packet: \emph{setup} (\cref{fig:nfp-adx-opalctl-setup}) and \emph{tilings} (\cref{fig:nfp-adx-opalctl-tiling}).
+Setup packets contain a mixture of operational and policy structure parameters.
+While most of these fields are self-explanatory, they behave as follows:
+\begin{description}
+	\item[F] Forces \gls{acr:rl} update logic to occur if set to 1, even if a valid historic state and reward pair cannot be found.
+	\item[N] Disables writeout of inferred state-action pairs over the \outring{} ring if set to 1.
+	\item[O] Enables online learning if set to 1.
+	\item[shift\_amt] The number of fractional bits in each fixed-point number.
+	\item[worker\_limit] A software limit on active worker threads. A setting of 0 disables this limit.
+	\item[n\_dims] The total number of dimensions expected in state vectors.
+	\item[tiles\_per\_dim] The number of tiles which every dimension is subdivided into.
+	\item[tilings\_per\_set] The number of tilings to offset and stride across each list of dimensions.
+	\item[n\_actions] The number of output actions to select between.
+	\item[$\epsilon^\star$] The current chance of selecting a randomised action (i.e., $\epsilon$-greedy action selection).
+	\item[$\alpha^\star$] The learning rate as in \cref{eqn:sg-sarsa}.
+	\item[$\gamma^\star$] The discount factor as in \cref{eqn:sg-sarsa}.
+	\item[$\epsilon_\textit{decay amount}^\star$] The amount by which $\epsilon$ should be decreased every time it is annealed.
+	\item[$\epsilon_\textit{decay frequency}$] The number of actions to wait before decreasing $\epsilon$.
+	\item[state\_key] The selection method for retrieving historic state-action tuples mapped to an input state (i.e., execution trajectories).
+	\item[reward\_key] The selection method for retrieving the reward value mapped to an input state.
+	\item[maxes$^\star$] The maximum value allowed in a state vector for each input dimension.
+	\item[mins$^\star$] The minimum value allowed in a state vector for each input dimension.
+\end{description}
+Of these, state/reward key lookups (\cref{fig:nfp-adx-opalctl-keysrc}) admit 3 types.
+Keys may be retrieved as a single shared value, ignoring the \texttt{location} field (type 0).
+Alternately, they may admit a field of the input state as the key (type 1) retrieving, e.g., \mintinline{rust}{rewards[hash(input[location])]}.
+Finally, they may directly access the storage map (type 2) retrieving, e.g., \mintinline{rust}{rewards[input[location]]}.
+These correspond to \emph{Shared}, \emph{Field}, and \emph{Value} respectively as covered by \cref{sec:opal-sys-model}.
+
+\begin{figure}
+	\centering
+	\begin{bytefield}{32}
+		\bitheader{0,7,8,15,16,18,19,20,21,22,23,24,31} \\
+		\bitbox{8}[]{type=0} &
+		\bitbox{8}[]{cfg\_type=0} &
+		\bitbox{3}[bgcolor=bitscratch]{} &
+		\bitbox{1}[]{F} &
+		\bitbox{2}[bgcolor=bitscratch]{} &
+		\bitbox{1}[]{N} &
+		\bitbox{1}[]{O} &
+		\bitbox{8}[]{shift\_amt} \\
+		
+		\bitbox{16}[]{worker\_limit} &
+		\bitbox{16}[]{n\_dims} \\
+		
+		\bitbox{16}[]{tiles\_per\_dim} &
+		\bitbox{16}[]{tilings\_per\_set} \\
+		
+		\bitbox{16}[]{n\_actions} &
+		\bitbox{16}[]{$\epsilon^\star$} \\
+
+		\bitbox{16}[]{... $\epsilon^\star$} &
+		\bitbox{16}[]{$\alpha^\star$} \\
+		
+		\bitbox{16}[]{... $\alpha^\star$} &
+		\bitbox{16}[]{$\gamma^\star$} \\
+		
+		\bitbox{16}[]{... $\gamma^\star$} &
+		\bitbox{16}[]{$\epsilon_\textit{decay amount}^\star$} \\
+		
+		\bitbox{16}[]{... $\epsilon_\textit{decay amount}^\star$} &
+		\bitbox{16}[]{$\epsilon_\textit{decay frequency}$} \\
+		
+		\bitbox{16}[]{... $\epsilon_\textit{decay frequency}$} &
+		\bitbox{16}[]{state\_key} \\
+		
+		\bitbox{24}[]{... state\_key (\cref{fig:nfp-adx-opalctl-keysrc})}
+		\bitbox{8}[]{reward\_key} \\
+		
+		\bitbox{32}[]{... reward\_key (\cref{fig:nfp-adx-opalctl-keysrc})} \\
+		
+		\bitbox{32}[]{maxes$^\star$=\mintinline{rust}{[Tile; n_dims]}} \\
+		\bitbox{32}[]{\vdots} \\
+		
+		\bitbox{32}[]{mins$^\star$=\mintinline{rust}{[Tile; n_dims]}} \\
+		\bitbox{32}[]{\vdots}
+	\end{bytefield}
+	\caption{\approachshort{} configuration (setup) packet.\label{fig:nfp-adx-opalctl-setup}}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\begin{bytefield}{32}
+		\bitheader{0,7,8,31} \\
+		\bitbox{8}[]{type} &
+		\bitbox{24}[]{location} \\
+		\bitbox{8}[]{... location}
+	\end{bytefield}
+	\caption{\approachshort{} lookup key source layout.\label{fig:nfp-adx-opalctl-keysrc}}
+\end{figure}
+
+Tiling packets are comprised of a list of individual tiling instances (\cref{fig:nfp-adx-opalctl-tiling-inst}), parsed until the end of the \gls{acr:udp} datagram.
+Each tiling instance contains a length \texttt{dim\_list\_len}, a \texttt{location} $\in [0,2]$ (CLS, CTM or IMEM according to \cref{sec:policy-storage}), and a list of \texttt{dim\_list\_len} state indices to be used as tiling dimensions.
+These instances must be present in location-sorted order, smallest to largest.
+Additionally, dimension lists' size must not exceed the limit for their parent memory region (1, 2, and 4 dims respectively).
+
+\begin{figure}
+	\centering
+	\begin{bytefield}{32}
+		\bitheader{0,7,8,15,16,31} \\
+		\bitbox{8}[]{type=0} &
+		\bitbox{8}[]{cfg\_type=1} &
+		\bitbox{16}[]{tilings} \\
+		\bitbox{32}[]{... tilings (\cref{fig:nfp-adx-opalctl-tiling-inst})}
+	\end{bytefield}
+	\caption{\approachshort{} configuration (tiling) packet.\label{fig:nfp-adx-opalctl-tiling}}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\begin{bytefield}{32}
+		\bitheader{0,15,16,23,24,31} \\
+		\bitbox{16}[]{dim\_list\_len} &
+		\bitbox{8}[]{location} &
+		\bitbox{8}[]{dims} \\
+		\bitbox{32}[]{... dims=\mintinline{rust}{[u16; dim_list_len]}}
+	\end{bytefield}
+	\caption{\approachshort{} tiling instance layout.\label{fig:nfp-adx-opalctl-tiling-inst}}
+\end{figure}
+
+\paragraph{Policy Insertion.}
+\emph{Insert} packets (\cref{fig:nfp-adx-opalctl-ins}) contain an \texttt{offset}---the index of the first policy value contained in this packet---and are then filled for the remainder of the datagram with tile values (\texttt{body}).
+These packets are free to straddle memory region boundaries, be unaligned with respect to actions in a tiling, and arrive in any order.
+
+\begin{figure}
+	\centering
+	\begin{bytefield}{32}
+		\bitheader{0,7,8,31} \\
+		\bitbox{8}[]{type=1} &
+		\bitbox{24}[]{offset} \\
+		\bitbox{8}[]{... offset} &
+		\bitbox{24}[]{body$^\star$=\mintinline{rust}{[Tile]}} \\
+		\bitbox{32}[]{... body$^\star$} \\
+	\end{bytefield}
+	\caption{\approachshort{} policy insertion header.\label{fig:nfp-adx-opalctl-ins}}
+\end{figure}
+
+\paragraph{State Vectors.}
+\emph{State} packets (\cref{fig:nfp-adx-opalctl-state}) are used to pass in state from the network to \approachshort{}, and simply contain a list of \mintinline{rust}{Tile}s of size \texttt{dim\_count}.
+
+\begin{figure}
+	\centering
+	\begin{bytefield}{32}
+		\bitheader{0,7,8,23,24,31} \\
+		\bitbox{8}[]{type=2} &
+		\bitbox{16}[]{dim\_count} &
+		\bitbox{8}[]{body$^\star$} \\
+		\bitbox{32}[]{... body$^\star$=\mintinline{rust}{[Tile; dim_count]}}
+	\end{bytefield}
+	\caption{\approachshort{} state vector packet.\label{fig:nfp-adx-opalctl-state}}
+\end{figure}
+
+\paragraph{Reward Measurements.}
+\emph{Reward} packets contain a reward \texttt{value} of type \mintinline{rust}{Tile} padded to \qty{4}{\byte}.
+If reward lookups rely on state vector fields to match a trace (\emph{Field} or \emph{Value}) then \texttt{key} is used to store this value in the correct location.
+
+\begin{figure}
+	\centering
+	\begin{bytefield}{32}
+		\bitheader{0,7,8,15,16,23,24,31} \\
+		\bitbox{8}[]{type=3} &
+		\bitbox{24}[]{value$^\diamondsuit$} \\
+		\bitbox{8}[]{... value$^\diamondsuit$} &
+		\bitbox{24}[]{key} \\
+		\bitbox{8}[]{... key}
+	\end{bytefield}
+	\caption{\approachshort{} reward header.\label{fig:nfp-adx-opalctl-reward}}
+\end{figure}
+
