@@ -359,4 +359,4 @@ This lowers the state-action latency and produces a corresponding increase to th
 However, the factor of speedup is \emph{worse} than $n$~\unit{\times}, and exhibits diminishing returns in terms of core count---for instance due to the cost of \texttt{memcpy}s and arithmetic in the serial logic of \emph{Ctl}, message passing costs at the broadcast and receive steps, and any memory fences or reorderings inserted by the compiler around atomic arithmetic.
 This is limited further by the number of subtasks which can be generated for a given policy.
 While ParSa assumes tile-level granularity, it may be modified to compute individual actions at the cost of being dominated by significant repetition of work and \gls{acr:ipc} overheads.
-Since these aspects are platform-dependent, this behaviour can only be shown empirically as I do in \cref{sec:opal-evaluation}.\sidenote{?? Can I get a more precise cref here?!}
+Since these aspects are platform-dependent, this behaviour can only be shown empirically as I do in \cref{sec:opal-results-work-alloc}.
