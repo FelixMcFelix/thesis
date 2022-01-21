@@ -2,7 +2,7 @@
 \label{adx:opal-proto}
 
 \approachshort{}'s control protocol is carried within \gls{acr:udp} packets.
-Its presence is signalled to the P4 control plane by setting the \gls{acr:dscp} field of the \gls{acr:ip} header to \mintinline{rust}{0b000011}, though in practice this decision choice is fairly arbitrary and only serves to allow for easy detection and filtering in the network without impacting valid user choices of more common fields such as UDP port number.
+Its presence is signalled to the P4 control plane by setting the \gls{acr:dscp} field of the \gls{acr:ip} header to \mintinline{rust}{0b000011}, though in practice this choice is fairly arbitrary and only serves to allow for easy detection and filtering in the network without impacting valid user choices of more common fields such as \gls{acr:udp} port number.
 
 Firstly, we choose a fixed-point representation type at compile time, setting \mintinline{rust}{type Tile} $\in$ \{\mintinline{rust}{i8}, \mintinline{rust}{i16}, \mintinline{rust}{i32}\}.
 These and any other numeric types are stored in big-endian format.
@@ -38,8 +38,9 @@ While most of these fields are self-explanatory, they behave as follows:
 Of these, state/reward key lookups (\cref{fig:nfp-adx-opalctl-keysrc}) admit 3 types.
 Keys may be retrieved as a single shared value, ignoring the \texttt{location} field (type 0).
 Alternately, they may admit a field of the input state as the key (type 1) retrieving, e.g., \mintinline{rust}{rewards[hash(input[location])]}.
-Finally, they may directly access the storage map (type 2) retrieving, e.g., \mintinline{rust}{rewards[input[location]]}.
-These correspond to \emph{Shared}, \emph{Field}, and \emph{Value} respectively as covered by \cref{sec:opal-sys-model}.
+They may directly access the storage map (type 2) retrieving, e.g., \mintinline{rust}{rewards[input[location]]}.
+Finally, \emph{reward} values may be accessed as a field in the input vector (type 4), where \texttt{location} is the index in the state vector to select---this obviously cannot extend to state lookup.
+These correspond to \emph{Shared}, \emph{Field}, \emph{Raw Field}, and \emph{Value} respectively as covered by \cref{sec:opal-sys-model}.
 
 \begin{figure}
 	\centering
@@ -103,7 +104,7 @@ These correspond to \emph{Shared}, \emph{Field}, and \emph{Value} respectively a
 	\caption{\approachshort{} lookup key source layout.\label{fig:nfp-adx-opalctl-keysrc}}
 \end{figure}
 
-Tiling packets are comprised of a list of individual tiling instances (\cref{fig:nfp-adx-opalctl-tiling-inst}), parsed until the end of the \gls{acr:udp} datagram.
+Tiling packets are composed of a list of individual tiling instances (\cref{fig:nfp-adx-opalctl-tiling-inst}), parsed until the end of the \gls{acr:udp} datagram.
 Each tiling instance contains a length \texttt{dim\_list\_len}, a \texttt{location} $\in [0,2]$ (CLS, CTM or IMEM according to \cref{sec:policy-storage}), and a list of \texttt{dim\_list\_len} state indices to be used as tiling dimensions.
 These instances must be present in location-sorted order, smallest to largest.
 Additionally, dimension lists' size must not exceed the limit for their parent memory region (1, 2, and 4 dims respectively).
@@ -164,10 +165,6 @@ These packets are free to straddle memory region boundaries, be unaligned with r
 	\caption{\approachshort{} state vector packet.\label{fig:nfp-adx-opalctl-state}}
 \end{figure}
 
-\paragraph{Reward Measurements.}
-\emph{Reward} packets contain a reward \texttt{value} of type \mintinline{rust}{Tile} padded to \qty{4}{\byte}.
-If reward lookups rely on state vector fields to match a trace (\emph{Field} or \emph{Value}) then \texttt{key} is used to store this value in the correct location.
-
 \begin{figure}
 	\centering
 	\begin{bytefield}{32}
@@ -180,4 +177,8 @@ If reward lookups rely on state vector fields to match a trace (\emph{Field} or 
 	\end{bytefield}
 	\caption{\approachshort{} reward header.\label{fig:nfp-adx-opalctl-reward}}
 \end{figure}
+
+\paragraph{Reward Measurements.}
+\emph{Reward} packets contain a reward \texttt{value} of type \mintinline{rust}{Tile} padded to \qty{4}{\byte}.
+If reward lookups rely on state vector fields to match a trace (\emph{Field} or \emph{Raw Field}) then \texttt{key} is used to store this value in the correct location.
 

@@ -91,8 +91,8 @@ Moreover, each may require its own reward value depending on the nature of the \
 \begin{description}
 	\item[Shared.] A single \gls{acr:rl} trajectory or reward value is held. The reward value must be periodically updated using dedicated reward packets.
 	\item[Field.] A given field of the input state vector is used as the lookup key (e.g., in a hash table) for either the trajectory or reward value. For instance, this may be a packet's flow hash or source \gls{acr:ip}. The reward value must be periodically updated as above.
-	\item[Value.] A given field of the input state vector is used as in \emph{Field}, but is not hashed for lookup.
-%	\item[Value.] A given field of the input state vector is directly used as the reward value. The installed policy can use or ignore this field as needed. ?? This would have actually been useful...
+	\item[Raw Field.] A given field of the input state vector is used as in \emph{Field}, but is not hashed for lookup.
+	\item[Value.] A given field of the input state vector is directly used as the reward value. The installed policy can use or ignore this field as needed.
 \end{description}
 
 \paragraph{Policy constraints.}
@@ -161,61 +161,55 @@ For instance, only multiplications and additions require additional bitshifts fo
 %?? Can choose bits allocated to fraction at runtime, overall bits at compile.
 %?? Mention memory benefits.
 
-From a configurability perspective, the number of fractional bits in a $Q$ number can be easily changed at runtime.
+From a configurability perspective, the count of fractional bits in a $Q$ number can be easily changed at runtime.
 Naturally, this has no effect on overall latency and throughput of fixed-point arithmetic, but is a useful characteristic for being able to deploy different \gls{acr:rl} agents to the same hardware without invoking more costly firmware or \gls{acr:fpga} design installation.
 If this is fixed at the same setting for all values used, then we needn't tag individual $Q$ numbers with information about their base, saving memory.
 The bit width of the numbers themselves (i.e., $k$) may be changed only at compile time in many cases, particularly as SmartNICs often lack dynamic memory management in their native non-P4 programming environments.
 Lower choices of $k$ sacrifice numeric range, but allow policies and data to occupy less memory---allowing fairer resource use versus other dataplane programs---and thus occupy less memory bandwidth in data transfers.
-Alternately, larger policies may be stored in the same memory bounds (potentially enabling the solution of more complex problems).
+Alternatively, larger policies may be stored in the same memory bounds (potentially enabling the solution of more complex problems).
 
-Although reduced width floating-point formats have seen good successes in both inference and training on other resource-constrained devices, these require specialised \gls{acr:fpu} implementations.
+The reduced width and precision floating-point data formats we also examined earlier are not suitable here, in spite of their successes in other embedded domains.
+First and foremost, these still require specialised \gls{acr:fpu} implementations.
 This is naturally at odds with the design and goals of \gls{acr:pdp} hardware, and beyond \gls{acr:fpga} designs such a data format would be infeasible.
 Software floating-point emulation has historically required \qtyrange{10}{30}{\times} more cycles to perform compared to hardware \glspl{acr:fpu}~\parencite{DBLP:conf/arith/IordacheT03}, which is incompatible with our need for low-latency and high-throughput processing.
 While the added dynamic range would be useful in this application, performance is a primary goal.
 
-\gls{acr:pdp} hardware excels in applying actions to network packets using \glspl{acr:mat}, potentially giving us a high-performance method to install inferred actions within the network.
+\gls{acr:pdp} hardware excels in applying actions to network packets using \glspl{acr:mat}, potentially giving us a high-performance method to install selected actions within the network.
 However, directly modifying these match tables from within the device itself is neither feasible nor safe.
 On Netronome \gls{acr:nfp} hardware in particular, rule updates \emph{must} be applied by the co-hosted controller machine, as tables are reliant on the optimised DCFL~\parencite{DBLP:conf/infocom/TaylorT05} data format.
 In addition to the prohibitive complexity of building this data structure on-device, its construction requires knowledge of the entire rule set (and cannot be incrementally updated).
 I instead suggest in general that \texttt{extern}s or datapath stages which apply \gls{acr:rl} actions to packets should maintain a small store of state-action pairs, and periodically send these back to the controller for batch installation.
-This ensures that the majority of installed rules exhibit accelerated performance, while preventing installation delay on the newest decisions.
-Platforms such as Intel Tofino greatly simplify this, where Tofino Native Architecture intrinsics such as \emph{Action Profiles/Selects} allow a P4 action to be chosen based on a register value (i.e., an \gls{acr:rl} action).
+This ensures that the majority of installed rules benefit from faster hardware-accelerated lookups, while preventing installation delay on the newest decisions.
+Platforms such as Intel Tofino greatly simplify this, where Tofino Native Architecture intrinsics such as \emph{Action Profiles/Selects} allow a P4 action to be chosen based on a register value (e.g., an \gls{acr:rl} action).
 
 \subsection{Algorithm}\label{sec:opal-algorithm}
-%?? algo selection
-%
-%?? Need to discuss compute strategies; coop vs parallel here.
-%
-%?? Introduce tile coding and whatever as the soln first for compute complexity etc.
-%
-%?? old, salesman-y
-To enable online in-\gls{acr:nic} learning in spite of the computational limits of \gls{acr:pdp} hardware, we return to \emph{classical} \gls{acr:rl} methods and models.
+To enable online in-\gls{acr:nic} learning in spite of the computational limits of \gls{acr:pdp} hardware, we must return to \emph{classical} \gls{acr:rl} methods and models.
 In particular, we focus on tile coding with one-step temporal-difference learning algorithms such as Sarsa, which were discussed and explained earlier (\cref{sec:tile-code} and \cref{sec:demo-rl-sarsa}).
 %These choices have important benefits for in-NIC execution.
 These functions do not require batches of inputs to learn in a stable way, negating the memory needed to store experience replays, and have simple update and inference logic.
 Moreover, gradient computation is identical to the forward pass and has no dependency on the current parameter values $\wvec{}$, potentially allowing hit tiles to be stored to accelerate the next update step.
-Finally, the choice of single-step algorithms (as opposed to $n$-step or Monte Carlo methods) bounds the amount of per-trace state required for online learning to just the last state-action pair, safeguarding the limited memory of the target devices.
+Finally, the choice of single-step algorithms (as opposed to $n$-step or Monte Carlo methods) bounds the amount of per-trace state required for online learning to just the last state-action pair, safeguarding the limited memory of our target devices.
 
 As for how to take advantage of the multicore nature of SmartNICs, there are two strategies worth considering.
 Suppose we have $n$ cores.
 The first strategy is that we simply have each core work independently.
-For instance, when dealing with a stream of input state vectors according to \approachshort{}'s interaction model, we may serve each arrived vector to a free core---this then tile codes the state against every tiling, produces an output action, and then updates the policy as required (\cref{alg:tile-code,eqn:sg-sarsa}).
+For instance, when dealing with a stream of input state vectors according to \approachshort{}'s interaction model, we may serve each arrived vector to a free core---this core then tile codes the state against every tiling, produces an output action, and then updates the policy as required (\cref{alg:tile-code,eqn:sg-sarsa}).
 Intuitively, this produces an $n$~\unit{\times} throughput improvement assuming there are no bottlenecks at either the input and output queues or mutual exclusion around shared data.
-However, this offers no reduction to the processing time of any individual element---and so the state-action latency is not reduced as desired.
+However, this offers no reduction to the processing time of any \emph{individual} element---and so the state-action latency is not reduced as desired.
 
 \begin{figure}
 	\centering
 	\resizebox{0.67\linewidth}{!}{
 		\input{diagrams/opal/parallel-tilecode-intuit.tex}
 	}
-	\caption[A visualisation of how tile-coding can be split into subtasks as a map-reduce problem.]{Tile-coded function approximation can be considered as a map-reduce problem during both the inference and update steps. Action preferences are aggregated from \emph{disjoint} tile queries, where each tile hit contains a list of action values to add to $\mathbf{a}$. Checking or updating each tiling is thus a separate task. As all candidate lists are disjoint between tasks, updating hit tiles requires no control over concurrent accesses---furthermore, it requires no final aggregation step.\label{fig:opal-par-tilecode}}
+	\caption[A visualisation of how tile-coding can be split into subtasks as a map-reduce problem.]{Tile-coded function approximation can be considered as a map-reduce problem during both the inference and update steps. Action preferences are aggregated from \emph{disjoint} tile queries, where each tile hit contains a list of action values to add to $\mathbf{a}$. Retrieving or updating each tiling is thus a separate task. As all constituent action preference lists are disjoint between tasks, updating hit tiles requires no control over concurrent accesses---furthermore, it requires no final aggregation step.\label{fig:opal-par-tilecode}}
 \end{figure}
 
-To effect this, we must consider instead a second strategy: how several cores may work together to complete an individual inference or update operation.
+To attain the latency improvements we desire, we must consider instead a second strategy: how several cores may work together to complete an individual inference or update operation.
 Consider that tile coding computes individual hits against a set of tilings to produce a sparse boolean feature vector, which we'll denote $\mathbf{x}$, and refer to the set of all its non-zero indices by $H$.
 Without loss of generality, suppose we have two tilings $t_1$ and $t_2$, with a number of tiles $|t_1|$ and $|t_2|$ in each respectively (such that $\dim{\mathbf{x}}=|t_1|+|t_2|$).
 For notational simplicity, let each entry of an agent's policy data $\wvec{}$ be a vector of length $A$ (i.e., choosing between $A$ discrete actions).
-A state vector will produce exactly one hit in each tiling, having indices $h_1\in[0,|t_1|)$ and $h_2\in[|t_1|,|t_2|)$, without overlap.
+A state vector will produce exactly one hit in each tiling, having indices $h_1\in[0,|t_1|)$ and $h_2\in[|t_1|,|t_1|+|t_2|)$, without overlap.
 The final action preference list is given by \cref{eqn:lin-approx}, which we can specialise further:
 $$
 \mathbf{a} = \wvec{}^{\top} \mathbf{x} = \wvec{}\left[h_1\right] + \wvec{}\left[h_2\right] = \sum_{h\in{}H}\wvec{}\left[h\right]
@@ -241,7 +235,7 @@ The aggregation step still risks becoming a bottleneck during inference; if indi
 While this may be performed by a dedicated worker thread or core in parallel to the other disaggregated inference tasks, this involves additional costs in every such task for \texttt{memcpy} operations into a message buffer.
 Consider again that \approachshort{} targets \gls{acr:pdp} hardware: without a dynamic memory allocator, this buffer has bounded length and so risks causing head-of-line blocking for all other tasks.
 However, encoding our values using a fixed-point representation allows us to employ atomic instructions to remove the aggregate step, thus producing a wait-free algorithm.
-Recall that the aggregation step involves \emph{only additions}, that atomic integer fetch-add instructions are commonly offered on many machine architectures,\sidenote{While other datatypes such as \mintinline{rust}{f32} can technically support atomic operations on many platforms, outside of specialised \gls{acr:gpu} environments such as CUDA these invoke non-trivial performance costs due to cache and register placement restrictions.} and that fixed-point addition is identical to integer addition.
+Recall that the aggregation step involves \emph{only additions}, that atomic integer fetch-add instructions are commonly offered on many machine architectures,\sidenote{While other datatypes such as \mintinline{rust}{f32} can technically support atomic operations on many platforms, outside of specialised \gls{acr:gpu} environments such as CUDA these incur non-trivial performance costs due to cache and register placement restrictions.} and that fixed-point addition is identical to integer addition.
 As a result, the final action preference list may be allocated once and atomically added to by all workers.
 Moreover, if extra care is required to prevent numeric overflows or ensure saturation, then any worker may locally verify whether the fetched value and summand would cause an overflow.
 Alternately, an implementer may simply enforce upper and lower bounds on each action value to prevent positive or negative overflow.
@@ -327,8 +321,8 @@ To match the deployment environment of SmartNIC devices, ParSa is presented such
 We first assume that every process knows its own index---\emph{id}---and that a \emph{schedule} has been precomputed to divide individual tilings among cores as tasks (\cref{alg:parsa:par}).
 This careful division is important; an individual tiling may contain several dimensions, and by recalling \cref{alg:tile-code} it is obvious that tilings with a higher dimension count require more iterations and are thus more expensive to infer.
 To give some context on the number of tasks ParSa is expected to perform, a policy sized to match the agent designs from \cref{chap:ddos-rl} with one bias tile and \num{16} sets of \num{8} tilings creates \num{129} work items.
-As such, a schedule is required to produce the most balanced workload between worker threads\sidenote{Work stealing or other parallelisation strategies are not suitable choices for work balancing in tile-coded Sarsa for several reasons. These include the computational simplicity of individual tasks, the predictable compute cost of any such task, and the relative cost of \gls{acr:ipc} required to pass cached state between workers.}.
-However, this is a deployment-specific implementation detail, as in addition to raw task costs an effective scheduler must account for cache size limits and physical/logical core differences, to give some examples.
+As such, a schedule is required to produce the most balanced workload between worker threads.\sidenote{Work stealing or other parallelisation strategies are not suitable choices for work balancing in tile coded Sarsa for several reasons. These include the computational simplicity of individual tasks, the predictable compute cost of any such task, and the relative cost of \gls{acr:ipc} required to pass cached state between workers.}
+However, this is a deployment-specific implementation detail, as in addition to raw task costs an effective scheduler must account for cache size limits and physical/logical core differences.
 I present an allocator tailored to Netronome hardware later in \cref{alg:parsa-schedule}.
 A single worker thread, designated as the \emph{controller}, then receives and processes state vectors from the environment (\crefrange{alg:parsa:parctl-start}{alg:parsa:parctl-end}), while the remaining threads---\emph{minions}---retrieve a broadcast message of type \emph{Par} to apply over their prescheduled task set (\crefrange{alg:parsa:parminion-start}{alg:parsa:parminion-end}).
 
@@ -336,7 +330,7 @@ The \emph{Ctl} procedure directs tasks to minion threads, manages storage of exe
 Applying the insights of \textcite{DBLP:journals/firai/TravnikMSP18} to minimise action latency, an action is computed and sent out into the environment---and only then is the underlying policy updated.
 For each input state, the controller thread zeroes out the shared aggregation space, where \emph{values} holds the aggregated action preference list and \emph{acks} contains the count of terminated minion threads.
 An \emph{Act} request is then sent as a broadcast message to all minion threads using the platform-specific \emph{scatter} \gls{acr:ipc} call (\cref{alg:parsa:parctl-act}).
-While the minions produce the action preference list asynchronously, the control thread then requests an output message slot and prepares it by copying the state into the requisite buffer (\cref{alg:parsa:parctl-preprep}).\sidenote{In principle, the controller thread may also act as another minion after this step, between scatter and recv calls, subject to code store limits.}
+While the minions produce the action preference list asynchronously, the control thread then requests an output message slot and prepares it by copying the state into the acquired buffer (\cref{alg:parsa:parctl-preprep}).\sidenote{In principle, the controller thread may also act as another minion after this step, between scatter and recv calls, subject to code store limits.}
 Once every thread has marked its termination, the values of each action given the input state are located in \emph{values} (\cref{alg:parsa:parctl-await1}).
 The index of the largest value is then taken to be the chosen action, though this may be trivially modified to account for $\epsilon$-greedy selection (\cref{alg:parsa:parctl-acchoose}), which is then placed into the output message and returned to the environment (\cref{alg:parsa:parctl-acemit}).
 When online learning is enabled, the control thread checks for a reward signal and prior state-action-value tuple according to the configured trace selection scheme from \cref{sec:opal-sys-model} (\crefrange{alg:parsa:parctl-checkstate}{alg:parsa:parctl-checkreward}).
@@ -346,12 +340,12 @@ The newest state-action-value tuple is then stored (\cref{alg:parsa:parctl-store
 
 The \emph{Minion} procedure processes a single request to retrieve and aggregate, or update, the action values learned for an input state over some subset of the policy tilings, \emph{tasks}.
 All minion threads cover the complete set of tilings between themselves.
-In the case that action inference is requested, the policy hit index is computed using the state against each tiling in this thread's task list (\cref{alg:parsa:parminion-acthit}).
+In the case that action inference is requested, the policy hit index is computed against the input state for each tiling in this thread's task list (\cref{alg:parsa:parminion-acthit}).
 As described above, each action value is atomically added to its matching position in the shared preference list \emph{values} (\crefrange{alg:parsa:parminion-liststart}{alg:parsa:parminion-listend}).
 When an update is requested, all tile hit indices are recomputed (\cref{alg:parsa:parminion-acthit2}), and an adjustment $\delta$ is added to the selected action in each case (\cref{alg:parsa:parminion-update}).
 Once all subtasks have been completed, this thread's completion is recorded (\cref{alg:parsa:parminion-lastack}).
 While it is apparent that the indices of hit tiles may also be locklessly sent back and stored as part of the execution trace---i.e., by adding an extra value slot per task---the number of subtasks often far exceeds the count values in a state vector.
-As a result, this results in a larger \texttt{memcpy} in \emph{Ctl} (the serial portion of ParSa), and as such it is more efficient to recompute hit indices in the update step---though this optimisation is useful in the case of the first parallelisation strategy.
+As a result, this results in a larger \texttt{memcpy} in \emph{Ctl} (the serial portion of ParSa), and as such it is more efficient to recompute hit indices in the update step---though this optimisation is useful in the case of the first (non-ParSa) parallelisation strategy.
 
 %?? mention that theoretical worse than just adding more cores due to message passing costs, memfence, compiler reordering etc., size of serial portion, number of constituent tasks. (could split to indiv actions, but need stupid cores for feasible.)
 As required, this new algorithm scales with increasing processor counts to reduce both the inference and update costs incurred by a single state vector.
@@ -359,4 +353,4 @@ This lowers the state-action latency and produces a corresponding increase to th
 However, the factor of speedup is \emph{worse} than $n$~\unit{\times}, and exhibits diminishing returns in terms of core count---for instance due to the cost of \texttt{memcpy}s and arithmetic in the serial logic of \emph{Ctl}, message passing costs at the broadcast and receive steps, and any memory fences or reorderings inserted by the compiler around atomic arithmetic.
 This is limited further by the number of subtasks which can be generated for a given policy.
 While ParSa assumes tile-level granularity, it may be modified to compute individual actions at the cost of being dominated by significant repetition of work and \gls{acr:ipc} overheads.
-Since these aspects are platform-dependent, this behaviour can only be shown empirically as I do in \cref{sec:opal-results-work-alloc}.
+Since these aspects are platform-dependent, this behaviour can only be shown empirically as in \cref{sec:opal-results-work-alloc}.

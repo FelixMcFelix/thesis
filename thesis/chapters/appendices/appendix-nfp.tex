@@ -24,7 +24,7 @@ Each \gls{acr:me} may choose at compile time to run either 4 or 8 contexts, whic
 As one code store is maintained per \gls{acr:me}, all of its child contexts run the same program code though may query the current context number to enable branching behaviour.
 Contexts are cooperatively scheduled at run time, where context switches are triggered by signalled I/O operations (who must be awaited) or by voluntary yield hints inserted by the programmer.
 Context switches are effectively zero cost: as the register file is divided among all threads, another thread may instantly progress when the active thread chooses to sleep.
-Each core offers \num{15} separate signals which can be independently fired for each context, and a thread may await any or all of a bitset of signals before it may progress.
+Each core offers \num{15} separate signals which can be independently fired for each context, and a thread may await any or all of a bitset of signals before it resumes execution.
 These signals may be fired by other \glspl{acr:me}, contexts, or by the memory units in response to a completed I/O operation.
 
 \paragraph{Programming.}
@@ -45,7 +45,7 @@ Additionally, this functionality may be disabled on a per-\gls{acr:me} basis to 
 Memories outside of EMEM are small in line with the typical expectations surrounding resource-limited environments like \gls{acr:pdp} hardware.
 While almost all per-island or shared memories may be accessed from remote islands, cross-island accesses are more expensive and are typically avoided.
 \Textcite[p.~30]{langlet-ml-netronome} relates his own measurements of these costs, save for EMEM Cache which is allocated and accessed solely---to the best of my knowledge---by the compiler.
-My understanding is that these are primarily occupied by \gls{acr:cam}-accelerated lookups via the provided hashtable primitives.
+My understanding is that EMEM Cache is primarily occupied by \gls{acr:cam}-accelerated lookups offered via the provided hash table primitives.
 
 \begin{table}
 	\centering

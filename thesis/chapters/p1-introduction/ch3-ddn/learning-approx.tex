@@ -201,7 +201,7 @@ I.e., it may well be the case that following the current optimal policy up to so
 To encourage exploration in discrete action spaces, we typically introduce some randomness into action selection.
 \emph{$\epsilon$-greedy methods} pick another action at random with probability $\epsilon$---typically annealing the value of $\epsilon$ towards zero over some number of timesteps or training episodes.
 Meanwhile, the simplest way to achieve this in many \glspl{acr:nn} is to use the outputs of a softmax~\parencite{luce-softmax} layer as a probability distribution over actions, particularly if starting from randomly initialised parameters.
-Boltzmann and Max-Boltzmann action selection~\parencite[pp. 73]{WieringMThesisRLExploration} constitute variations of these schemes which control the concentration of action probabilities.
+Boltzmann and Max-Boltzmann action selection~\parencite[p. 73]{WieringMThesisRLExploration} constitute variations of these schemes which control the concentration of action probabilities.
 Active estimation of the degree of exploration has also attracted healthy degrees of interest (particularly with regard to evolving or non-stationary problems): VDBE~\parencite{DBLP:conf/ki/Tokic10,DBLP:conf/ki/TokicP11} uses changes in the \gls{acr:td} error to control $\epsilon$ over time, while \textcite{DBLP:conf/annpr/TokicP12} train a continuous \gls{acr:nn}-backed agent to control exploration parameters.
 
 In the case of continuous \gls{acr:rl} action spaces, an initial consensus in the wake of the DDPG algorithm~\parencite{DBLP:journals/corr/LillicrapHPHETS15} was to make use of Ornstein-Uhlenbeck processes~\parencite{PhysRev.36.823} to directly inject noise in the action space.

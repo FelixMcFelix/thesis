@@ -11,7 +11,7 @@ Actions then move flows up or down in punishment levels according to a finite st
 
 \paragraph{Why in-NIC?}
 This approach relies on co-hosting traffic measurement and analysis alongside OpenFlow-compatible switches at the edge nodes of an \gls{acr:as}.
-However, packet mirroring and offloading \gls{acr:rl} computation to a host (potentially over layers of virtualisation) are all sources of additional, consistent state-action latency.
+However, packet mirroring and moving \gls{acr:rl} computation to a host (potentially over layers of virtualisation) are all sources of additional, consistent state-action latency.
 Both traffic statistics collection \emph{and} data-driven learning must be executed on such hosts/network functions.
 Unless running these stages in a dedicated pipeline (adding further processing latency), resource contention between these processes will further impact tail latencies.
 Naturally, this requires high-performance hardware to be stacked at network egress points, potentially beyond reasonable space, power, or ventilation constraints.
@@ -20,7 +20,7 @@ The solution to implement and improve upon this work using \approachshort{} is t
 %?? Any way to move some of this sooner? I.e., this is ``why move DDoS prevention here'', Stefanos suggested backporting some of this to justify ``why \emph{RL} in-NIC''?
 
 \paragraph{Inputs}
-To collate the required inputs and state, we then examine the recent innovations of the community.
+To collate the required inputs and state, let us examine the recent innovations of the community.
 Low-latency, pure-P4 solutions to extract and record per-flow \gls{acr:tcp} state directly in the dataplane such as Dapper~\parencite{DBLP:conf/sosr/GhasemiBR17} and Sonata~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18} are well-studied.
 In fact, the statistics offered by Dapper are a super-set of the local input state values employed by \emph{Guarded} agents, offering an opportunity to further improve their efficacy. 
 I propose placing such monitors in the P4 dataplane, existing on-chip alongside the \approachshort{} agent.
@@ -56,4 +56,4 @@ The control plane can then use wildcards or specific matches to narrow down or e
 The two compute models discussed above, \coopfw{} and \indfw{}, needn't be homogeneously deployed in a distributed installation.
 In a networked deployment, a subset of \approachshort{} nodes could be \coopfw{} agents, training online, while most other nodes run \indfw{} designs to meet throughput guarantees.
 The control plane would then combine, downsample, and distribute these improved policies between offline agents.
-This can be taken further still, using policy deltas or execution traces to enable out-of-path transfer learning for more complex models such as neural networks.
+This can be taken further still, using policy deltas or execution traces to enable out-of-path transfer learning for more complex models such as \glspl{acr:nn}.

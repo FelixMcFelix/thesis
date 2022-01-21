@@ -11,7 +11,7 @@ These testing machines had the following hardware, all with \qty{32}{\gibi\byte}
 	\item[\emph{HighServer}] Intel Xeon Silver 4208 (\qtyproduct[product-units=single]{8 x 2.1}{\giga\hertz}),
 	\item[\emph{Collector}] Intel Core i7-6700K (\qtyproduct[product-units=single]{4 x 4.2}{\giga\hertz}).
 \end{description}
-\emph{Mid/HighServer} are rackmounted server-grade hardware and are representative for situations where a server administrator aims to include inference in the packet path as a bump-in-the-wire deployment.
+\emph{Mid/HighServer} are rackmounted server-grade hardware and are representative for situations where a server administrator aims to include inference in the packet path as part of a bump-in-the-wire deployment.
 Both of these servers ran Ubuntu 18.04.5 LTS (4.15.0-140-generic).
 \emph{Collector} accounts for higher clocked consumer-grade hardware having fewer physical cores, capturing the case of mirrored (out-of-rack) traffic processing.
 This also enables the estimation of host performance when directed to a virtualised network function.
@@ -25,20 +25,19 @@ This is the largest cluster of cores which is not in use by a P4 pipeline.
 Versions of these firmwares using \qtylist{32;16;8}{\bit} arithmetic and registers to represent tiles, inputs, and values were built.
 Where feasible, I use these to test \qtylist{32;16;8}{\bit} quantised arithmetic.
 
-All \approachshort{} timing measurements were repeated over \num{10000} state packets (preceded by \num{1000} warmup packets), retrieving item processing times over PCIe via the controller machine, from which throughput was derived.
-Host integer and floating-point performance numbers were acquired using a numpy-based tile-coded Sarsa implementation---throughput and latency measures were observed over \num{10} trials of \qty{10}{\second} (with \qty{5}{\second} warmup/cooldown times).
+All \approachshort{} timing measurements were repeated over \num{10000} state packets (preceded by \num{1000} warmup packets), retrieving item processing times over \gls{acr:pcie} via the controller machine, from which throughput was derived.
+Host integer and floating-point performance numbers were acquired using a tile-coded Sarsa implementation written in numpy---throughput and latencies were measured over \num{10} trials of \qty{10}{\second} (with \qty{5}{\second} warmup/cooldown times).
 This differs from the \gls{acr:nfp}'s methodology as a consequence of a numpy-based solution: Python's multithreading support is questionable at best due to the global interpreter lock, thus these agents must be run in parallel via separate processes.
-This \emph{does} have some benefits for evaluation in that it also allows us to investigate the effects of oversubscription on host latencies.\sidenote{Multithreading on \gls{acr:nfp} hardware prevents the costs associated with oversubscription even though contexts are not physical cores. Context switches are cooperative around I/O or voluntary wait points rather than time quanta, and the register file for each is preserved since the same program code is run.}
+This \emph{does} have some benefits for evaluation in that it also allows us to investigate the effects of oversubscription on host latencies.\sidenote{Multithreading on \gls{acr:nfp} hardware prevents the costs associated with oversubscription even though contexts are not physical cores. Context switches are cooperative around I/O or voluntary wait points rather than time quanta, and the register file for each is preserved since the same program code is run for each.}
 
 Policy sizes are set to those of the \emph{Instant} DDoS control application introduced in \cref{chap:ddos-rl}: 20-dim state vectors, a bias tile and 16 full tiling sets (\numproduct{7x1}-dim, \numproduct{8x2}-dim, \numproduct{1x4}-dim), 8 tilings per set, 6 tiles per dimension, and 10 actions.
-As a reminder, such input state would contain various aspects of per-flow state (e.g., IATs, rates) which are combined with other state such as the last action taken (2-dim tilings) and loads along the ingress-egress path (4-dim).
+As a reminder, such input state would contain various aspects of per-flow state (e.g., \glspl{acr:iat}, rates) which are combined with other state such as the last action taken (2-dim tilings) and loads along the ingress-egress path (4-dim).
 In \Coopfw{}, this creates \num{129} work items across \num{31} workers.
 Although the more successful \emph{Guarded} agent design uses 3 actions, I choose a larger action set here to investigate the performance of more complex agents.
 
 \subsection{Experiments}
-
 \paragraph{Raw inference and learning performance}
-I compare how long it takes for \approachshort{} to compute actions and update its policy per state vector received, and report on the observed throughput of our designs against floating point (numpy-based) implementations of Sarsa on a commodity host machine.
+I compare how long it takes for \approachshort{} to compute actions and update its policy per state vector received, and report on the observed throughput of both firmware designs against floating point (numpy-based) implementations of Sarsa on a commodity host machine.
 This allows us to demonstrate the performance differences between the \indfw{} and \coopfw{} configurations, particularly in how \indfw's (and hosts') required policy locks impact throughput.
 %We also report on the derived throughput measures accounting for the locking behaviour of each.
 We compare online learning performance (input states produce an output, and then update the policy) with offline (input states \emph{only} produce an output) in these cases.
@@ -49,7 +48,7 @@ State-action latency is a shared property of both cases, with the main impact on
 Building on this, I vary the amount of worker threads to show how \approachshort{} scales to fit available compute resources on a device.
 This is an important aspect for (automated) allocation of compute resources in an intelligent dataplane---particularly when cohabiting with other dataplane programs---and has effects on ahead-of-time work scheduling which are examined later.
 This also demonstrates the number of cores needed to achieve a given latency or throughput bound on a policy of representative complexity.
-Moreover, to demonstrate how these costs vary as policy complexity increases, I vary the number of total dimensions included in the tiling (i.e., the number of subtasks included in an inference or update step).\sidenote{?? Can I vary the number of actions, too? Might have limited scaling since this only affects the amount of work happening in the final writeback phase.}
+Moreover, to demonstrate how these costs vary as policy complexity increases, I vary the number of total dimensions included in the tiling (i.e., the number of subtasks included in an inference or update step).%\sidenote{?? Can I vary the number of actions, too? Might have limited scaling since this only affects the amount of work happening in the final writeback phase.}
 
 \paragraph{Work allocation}
 %?? Also our simple, ahead-of-time, work scheduler.
@@ -75,7 +74,7 @@ While varying the rate of full \gls{acr:rl} updates performed by \approachshort{
 This allows us to quantify whether on-chip (out-of-path) execution impacts ordinary dataplane behaviour through indirect means: e.g., EMEM cache evictions or hidden resource contention.
 %In particular, we stress test both decisions and policy updates of our \emph{Parallel} design at full throughput.
 
-I perform these tests using Pktgen-DPDK~\parencite{pktgen-dpdk}, placing an \gls{acr:nfp} in \emph{MidServer} as the device under test and connecting \emph{HighServer} over a \qty{40}{\giga\bit\per\second} DAC cable as the traffic source via the default \gls{acr:nfp} firmware.
+I perform these tests using Pktgen-DPDK~\parencite{pktgen-dpdk}, placing an \gls{acr:nfp} in \emph{MidServer} as the device under test and connecting \emph{HighServer} over a \qty{40}{\giga\bit\per\second} direct copper cable as the traffic source via the default \gls{acr:nfp} firmware.
 Throughput and loss tests are performed using \num{7}/\num{1} transmit/receive queues at \qty{100}{\percent} send rate for 10 bursts of \qty{30}{\second}, and perform latency tests using \num{1}/\num{1} transmit/receive queue at \qty{10}{\percent} send rate for \num{200000} measurements (sampling at \qty{2000}{\hertz} for \qtyproduct[product-units=single]{10 x 10}{\second}).
 This provides maximum throughput in the former case (relying solely on \gls{acr:nic} counters for loss counting).
 In the latter case, this minimises host resource contention to observe exact latency measurements, have a high enough sample count to detect subtle (aggregate) latency effects, and eliminate \emph{host} receive drops.
@@ -86,6 +85,7 @@ Sent traffic was comprised of fixed-size \qtyrange{64}{1518}{\byte} packets~\par
 \paragraph{Resource requirements}
 Using the maximum policy size defined above, I investigate how the memory requirements imposed by \approachshort{} vary with the number of dedicated \glspl{acr:me}, over and above a base P4 forwarding plane.
 I report resource use for \qty{32}{\bit} \Indfw{} and \Coopfw{} agents, with hash-tables sized to \num{4096} state-action pairs and \num{16} separate reward values.
+Firmwares are compiled to make use of \numlist{1;4} \glspl{acr:me}.
 This captures the relative cardinality of network \gls{acr:rl} traces to rewards, i.e., many input flows will map to one or few reward values (i.e., \gls{acr:ddos} attack size estimation per egress-\gls{acr:as}, queue occupancy in the case of \gls{acr:aqm} per output port).
 
 %\paragraph{The impact of bit depth}

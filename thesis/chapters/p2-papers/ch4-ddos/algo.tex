@@ -28,7 +28,7 @@ Although the choice of a classical RL method likely brings lower theoretical per
 This aligns with our goal of quick online learning, and faster adaptation to aggregate changes in traffic without introducing dedicated tensor processing hardware to networks.
 Simpler decision boundaries reduce the risk of overfitting and unexpected behaviour, and we expect that the simplicity of tile-based policy computation will also greatly aid interpretability of anomalous action choices.
 
-When choosing a learning algorithm, we compared against Q-learning as well as methods based on \emph{eligibility traces} such as Watkins's $\operatorname{Q}(\lambda)$ \cite[pp. 312--314]{RL2E} and $\operatorname{Sarsa}(\lambda)$ \cite[pp. 305]{RL2E}.
+When choosing a learning algorithm, we compared against Q-learning as well as methods based on \emph{eligibility traces} such as Watkins's $\operatorname{Q}(\lambda)$ \cite[pp. 312--314]{RL2E} and $\operatorname{Sarsa}(\lambda)$ \cite[p. 305]{RL2E}.
 Preliminary experiments found that Sarsa offered the best performance and behaviour.
 
 \subsubsection{Action rate}

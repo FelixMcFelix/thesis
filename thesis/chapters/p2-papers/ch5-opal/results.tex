@@ -1,14 +1,15 @@
-Investigate the performance of \approachshort{} compared to classical \gls{acr:rl} techniques executed on commodity host machines, we see that \Coopfw{} offers a \qtyrange{15}{21}{\times} speedup in median--\num{99.99}\nthscript{th} state-action latency as well as \qty{9.9}{\times} greater online learning throughput.
+Investigating the performance of \approachshort{} compared to classical \gls{acr:rl} techniques executed on commodity host machines, we see that \Coopfw{} offers a \qtyrange{15}{21}{\times} speedup in median--\num{99.99}\nthscript{th} state-action latency as well as \qty{9.9}{\times} greater online learning throughput.
 Crucially, in-\gls{acr:nic} execution offers tight tail latency bounds compared to host-based approaches.
-We report on how \approachshort{} scales as additional device resources are added, noting that both in-\gls{acr:nic} designs outperform commodity hosts using just one core in latency and online throughput.
+I report on how \approachshort{} scales as additional device resources are added, noting that both in-\gls{acr:nic} designs outperform commodity hosts using just one core in latency and online throughput.
 Furthermore, \Indfw{} provides higher per-core offline throughput than host-based approaches, even though our measured hosts exhibit higher clock speeds.
-Finally, we show that \approachshort{} has minimal impact on dataplane cross-traffic carried by its parent device.
+Finally, I show that \approachshort{} has minimal impact on dataplane cross-traffic carried by its parent device, and that it performs at a similar level of performance as other \gls{acr:pdp} \gls{acr:ml} which are implemented as MicroC programs.
 
 \subsection{Raw inference and learning performance}\label{sec:opal-results-inference}
-\Cref{tab:lats} shows how \approachshort{} compares in latency with a numpy-based \gls{acr:rl} policy.\sidenote{For brevity, I omit numpy-based integer results---against a floating point implementation, median action latencies are \qty{14.6}{\percent} worse, with \qty{7.9}{\percent} longer update times. ??TODO: adapt the table to include these?}
+\Cref{tab:lats} shows how \approachshort{} compares in latency with a numpy-based \gls{acr:rl} policy.
 \Coopfw{} achieves sub-\qty{35}{\micro\second} median latency, with \nth{99} and \num{99.99}\nthscript{th} percentile latencies less than \qty{1}{\micro\second} worse using 4 \glspl{acr:me} of the NFP-6480.
-This corresponds to \qtylist{15;21}{\times} speedups over a \emph{Collector} host.
-Importantly, \Indfw{} achieves lower median state-action latencies (\qty{2.79}{\times}) \emph{and} update times (\qty{2.63}{\times}) than a dedicated \emph{Collector} host while requiring only a single core or dedicated functional unit.
+This corresponds to \qtyrange{15}{21}{\times} speedups over a \emph{Collector} host using floating-point arithmetic.
+Importantly, \Indfw{} still achieves lower median state-action latencies (\qty{2.79}{\times}) \emph{and} update times (\qty{2.63}{\times}) than a dedicated \emph{Collector} host while requiring only a single core or dedicated functional unit.
+Note that the numpy-based integer results underperform compared to the floating-point variant---median action latencies are \qty{14.6}{\percent} worse, with \qty{7.9}{\percent} longer update times.
 
 \newlength{\resultplotwidth}
 \setlength{\resultplotwidth}{\linewidth}
@@ -16,28 +17,28 @@ Importantly, \Indfw{} achieves lower median state-action latencies (\qty{2.79}{\
 \begin{table}
 	\caption[Latencies and computation times for \approachshort{} versus commodity hardware hosts.]{Latencies and computation times for \approachshort{} versus commodity hardware hosts. On-device execution is crucial in not only lowering latencies, but in reducing tail latencies. Lower is better, with the best marked \emph{in bold}.\label{tab:lats}}
 	\resizebox{\linewidth}{!}{
-		\expandableinput tables/opal/latency
+		\expandableinput tables/opal/latency-allint
 	}
 \end{table}
 
 \begin{table}
 	\caption[Action and update throughputs for \approachshort{} versus commodity hardware hosts.]{Action and update throughputs for \approachshort{} versus commodity hardware hosts. Most designs cannot scale online performance with additional cores. Higher is better, with the best marked \emph{in bold}.\label{tab:tputs}}
 	\resizebox{\linewidth}{!}{
-		\expandableinput tables/opal/tput
+		\expandableinput tables/opal/tput-allint
 	}
 \end{table}
 
 \Cref{tab:tputs} compares \approachshort{}'s throughput against host-based execution.
-The worker count was chosen for on host machines such that their throughput was maximised without causing latency degradation.
+The worker count was chosen for host machines such that their throughput was maximised without causing latency degradation.
 This equalled the amount of physical cores on each device---moving beyond this (even below the number of hyper-threads) would hamper tail latencies by an order of magnitude.
-To make the comparison fair in the context of many-core \gls{acr:cpu} environments, we include per-core throughput.
+To make the comparison fair in the context of many-core \gls{acr:cpu} environments, I include per-core throughput.
 \Indfw{} achieves \qty{2.82}{\times} higher offline throughput than commodity \emph{Collector} hardware in spite of the NFP-6480 having a considerably slower clock speed (\qty{0.29}{\times}).
 When compounded with the abundance of such weaker chips, in-\gls{acr:nic} \gls{acr:rl} is able to deliver much higher throughput.
 %As anticipated, the \Coopfw{} strategy is key in achieving serviceable throughput in an online learning agent, \qty{9.9}{\times} that of a dedicated collector machine, due to the locking requirements mandating coordinated division of work.
 As anticipated, the \Coopfw{} strategy is key in achieving serviceable throughput in an online learning agent, \qty{9.9}{\times} that of a dedicated collector machine, as the write lock around policy updates creates a bottleneck.
 
 By limiting the available workers in software, I show how \Coopfw{}'s policy update time (thus  online throughput---\cref{fig:vary-core}) and state-action latency (\cref{fig:vary-core-latency}) scale with available cores.
-While \Coopfw{} always outperforms the host-based floating point implementations, we observe that there are two distinct crossover points which must be met to overcome our own \Indfw{}; \num{8} workers for online throughput, and \num{3} workers for state-action latency.
+While \Coopfw{} always outperforms the host-based floating point implementations according to the earlier findings, we observe that there are two distinct crossover points which must be met to overcome our own \Indfw{}; \num{8} workers for online throughput, and \num{3} workers for state-action latency.
 Some artefacts of the hardware environment and design choices are visible, such as the addition of new physical cores being more significant than contexts, and the presence of some schedule bottlenecks.
 Most importantly however, \Coopfw{}'s resource demand is tunable at compile time to meet the online training rate and/or action latency required by a task/environment.
 
@@ -59,13 +60,13 @@ Most importantly however, \Coopfw{}'s resource demand is tunable at compile time
 \Cref{fig:vary-work,fig:vary-work-latency} show how policy complexity affects update cost and state-action latency respectively, scaling from a bias tile up to the full \gls{acr:ddos} policy size.\sidenote{Input vectors here all have 20 elements regardless of the policy design.}
 \Coopfw{} always produces an action in less time than \Indfw{}, but requires at least one state-based tile to excel in online learning.
 %We note that this is a trivial case, in that the use of \emph{only} a bias tile negates the need for any input state (similar to a multi-arm bandit problem).
-We note that this is a trivial case, as using \emph{only} a bias tile returns a single preference list regardless of input state.
+Note that this is a trivial case, as using \emph{only} a bias tile returns a single preference list regardless of input state.
 
 A key aspect of in-\gls{acr:nic} execution is that it allows far tighter bounds on tail latency compared to host inference.
 Examining the state-action latencies in \cref{tab:lats}, we see that \num{99.99}\nthscript{th} percentile latencies exceed the median by \qtylist{0.58;0.66}{\percent} for \Indfw{} and \Coopfw{}, respectively.
 Similar results were observed for other bit depths.
 By contrast, host-based tail latencies are at least \qty{40.53}{\percent} greater even when the parallel worker count is at or below the physical core count.
-We show the cumulative distributions of these in detail (\cref{fig:lat-cumul}), noting how just one additional \gls{acr:cpu}-intensive task---potentially automated system updates, scans, or another \gls{acr:vnf}/traffic processing task---impacts tail latencies further (\emph{Float(Over)}).
+The cumulative distributions of these are shown in detail by \cref{fig:lat-cumul}, noting how just one additional \gls{acr:cpu}-intensive task---potentially automated system updates, scans, or another \gls{acr:vnf}/traffic processing task---impacts tail latencies further (\emph{Float(Over)}).
 
 \begin{figure}
 	\resizebox{\resultplotwidth}{!}{
@@ -87,16 +88,16 @@ We show the cumulative distributions of these in detail (\cref{fig:lat-cumul}), 
 		\resizebox{1.0\linewidth}{!}{
 			\includegraphics{plots/opal/rl-perf-tester/latency-cumul-thesis}
 		}
-		\caption{\approachshort's \Coopfw{} design achieves consistent, tight latency bounds, with less than \qty{1}{\micro\second} between minima and maxima for all choices of bit depth. In most cases, latencies follow 32$<$16$<$\qty{8}{bit}.}
+		\caption{\approachshort's \Coopfw{} design achieves consistent, tight latency bounds, with less than \qty{1}{\micro\second} between minima and maxima for all choices of bit depth. In most cases, latencies follow 32${}<{}$16${}<{}$\qty{8}{bit}.}
 	\end{subfigure}
 
 	\begin{subfigure}{\linewidth}
 		\resizebox{1.0\linewidth}{!}{
 			\includegraphics{plots/opal/rl-perf-tester/latency-cumul-broad-thesis}
 		}
-		\caption{\indfw{} observes higher---though similarly tightly bounded---latencies than \coopfw. In hosts tail latencies suffer, particularly when oversubscribed.}
+		\caption{\indfw{} observes higher---though similarly tightly bounded---latencies than \coopfw. In hosts tail latencies suffer, particularly when oversubscribed as shown by Float(Over) which adds a single additional worker above the host's physical \gls{acr:cpu} count.}
 	\end{subfigure}
-	\caption[Cumulative state-action latency plots for \approachshort{} and host-based execution.]{Cumulative state-action latency plots for \approachshort{} and host-based execution. In-\gls{acr:nic} execution offers lower latencies and more consistent latencies than execution on a numpy-based host. \qty{32}{\bit} inference is the lowest-latency strategy in \approachshort{}.\label{fig:lat-cumul}}
+	\caption[Cumulative state-action latency plots for \approachshort{} and host-based execution.]{Cumulative state-action latency plots for \approachshort{} and host-based execution. In-\gls{acr:nic} execution offers lower (and more consistent) latencies than execution on a numpy-based host. \qty{32}{\bit} inference is the lowest-latency strategy in \approachshort{}.\label{fig:lat-cumul}}
 \end{figure}
 
 A noteworthy trend is that \qtylist{8;16}{\bit} versions of \approachshort{} consistently underperform compared to \qty{32}{\bit}, except for smaller workloads (seen in the zoomed portions of \cref{fig:vary-work,fig:vary-work-latency}).
@@ -144,8 +145,8 @@ An interesting aspect of \Coopfw{} and \emph{ParSa} is that adding cores has bot
 Consider \cref{fig:tput-per-core}, where the throughput per worker decreases with cores but occasionally increases sharply.
 Later downward ticks (\numrange{25}{29} workers) correspond to plateaus in throughput.
 This is a problem stemming from the granularity of work items (i.e., tilings in \emph{ParSa}), where our scheduler cannot find a better solution to a bottleneck until extra cores are allocated.
-We measured individual work items in state-action computation to take a mean \qtylist{5.2; 6.2; 9.7; 11.0}{\micro\second} for bias, CLS, CTM and IMEM tilings respectively.
-Though we have a \qty{4.2}{\times} factor of task oversubscription, it is clear that latencies are eventually bound below by the length of the longest task.
+As mentioned in \cref{sec:work-allocation}, individual state-action computation work items were measured as taking a mean \qtylist{5.2; 6.2; 9.7; 11.0}{\micro\second} for bias, CLS, CTM and IMEM tilings respectively.
+Though we have a \qty{4.2}{\times} factor of task oversubscription it is clear that as the count of worker threads increases, latencies are eventually bound below by the length of the longest task.
 
 \subsection{End-to-end RL latency}
 %?? PCIe RTT is 10us (neugebauer, BNN NFP paper), NFP RTT is 18us (own measurements). EMEM Ring one-way is 120ns.
@@ -157,33 +158,33 @@ Referring to \cref{fig:state-slip}, we take $t_2$ from \cref{tab:lats} for host 
 	\item[Dedicated Collector.] Offloads hosted in this manner will employ DPDK to maximise performance, giving one-way \gls{acr:pcie} delays of \qtyrange{0.9}{2.3}{\micro\second} for network packets~\parencite{DBLP:conf/sigcomm/NeugebauerAZAL018}.
 	A \gls{acr:udp} packet carrying \num{20} elements of state in \approachshort{} is \qty{128}{\byte}, so costs \qty{1}{\micro\second} to forward, and the reply state-action pair is slightly larger.
 	\emph{This gives an end-to-end inference latency of \qty{517.9}{\micro\second}}.
-	\item[\gls{acr:vnf} Offload.] \Textcite{DBLP:journals/cm/CzivaP17} show that more lightweight \gls{acr:vnf} frameworks like GNF~\parencite{DBLP:journals/cm/CzivaP17} and ClickOS~\parencite{DBLP:conf/nsdi/MartinsAROHBH14} add \qtyrange{45}{55}{\micro\second} \emph{additional} \gls{acr:rtt} latency above \gls{acr:pcie} costs.
+	\item[\gls{acr:vnf} Offload.] \Textcite{DBLP:journals/cm/CzivaP17} show that  lightweight \gls{acr:vnf} frameworks like GNF~\parencite{DBLP:journals/cm/CzivaP17} and ClickOS~\parencite{DBLP:conf/nsdi/MartinsAROHBH14} add \qtyrange{45}{55}{\micro\second} \emph{additional} \gls{acr:rtt} latency above \gls{acr:pcie} costs, which remain an estimated \qty{1}{\micro\second} as above.
 	\emph{This gives an end-to-end inference latency of \qty{572.9}{\micro\second}}.
 \end{description}
 Using these estimates, in-\gls{acr:nic} classical \gls{acr:rl} inference offers \qtylist{14.96;16.54}{\times} speedups in latency over collector and \gls{acr:vnf} deployments respectively (assuming no steering cost in either case).
-We also contrast these against deep RL policies on network tasks, which can take \qty{3}{\milli\second} to compute~\parencite{DBLP:journals/corr/abs-1910-04054}---2 orders of magnitude above \approachshort{} with identically sized (20-dim) input vectors.
+We also contrast these against \gls{acr:drl} policies on network tasks, which can take \qty{3}{\milli\second} to compute~\parencite{DBLP:journals/corr/abs-1910-04054}---2 orders of magnitude above \approachshort{} with identically sized (20-dim) input vectors.
 %In the name of fairness, we assume that rule installation uses same mechanism we recommend, but show how bad it can get? I.e. with rule installation costs etc.
 
 \subsection{Co-existence with the dataplane}
-Our setup met \qty{40}{\giga\bit\per\second} for packet sizes $\ge$\qty{256}{\byte}.
+The traffic generation setup met \qty{40}{\giga\bit\per\second} for packet sizes $\ge$\qty{256}{\byte}.
 %For frame sizes of \qtylist{64;128;256}{\byte} input traffic rates were \qtylist{17.4;32.9;37.0}{\giga\bit\per\second} respectively (\qtylist[per-symbol=p,sticky-per=true]{33.9;32.2;18.1}{\mega\packet\per\second}).
 For frame sizes of \qtylist{64;128}{\byte}, input traffic rates were \qtylist{17.4;32.9}{\giga\bit\per\second} respectively (\qtylist[per-symbol=p,sticky-per=true]{33.9;32.2}{\mega\packet\per\second}).
 Passing this traffic over the \gls{acr:nfp} device running \approachshort, no packet losses were incurred at any rate of \gls{acr:rl} actions.
 
-We show the effect of \gls{acr:rl} workloads on the round-trip latencies of cross traffic through \cref{fig:dataplane-heat}.
-As observed latencies do not obey a normal distribution (particularly \qtylist{256;1518}{\byte}, which are bimodal), we employ a one-tailed \emph{Mann-Whitney U test} to mark statistically significant population increases in latency ($p < 0.05$) with a ``+''.
+\Cref{fig:dataplane-heat} shows the effect of \gls{acr:rl} workloads on the round-trip latencies of cross traffic.
+As observed latencies do not obey a normal distribution (particularly \qtylist{256;1518}{\byte}, which are bimodal), I employ a one-tailed \emph{Mann-Whitney U test} to mark statistically significant population increases in latency ($p < 0.05$) with a ``+''.
 In general, statistically significant latency increases concentrate around smaller packet sizes.
 All (bar one) of these affected \nth{99} percentile latencies by under \qty{0.38}{\percent} (at most \qty{78}{\nano\second}).
 This slight degradation can be explained by increased pressure on the \gls{acr:nfp}'s \gls{acr:cpp} bus, which is responsible for handling cross-island accesses to memory (particularly IMEM/EMEM) and other resources.
 \approachshort{} places load on the \gls{acr:cpp} bus through its \inring{}/\outring{} EMEM rings and last-tier policy accesses.
-This also explains the sensitivity of \qty{256}{\byte} packets to \approachshort{}---the \gls{acr:nfp} P4 toolchain segments packets, storing metadata (e.g., MAC prepend) and the first bytes of a packet in a \qty{256}{\byte} CTM block and parking their payloads in EMEM.
+This also explains the sensitivity of \qty{256}{\byte} packets to \approachshort{}---the \gls{acr:nfp} P4 toolchain segments packets, storing metadata (e.g., \gls{acr:mac} prepend) and the first bytes of a packet in a \qty{256}{\byte} CTM block and parking their payloads in EMEM.
 \qty{256}{\byte} packets overshoot this due to metadata, causing small I/O accesses at a high rate for packets sized around this cutoff.
 %Regardless, this effect is small when observed.
 
 The anomalous result is \qty{128}{\byte} packets at \num{3000} \gls{acr:rl} action/update computations per second, causing a \qty{222}{\nano\second} (\qty{1.18}{\percent}) increase, shown in \cref{fig:dataplane-example}.
 This is observed through a shift of some packet latencies from the mode towards the tail, but no other changes in the distribution.
 In the above context, we believe that the inbound request rate is weakly synchronised with inbound packets, causing a higher level of burstiness around accesses to the \gls{acr:cpp} bus.
-We expect that dedicated hardware or \gls{acr:fpga} designs can avoid this problem by having dedicated \inring{}/\outring{} access mechanisms for an \approachshort{} agent.
+I expect that dedicated hardware or \gls{acr:fpga} designs can avoid this problem by having dedicated \inring{}/\outring{} access mechanisms for an \approachshort{} agent, which would of course completely eliminate the possibility of resource contention.
 
 \begin{figure}
 	\centering
@@ -200,7 +201,7 @@ We expect that dedicated hardware or \gls{acr:fpga} designs can avoid this probl
 		\resizebox{1.0\linewidth}{!}{
 			\includegraphics{plots/opal/stress/histo-128B-0-3-up-trim}
 		}
-		\caption[Distribution of RTTs for \qty{128}{\byte} packets for \numlist{0;3000} full RL updates/s.]{Distribution of \glspl{acr:rtt} for \qty{128}{\byte} packets for \numlist{0;3000} full \gls{acr:rl} updates/s. This is an anomalously high deviation present in \cref{fig:dataplane-heat}---the median value has not altered, but the peak has dampened somewhat, increasing tail latencies.\label{fig:dataplane-example}}
+		\caption[Distribution of RTTs for \qty{128}{\byte} packets for \numlist{0;3000} full RL updates/s.]{Distribution of \glspl{acr:rtt} for \qty{128}{\byte} packets for \numlist{0;3000} full \gls{acr:rl} updates/s. This is an anomalously high deviation present in \cref{fig:dataplane-heat}---the modal value has not altered, but the peak has dampened somewhat, increasing tail latencies.\label{fig:dataplane-example}}
 	
 %	\caption{Effects on tail latency of cross-traffic caused by different loads of off-path \gls{acr:rl} compute. Statistically significant increases in population latency are concentrated on smaller packet sizes, and are typically sub-\qty{78}{\nano\second}.\label{fig:dataplane-coop}}
 \end{figure}
@@ -216,7 +217,7 @@ This is a high upfront cost on per-island resources (CLS/CTM)---\approachshort{}
 %Due to the initial policy cost this falls below the fair share at 3 MEs, but always allows for co-existence with other asynchronous dataplane programs.
 
 \begin{table}
-\caption[NFP memory incurred by \approachshort{} when built to use \numlist{1;4} MEs (\qty{32}{\bit}).]{\gls{acr:nfp} memory incurred by \approachshort{} when built to use \numlist{1;4} \glspl{acr:me} (\qty{32}{\bit}). CLS and CTM are shared between all programs on the same island (placing our \gls{acr:rl} agent on i5), while EMEM and IMEM are shared between all \gls{acr:nfp} programs on a \gls{acr:nic}.\label{tab:resources}}
+\caption[NFP memory cost incurred by \approachshort{} when built to use \numlist{1;4} MEs (\qty{32}{\bit}).]{\gls{acr:nfp} memory cost incurred by \approachshort{} when built to use \numlist{1;4} \glspl{acr:me} (\qty{32}{\bit}). CLS and CTM are shared between all programs on the same island (placing our \gls{acr:rl} agent on i5), while EMEM and IMEM are shared between all \gls{acr:nfp} programs on a \gls{acr:nic}.\label{tab:resources}}
 \resizebox{\linewidth}{!}{
 \begin{tabular}{
 		@{}c
@@ -259,7 +260,7 @@ Ignoring the trivial solutions, reducing the worker count to \num{1} costs a mea
 Policy \emph{data} changes require no additional work in any case, resolving purely to \texttt{memcpy}s.
 
 Firmware (re-)installation (i.e., changing from \Indfw{} to \Coopfw{}, bit depth, or increasing maximum policy sizes) took a mean time of \qty{38.83}{\second}.
-In the event that appropriate firmwares are not pre-compiled, we found that compiling and linking both \approachshort{} and the P4 toolchain took around \qty{35}{\second}, while changing only \approachshort{} parameters required around \qty{25}{\second}.
+In the event that appropriate firmwares are not pre-compiled, compiling and linking both \approachshort{} and the P4 toolchain took around \qty{35}{\second}, while changing only \approachshort{} parameters required around \qty{25}{\second}.
 These results show that \approachshort{} can be easily adapted and altered by network administrators once in place, and illustrates an advantage of \gls{acr:soc}-based SmartNICs.
 
 \subsection{Magnitude comparisons against PDP ML}

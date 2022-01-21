@@ -86,7 +86,7 @@
 			I begin because I don't have the strength to think; I finish because I don't have the courage to quit.
 			This book is my cowardice.
 		\end{quotation}
-		---Fernando Pessoa, \emph{The Book of Disquiet} (pp.~156)}
+		---Fernando Pessoa, \emph{The Book of Disquiet} (p.~156)}
 \end{flushright}
 \input{"chapters/frontmatter/acks.tex"}
 
@@ -153,21 +153,19 @@
 % -----------------------------------------------------------------------------
 % Introduction and research problem
 %\part{Background}
-\input{"chapters/p1-introduction/intro.tex"}
+\input{"chapters/p1-introduction/ch1-intro/root.tex"}
 
 % -----
 
 %\part{Background}
-\input{"chapters/p1-introduction/lit-networks.tex"}
-\input{"chapters/p1-introduction/lit-pdp.tex"}
-\input{"chapters/p1-introduction/lit-ddn.tex"}
+\input{"chapters/p1-introduction/ch2-pdp/root.tex"}
+\input{"chapters/p1-introduction/ch3-ddn/root.tex"}
 
 % -----
 
 %\part{Improving Deployability}
 
 \input{"chapters/p2-papers/ch4-ddos/root.tex"}
-
 \input{"chapters/p2-papers/ch5-opal/root.tex"}
 
 % -----
@@ -180,11 +178,7 @@
 
 %\part{Conclusions}
 
-\chapter{Conclusion}
-
-\section{Future directions}
-?? OPaL: In future, we aim to examine the performance of individual applications driven by \approachshort---both classical and \gls{acr:drl}-based---and how a NetFPGA implementation can offer further latency and throughput improvements.
-A promising avenue here would be to investigate constant transfer learning between online \approachshort{} agents and high-throughput offline function approximators such as \glspl{acr:bnn}.
+\input{"chapters/p3-conc/ch7-conc/root.tex"}
 
 % -----------------------------------------------------------------------------
 
