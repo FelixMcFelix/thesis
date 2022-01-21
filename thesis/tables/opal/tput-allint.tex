@@ -1,0 +1,20 @@
+\begin{tabular}{@{}ccS[table-format=2]S[table-format=3.3]S[table-format=2.3]S[table-format=1.3]S[table-format=1.3]@{}}
+\toprule\multicolumn{1}{c}{Datatype} & \multicolumn{1}{c}{Machine/FW} & \multicolumn{1}{c}{Workers} & \multicolumn{2}{c}{Throughput (k actions/s)} & \multicolumn{2}{c}{Throughput/core (k actions/s)}\\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7} & & & \multicolumn{1}{c}{Offline} & \multicolumn{1}{c}{Online} & \multicolumn{1}{c}{Offline} & \multicolumn{1}{c}{Online}\\ \midrule
+Float & Collector & 4 & 7.673 \pm 0.049 & 1.627 \pm 0.031 & 1.918 \pm 0.012 & \multicolumn{1}{c}{---}\\
+ & MidServer & 6 & 5.584 \pm 0.030 & 0.791 \pm 0.012 & 0.931 \pm 0.005 & \multicolumn{1}{c}{---}\\
+NpInt32 & Collector & 4 & 6.960 \pm 0.131 & 1.493 \pm 0.057 & 1.740 \pm 0.033 & \multicolumn{1}{c}{---}\\
+ & MidServer & 6 & 5.176 \pm 0.015 & 0.727 \pm 0.008 & 0.863 \pm 0.003 & \multicolumn{1}{c}{---}\\
+NpInt16 & Collector & 4 & 6.973 \pm 0.116 & 1.495 \pm 0.037 & 1.743 \pm 0.029 & \multicolumn{1}{c}{---}\\
+ & MidServer & 6 & 5.182 \pm 0.035 & 0.736 \pm 0.010 & 0.864 \pm 0.006 & \multicolumn{1}{c}{---}\\
+NpInt8 & Collector & 4 & 6.968 \pm 0.101 & 1.520 \pm 0.026 & 1.742 \pm 0.025 & \multicolumn{1}{c}{---}\\
+ & MidServer & 6 & 5.190 \pm 0.028 & 0.731 \pm 0.016 & 0.865 \pm 0.005 & \multicolumn{1}{c}{---}\\
+\cmidrule(lr){1-7}
+Int32 & \approachshort{}-\Indfw{} & 32 & \bfseries 172.875 \pm 0.229 & 4.333 \pm 0.005 & \bfseries 5.402 \pm 0.007 & \multicolumn{1}{c}{---}\\
+ & \approachshort{}-\Coopfw{} & 32 & 29.166 \pm 0.173 & \bfseries 16.141 \pm 0.073 & 0.911 \pm 0.005 & \bfseries 0.504 \pm 0.002\\
+Int16 & \approachshort{}-\Indfw{} & 32 & 165.437 \pm 0.118 & 4.161 \pm 0.004 & 5.170 \pm 0.004 & \multicolumn{1}{c}{---}\\
+ & \approachshort{}-\Coopfw{} & 32 & 27.664 \pm 0.036 & 15.471 \pm 0.054 & 0.865 \pm 0.001 & 0.483 \pm 0.002\\
+Int8 & \approachshort{}-\Indfw{} & 32 & 164.524 \pm 0.142 & 4.147 \pm 0.005 & 5.141 \pm 0.004 & \multicolumn{1}{c}{---}\\
+ & \approachshort{}-\Coopfw{} & 32 & 27.631 \pm 0.101 & 15.552 \pm 0.068 & 0.863 \pm 0.003 & 0.486 \pm 0.002\\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,20 @@
+\begin{tabular}{@{}ccS[table-format=4.3]S[table-format=4.3]S[table-format=4.3]S[table-format=4.3]S[table-format=4.3]S[table-format=4.3]@{}}
+\toprule\multicolumn{1}{c}{Datatype} & \multicolumn{1}{c}{Machine/FW} & \multicolumn{3}{c}{State-Action Latency (\si{\micro\second})} & \multicolumn{3}{c}{State-Update Time (\si{\micro\second})}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8} & & \multicolumn{1}{c}{Median} & \multicolumn{1}{c}{\nth{99}} & \multicolumn{1}{c}{\num{99.99}\nthscript{th}} & \multicolumn{1}{c}{Median} & \multicolumn{1}{c}{\nth{99}} & \multicolumn{1}{c}{\num{99.99}\nthscript{th}}\\ \midrule
+Float & Collector & 515.94 & 606.06 & 725.03 & 606.06 & 636.82 & 833.99\\
+ & MidServer & 1069.07 & 1125.1 & 1508.0 & 1260.04 & 1605.99 & 1719.864\\
+NpInt32 & Collector & 562.91 & 668.05 & 889.06 & 653.03 & 715.02 & 943.9\\
+ & MidServer & 1154.9 & 1202.11 & 1595.252 & 1362.09 & 1477.0 & 1836.657\\
+NpInt16 & Collector & 562.91 & 647.07 & 831.13 & 653.98 & 782.01 & 952.01\\
+ & MidServer & 1152.99 & 1234.05 & 1607.932 & 1361.13 & 1415.97 & 1811.071\\
+NpInt8 & Collector & 564.1 & 645.88 & 861.008 & 651.84 & 739.1 & 922.012\\
+ & MidServer & 1152.04 & 1204.97 & 1602.022 & 1361.13 & 1502.99 & 1818.934\\
+\cmidrule(lr){1-8}
+Int32 & \approachshort{}-\Indfw{} & 185.133 & 185.533 & 186.213 & 230.840 & 231.347 & 232.227\\
+ & \approachshort{}-\Coopfw{} & \bfseries 34.347 & \bfseries 34.520 & \bfseries 34.573 & \bfseries 62.000 & \bfseries 62.440 & \bfseries 63.120\\
+Int16 & \approachshort{}-\Indfw{} & 193.427 & 193.787 & 194.587 & 240.333 & 240.840 & 241.560\\
+ & \approachshort{}-\Coopfw{} & 36.147 & 36.240 & 36.280 & 64.667 & 65.080 & 65.973\\
+Int8 & \approachshort{}-\Indfw{} & 194.520 & 194.840 & 195.240 & 241.173 & 241.707 & 242.760\\
+ & \approachshort{}-\Coopfw{} & 36.227 & 36.307 & 36.347 & 64.333 & 64.867 & 65.693\\
+\bottomrule
+\end{tabular}
