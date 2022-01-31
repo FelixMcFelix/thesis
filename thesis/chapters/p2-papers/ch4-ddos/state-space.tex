@@ -1,13 +1,11 @@
 \begin{figure}
 	\centering
 	\includegraphics[width=0.65\linewidth]{plots/marl/ftprep-cap-box}
-	\vspace{-0.75cm}
 	\caption{
 		Learned performance of Instant Control agents when benign traffic is UDP-like, using only a single feature as a basis for decisions.
 		Mean IAT, inbound packet sizes, and global state offer the best predictive performance, while most features offer marginal advantage over the unprotected baseline.
 		\label{fig:udp-feature-plots}
 	}
-\vspace{-0.4cm}
 \end{figure}
 
 %\begin{figure}
@@ -23,27 +21,23 @@
 \begin{figure}
 	\centering
 	\includegraphics[width=0.65\linewidth]{plots/marl/ftprep-tcp-cap-box}
-	\vspace{-0.75cm}
 	\caption{
 		Learned performance of Instant Control agents when benign traffic is TCP-like, using only a single feature as a basis for decisions.
 		All of the chosen features can offer a marked improvement over no protection at all.
 		Global state and Mean IAT still offer the greatest improvement above baseline, but packet-level statistics are considerably less effective for this class of traffic.
 		\label{fig:tcp-cap-feature-plots}
 	}
-\vspace{-0.7cm}
 \end{figure}
 
 \begin{figure}
 	\centering
 %	\vspace{-0.25cm}
 	\includegraphics[width=0.65\linewidth]{plots/marl/ftprep-tcp-laf-cap-box}
-	\vspace{-0.75cm}
 	\caption{
 		Learned performance of Instant Control agents when benign traffic is TCP-like, combining each feature with the last action taken as a basis for decisions.
 		This combination causes a significant improvement in the effectiveness of packet-level and per-window statistics.
 		\label{fig:tcp-laf-feature-plots}
 	}
-\vspace{-0.6cm}
 \end{figure}
 
 The main element required by a per-source model is a feature set with high predictive power, so that behavioural differences are apparent to an agent.
@@ -57,7 +51,7 @@ These values indicate the overall health of the network, and crucially are all m
 \fakepara{Source IP address}
 While trivial to spoof (and thus of limited use for many classes of attack), reflectors are themselves legitimate services being abused by spoofing attackers.
 As a result, they communicate with attack victims using their own IP address.
-In real-world scenarios the addresses of reflector nodes might exhibit similarity due to network uncleanliness \cite{DBLP:conf/imc/CollinsSFJWSK07}, e.g., unhardened services exposed by a single organisation.
+In real-world scenarios the addresses of reflector nodes might exhibit similarity due to network uncleanliness~\parencite{DBLP:conf/imc/CollinsSFJWSK07}, e.g., unhardened services exposed by a single organisation.
 
 \fakepara{Last action taken}
 This encodes an agent's current belief in the maliciousness of a flow.
