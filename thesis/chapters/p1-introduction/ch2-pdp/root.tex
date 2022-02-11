@@ -117,59 +117,81 @@ Naturally, this excludes stateful boosters of the type we've examined, but is we
 
 %?? Tie into PDP here: active networking and TPP . Think about the concept of protocol boosters~\parencite{DBLP:journals/jsac/FeldmeierMSBMR98}. (NOT READ)
 
-\paragraph{Failings}
-??Might be argued that
+\paragraph{Failings and drawbacks}
+Sadly, the active networking paradigm failed to properly fledge, at least in its first iteration.
+It might be argued that the `communistic' network view played a key part in this downfall---that the tangled web of \glspl{acr:as} between any two nodes should freely offer compute resources to the benefit hosts.
+This comes down to a simple question of economics: who pays whom for providing these services?
+It's easy to reason about this in campus or internal networks (the organisation provides active capabilities as part of its own remit), or if we require that only our \gls{acr:isp} offers these capabilities (hosts pay for them explicitly).
+Extending this notion to the wider Internet becomes more challenging.
+Assigning responsibility for administrative, technical, and security issues among all the organisations between two endpoints is a daunting prospect, to say the least.
+When modifying packets in a protocol booster-like model, it becomes difficult to communicate where boundaries of support start and end to enable truly transparent behaviour.
+In a setup like the PlanetLab overlay network the incentives for providing these capabilities in such a distributed way are obvious: all the users are researchers in need of distributed network compute.
+Each benefits from donating compute and network slices in their own infrastructure to receive resources in kind.
 
-?? Communistic view is part of its downfall administrative, tech, security issues etc. Even though some use cases would have benefited admins (i.e. compression to expand capacity).
-?? Obvious in PlanetLab: incentives are all users are researchers!
-?? Lots of economic drivers: who pays whom for providing these services? Why not just push this logic to hosts (preserving end-to-end) if the logic (i.e. compression) benefits the network AND hosts too?
-?? More issues? complexity, where boundaries of support start and end (and how to communicate them) (for instance, in protocol boosters).
-?? Flow migration and redundant failover, and path aggregation far harder?
+The problem here is also one of aggregation.
+At the Internet core such as in \glspl{acr:ixp}, transit bandwidth demands are the sum of all connected \glspl{acr:as}, amplifying compute demands and scale concerns.
+From another angle, suppose that all functions benefit the network \emph{and} hosts alike, as in the case of an in-band \gls{acr:tcp} compressor.
+Here, files can be transmitted between end hosts quicker \emph{and} the bandwidth impact on the switching fabric is reduced.
+If hosts benefit and have the resources to implement this functionality it is inevitable that at some point they will do so (pushing logic to the network edge), at which point network operators are able to put their own resources into faster or higher-capacity passive infrastructure with a vastly reduced attack surface compared to an active solution. 
+On the upside, this also preserves the end-to-end principle.
 
-?? In ANTS, implications for flow buffering on prog miss.
+% is part of its downfall administrative, tech, security issues etc. Even though some use cases would have benefited admins (i.e. compression to expand capacity).
+%?? Obvious in PlanetLab: incentives are all users are researchers!
+%?? Lots of economic drivers: who pays whom for providing these services? Why not just push this logic to hosts (preserving end-to-end) if the logic (i.e. compression) benefits the network AND hosts too?
 
-?? Naturally, this platform was still prototyped on host machines, and so marred by in-vogue high-level \gls{acr:vm}-based languages (Java, Caml) which didn't do credibility any good.
+%?? More issues? complexity, where boundaries of support start and end (and how to communicate them) (for instance, in protocol boosters).
+%?? Flow migration and redundant failover, and path aggregation far harder?
+%?? In ANTS, implications for flow buffering on prog miss.
 
-?? Capsules, being more popular as they were more capable, perhaps amplified scepticism.
-?? Naturally, most capsule impls were host-executed...
+Active network capabilities do in many senses \emph{limit} how networks can benefit their users (or at least make some innovations substantially harder).
+Consider flow migration, potentially as part of a wider \gls{acr:te} strategy, or path aggregation to increase bisectional bandwidth or provide redundancy to protect from link failures.
+Administrators must not only handle routing and design of such capabilities, but they must also ensure that active network programs on any flow's path are mirrored or migrated to the new path.
+In the event of a complete or partial node failure, this may not be trivially possible.
+Even when retrieving programs from the last hop, failover may be needed for a live high-bandwidth flow, requiring costly per-flow buffering at a node until capsule program setup is complete.
 
-\begin{quotation}
-	\noindent
-%	A major motivation behind Active Networks was the theory that there is an exponential growth of computing power in the network suggested by Moore’s Law, which states that the speed of electronic components doubles every 18 months.
-%	Unfortunately, in most parts of the Internet, the traffic growth rates far exceed the growth rate of Moore’s Law. ...
-%	There are places, however, where Moore’s Law is winning.
-%	One place is network management and monitoring.
-%	The average device is not generating, processing, or receiving drastically more network management traffic than it was a year or two ago.
-%	We can hope, therefore, that there is more per-device processing power available for network management than there was in the past.
-%	A major motivation behind Active Networks was the theory that there is an exponential growth of computing power in the network suggested by Moore’s Law, which states that the speed of electronic components doubles every 18 months.
-	Unfortunately, in most parts of the Internet, the traffic growth rates far exceed the growth rate of Moore’s Law. ...
-	There are places, however, where Moore’s Law is winning.
-	One place is network management and monitoring.
-	The average device is not generating, processing, or receiving drastically more network management traffic than it was a year or two ago.
-	We can hope, therefore, that there is more per-device processing power available for network management than there was in the past.
-	\strut\hfill\parencite[p. 68]{DBLP:journals/tocs/SchwartzJSZRP00}
-\end{quotation}
-We will revisit this quote in due course. ?? quote from smart packets ?? trim
+The capabilities of programmable network hardware were, to some extent, overshadowed by the community's focus on the more intoxicating idea of capsule networking.
+Naturally, the overwhelming majority of these platform were prototyped on host machines, which limited forwarding and processing performance far below that of even the reduced Ethernet line-rate of their time.
+The repeated emphasis on high-level prototypes reduced the focus on the sorts of low-level, capable languages a performant system would require---proposals were instead marred by in-vogue high-level \gls{acr:vm}-based languages such as Java and Caml, which didn't do credibility any good.
+This likely added to industry scepticism---one gets the sense of a paradigm driven by research trends instead of limiting its own boundaries to produce something truly capable and scalable.
 
 \subsection{Software-defined Networking}
+In parallel, ...
+
+?? What do I want to cover? first: separation of ctl plane, OF and Net OSes (ONOS, OpenDaylight, ...), then bring around to vNFs etc
 
 Tempest~\parencite{DBLP:journals/network/MerweRLC98}
 
+?? Greater capacity and use forced focus on \gls{acr:te}, which was onerous and required insane workarounds w/ fixed-fn hardware~\parencite{DBLP:journals/ccr/FeamsterRZ14}
+
+ForCES~\parencite{rfc3746}
+
+RCP~\parencite{DBLP:conf/nsdi/CaesarCFRSM05,10.1145/1016707.1016709}
+
+SoftRouter~~\parencite{lakshman2004the}
+
+PCE~\parencite{rfc4655}
+
+Ethane~\parencite{DBLP:conf/sigcomm/CasadoFPLMS07}
+
+OpenFlow~\parencite{DBLP:journals/ccr/McKeownABPPRST08}
+
+Controllers like NOX~\parencite{DBLP:journals/ccr/GudeKPPCMS08}, Ryu~\parencite{ryu} (since 2012)
+
 ?? Ossification in today's sense? Middleboxes? i.e. barrier to wider deployment even after standardisation i.e. hobbled SCTP~\parencite{rfc4960}, forced QUIC onto UDP. Also, middleboxes expensive and require work to integrate.\sidenote{Ossification causes: weight of \gls{acr:ietf}, desire for perf causing hardware impls (inflexible), over-reliance on observed behaviours of network \& protocols rather than the specs.}
 
-?? \gls{acr:ovs}~\parencite{DBLP:conf/nsdi/PfaffPKJZRGWSSA15} huge here.
+?? \gls{acr:ovs}~\parencite{DBLP:conf/nsdi/PfaffPKJZRGWSSA15,DBLP:conf/sigcomm/TuWAP21} huge here.
 
 ?? A survey to mine for stuff~\parencite{DBLP:journals/comsur/NunesMNOT14}
 
-?? Tie into PDP here: active networking and TPP . Think about the concept of protocol boosters~\parencite{DBLP:journals/jsac/FeldmeierMSBMR98}. (NOT READ)
-
-?? \gls{acr:ovs}~\parencite{DBLP:conf/sigcomm/TuWAP21}
+?? Network \glspl{acr:os}: Onix~\parencite{DBLP:conf/osdi/KoponenCGSPZRIIHS10}, ONOS~\parencite{onos} and OpenDaylight~\parencite{opendaylight} circa 2014
 
 ?? Google Jupiter~\parencite{DBLP:conf/sigcomm/SinghOAAABBDFGK15} for datacentres, Espresso~\parencite{DBLP:conf/sigcomm/YapMRPHBHKNJLRR17} for peering, B4 for \gls{acr:wan}~\parencite{DBLP:conf/sigcomm/HongMAZABBJKLMP18}, Orion~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21} for top-level mgmt
 
 ?? Why the success? iterative, built on existing tech with an easier-to-use interface etc.
 
 \subsection{Modern, Programmable Dataplanes}\label{sec:modern-pdps}
+?? Can we plot from \glspl{acr:npu}? incl., e.g., Orig NetFPGA~\parencite{DBLP:conf/mse/LockwoodMWGHNRL07}
+
 ?? Talk about how SmartNICs match what we thought p-switches would be, while p-switches are now ASICs, like you promised. Why did this happen? ?? multi-core can match rates on one or two ports, but getting \qtyrange{1}{2}{\tera\bit\per\second} would need an insane amount of cores (so ASICs are the only valid way to get in some manner of programmability)---also, the exclusion of the idea of `user-given programs' ?? maybe put later.
 
 ?? \gls{acr:rmt}~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13}) arose in response to limits of conventional switches and OpenFlow---became \gls{acr:pisa}~\parencite{barefoot-pisa}?
@@ -203,6 +225,26 @@ My personal interpretation and opinion is that this arises from several angles:
 Alternatively, we might argue that it's the control plane innovations of \gls{acr:sdn} that made this possible in the first place; beforehand, the design schism of capsules versus programmable switches was indeed an open question (one might say between `pragmatic' and `interesting' approaches to the task).
 The literature's evolution back towards programmable switches (and now \glspl{acr:nic}) offers a healthy does of pragmatism, ensuring that today's model is performant---but almost entirely focussed on allowing runtime reconfigurable specificity over which packets are fed to a pre-set array of dataplane programs, as opposed to totally arbitrary packet-level programs.
 Regardless, the old paradigm of active networking has been realised in the form of \glspl{acr:pdp} and in-network compute.
+
+?? Fit this in wrt. moore's law observations.
+?? How? They believed the way to make it feasible was to limit scope to management. Now we knoe this is valid, but so too is in-network compute?
+\begin{quotation}
+	\noindent
+	%	A major motivation behind Active Networks was the theory that there is an exponential growth of computing power in the network suggested by Moore’s Law, which states that the speed of electronic components doubles every 18 months.
+	%	Unfortunately, in most parts of the Internet, the traffic growth rates far exceed the growth rate of Moore’s Law. ...
+	%	There are places, however, where Moore’s Law is winning.
+	%	One place is network management and monitoring.
+	%	The average device is not generating, processing, or receiving drastically more network management traffic than it was a year or two ago.
+	%	We can hope, therefore, that there is more per-device processing power available for network management than there was in the past.
+	%	A major motivation behind Active Networks was the theory that there is an exponential growth of computing power in the network suggested by Moore’s Law, which states that the speed of electronic components doubles every 18 months.
+	Unfortunately, in most parts of the Internet, the traffic growth rates far exceed the growth rate of Moore’s Law. ...
+	There are places, however, where Moore’s Law is winning.
+	One place is network management and monitoring.
+	The average device is not generating, processing, or receiving drastically more network management traffic than it was a year or two ago.
+	We can hope, therefore, that there is more per-device processing power available for network management than there was in the past.
+	\strut\hfill\parencite[p. 68]{DBLP:journals/tocs/SchwartzJSZRP00}
+\end{quotation}
+We will revisit this quote in due course. ?? quote from smart packets ?? trim
 
 ?? What's different? Focus on ctl-plane connected, but essentially limited to individual \glspl{acr:as} in contrast to the augmented end-to-end vision of yore. Did it succeed \emph{because} it's more constrained? i.e. no inter-AS vision, not tied to preselected forwarding paths...
 

@@ -4593,3 +4593,168 @@ bibsource = {dblp computer science bibliography, http://dblp.org}
   doi={10.1109/OPNARC.1999.758497},
  }
 
+@inproceedings{DBLP:conf/nsdi/CaesarCFRSM05,
+  author    = {Matthew Caesar and
+               Donald F. Caldwell and
+               Nick Feamster and
+               Jennifer Rexford and
+               Aman Shaikh and
+               Jacobus E. van der Merwe},
+  editor    = {Amin Vahdat and
+               David Wetherall},
+  title     = {Design and Implementation of a Routing Control Platform},
+  booktitle = {2nd Symposium on Networked Systems Design and Implementation {(NSDI}
+               2005), May 2-4, 2005, Boston, Massachusetts, USA, Proceedings},
+  publisher = {{USENIX}},
+  year      = {2005},
+  url       = {http://www.usenix.org/events/nsdi05/tech/caesar.html},
+  timestamp = {Wed, 19 May 2021 08:28:11 +0200},
+  biburl    = {https://dblp.org/rec/conf/nsdi/CaesarCFRSM05.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{10.1145/1016707.1016709,
+	author = {Feamster, Nick and Balakrishnan, Hari and Rexford, Jennifer and Shaikh, Aman and van der Merwe, Jacobus},
+	title = {The Case for Separating Routing from Routers},
+	year = {2004},
+	isbn = {158113942X},
+	publisher = {Association for Computing Machinery},
+	address = {New York, NY, USA},
+	url = {https://doi.org/10.1145/1016707.1016709},
+	doi = {10.1145/1016707.1016709},
+	abstract = {Over the past decade, the complexity of the Internet's routing infrastructure has increased dramatically. This complexity and the problems it causes stem not just from various new demands made of the routing infrastructure, but also from fundamental limitations in the ability of today's distributed infrastructure to scalably cope with new requirements.The limitations in today's routing system arise in large part from the fully distributed path-selection computation that the IP routers in an autonomous system (AS) must perform. To overcome this weakness, interdomain routing should be separated from today's IP routers, which should simply forward packets (for the most part). Instead, a separate Routing Control Platform (RCP) should select routes on behalf of the IP routers in each AS and exchange reachability information with other domains.Our position is that an approach like RCP is a good way of coping with complexity while being responsive to new demands and can lead to a routing system that is substantially easier to manage than today. We present a design overview of RCP based on three architectural principles path computation based on a consistent view of network state, controlled interactions between routing protocol layers, and expressive specification of routing policies and discuss the architectural strengths and weaknesses of our proposal.},
+	booktitle = {Proceedings of the ACM SIGCOMM Workshop on Future Directions in Network Architecture},
+	pages = {5–12},
+	numpages = {8},
+	keywords = {routing architecture, BGP, interdomain routing},
+	location = {Portland, Oregon, USA},
+	series = {FDNA '04}
+}
+
+@inproceedings{lakshman2004the,
+	author = {Lakshman, T. V. and Nandagopal, T. and Ramjee, Ramachandran and Sabnani, K. and Woo, T.},
+	title = {The SoftRouter Architecture},
+	booktitle = {ACM HOTNETS},
+	year = {2004},
+	month = {January},
+	abstract = {In current routers, implementations of the control and forwarding functions are colocated and tightly integrated by static association of control and forwarding elements. In this paper, we present the SoftRouter architecture that permits dynamic association between control and forwarding elements, and separates the implementation of control plane functions from packet forwarding functions. In this architecture, all control plane functions are implemented on general purpose servers called the control elements (CE's) that could be multiple hops away from the forwarding elements (FEs). A network element (NE) or a router is formed using dynamic binding between the CEs and the FEs. We argue that this flexibility results in several benefits including increased reliability, increased scalability, increased security, ease of adding new functionality, and decreased cost.},
+	publisher = {ACM},
+	url = {https://www.microsoft.com/en-us/research/publication/the-softrouter-architecture/},
+	urldate = {2022-02-11},
+	edition = {ACM HOTNETS},
+}
+
+@inproceedings{DBLP:conf/sigcomm/CasadoFPLMS07,
+  author    = {Mart{\'{\i}}n Casado and
+               Michael J. Freedman and
+               Justin Pettit and
+               Jianying Luo and
+               Nick McKeown and
+               Scott Shenker},
+  editor    = {Jun Murai and
+               Kenjiro Cho},
+  title     = {Ethane: taking control of the enterprise},
+  booktitle = {Proceedings of the {ACM} {SIGCOMM} 2007 Conference on Applications,
+               Technologies, Architectures, and Protocols for Computer Communications,
+               Kyoto, Japan, August 27-31, 2007},
+  pages     = {1--12},
+  publisher = {{ACM}},
+  year      = {2007},
+  url       = {https://doi.org/10.1145/1282380.1282382},
+  doi       = {10.1145/1282380.1282382},
+  timestamp = {Thu, 14 Oct 2021 10:05:42 +0200},
+  biburl    = {https://dblp.org/rec/conf/sigcomm/CasadoFPLMS07.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{DBLP:journals/ccr/McKeownABPPRST08,
+  author    = {Nick McKeown and
+               Thomas E. Anderson and
+               Hari Balakrishnan and
+               Guru M. Parulkar and
+               Larry L. Peterson and
+               Jennifer Rexford and
+               Scott Shenker and
+               Jonathan S. Turner},
+  title     = {OpenFlow: enabling innovation in campus networks},
+  journal   = {Comput. Commun. Rev.},
+  volume    = {38},
+  number    = {2},
+  pages     = {69--74},
+  year      = {2008},
+  url       = {https://doi.org/10.1145/1355734.1355746},
+  doi       = {10.1145/1355734.1355746},
+  timestamp = {Thu, 14 Oct 2021 09:28:11 +0200},
+  biburl    = {https://dblp.org/rec/journals/ccr/McKeownABPPRST08.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{DBLP:conf/mse/LockwoodMWGHNRL07,
+  author    = {John W. Lockwood and
+               Nick McKeown and
+               Gregory Watson and
+               Glen Gibb and
+               Paul Hartke and
+               Jad Naous and
+               Ramanan Raghuraman and
+               Jianying Luo},
+  title     = {NetFPGA-An Open Platform for Gigabit-Rate Network Switching and Routing},
+  booktitle = {{IEEE} International Conference on Microelectronic Systems Education,
+               {MSE} '07, San Diego, CA, USA, June 3-4, 2007},
+  pages     = {160--161},
+  publisher = {{IEEE} Computer Society},
+  year      = {2007},
+  url       = {https://doi.org/10.1109/MSE.2007.69},
+  doi       = {10.1109/MSE.2007.69},
+  timestamp = {Wed, 16 Oct 2019 14:14:53 +0200},
+  biburl    = {https://dblp.org/rec/conf/mse/LockwoodMWGHNRL07.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{DBLP:conf/osdi/KoponenCGSPZRIIHS10,
+  author    = {Teemu Koponen and
+               Mart{\'{\i}}n Casado and
+               Natasha Gude and
+               Jeremy Stribling and
+               Leon Poutievski and
+               Min Zhu and
+               Rajiv Ramanathan and
+               Yuichiro Iwata and
+               Hiroaki Inoue and
+               Takayuki Hama and
+               Scott Shenker},
+  editor    = {Remzi H. Arpaci{-}Dusseau and
+               Brad Chen},
+  title     = {Onix: {A} Distributed Control Platform for Large-scale Production
+               Networks},
+  booktitle = {9th {USENIX} Symposium on Operating Systems Design and Implementation,
+               {OSDI} 2010, October 4-6, 2010, Vancouver, BC, Canada, Proceedings},
+  pages     = {351--364},
+  publisher = {{USENIX} Association},
+  year      = {2010},
+  url       = {http://www.usenix.org/events/osdi10/tech/full\_papers/Koponen.pdf},
+  timestamp = {Thu, 12 Mar 2020 11:35:56 +0100},
+  biburl    = {https://dblp.org/rec/conf/osdi/KoponenCGSPZRIIHS10.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{DBLP:journals/ccr/GudeKPPCMS08,
+  author    = {Natasha Gude and
+               Teemu Koponen and
+               Justin Pettit and
+               Ben Pfaff and
+               Mart{\'{\i}}n Casado and
+               Nick McKeown and
+               Scott Shenker},
+  title     = {{NOX:} towards an operating system for networks},
+  journal   = {Comput. Commun. Rev.},
+  volume    = {38},
+  number    = {3},
+  pages     = {105--110},
+  year      = {2008},
+  url       = {https://doi.org/10.1145/1384609.1384625},
+  doi       = {10.1145/1384609.1384625},
+  timestamp = {Thu, 14 Oct 2021 09:28:10 +0200},
+  biburl    = {https://dblp.org/rec/journals/ccr/GudeKPPCMS08.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
