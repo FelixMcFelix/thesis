@@ -159,7 +159,7 @@ In parallel, ...
 
 ?? What do I want to cover? first: separation of ctl plane, OF and Net OSes (ONOS, OpenDaylight, ...), then bring around to vNFs etc
 
-Tempest~\parencite{DBLP:journals/network/MerweRLC98}
+Tempest~\parencite{DBLP:journals/network/MerweRLC98} for ATM networks, built on principle of \emph{open signalling}~\parencite{DBLP:journals/ccr/CampbellKMV99} (in ATM) from 1995. IP/Ethernet networks still `bonded' FEs and CEs in routing design.
 
 ?? Greater capacity and use forced focus on \gls{acr:te}, which was onerous and required insane workarounds w/ fixed-fn hardware~\parencite{DBLP:journals/ccr/FeamsterRZ14}
 
@@ -169,11 +169,13 @@ RCP~\parencite{DBLP:conf/nsdi/CaesarCFRSM05,10.1145/1016707.1016709}
 
 SoftRouter~~\parencite{lakshman2004the}
 
+\emph{XORP}~\parencite{DBLP:journals/ccr/HandleyHK03} as a host-based router (dataplane in kernel, control plane in kernel).
+
 PCE~\parencite{rfc4655}
 
 Ethane~\parencite{DBLP:conf/sigcomm/CasadoFPLMS07}
 
-OpenFlow~\parencite{DBLP:journals/ccr/McKeownABPPRST08}
+OpenFlow~\parencite{DBLP:journals/ccr/McKeownABPPRST08} ?? arrival marked a watershed moment, Current vers~\parencite{openflow-1-5}
 
 Controllers like NOX~\parencite{DBLP:journals/ccr/GudeKPPCMS08}, Ryu~\parencite{ryu} (since 2012)
 
@@ -185,11 +187,13 @@ Controllers like NOX~\parencite{DBLP:journals/ccr/GudeKPPCMS08}, Ryu~\parencite{
 
 ?? Network \glspl{acr:os}: Onix~\parencite{DBLP:conf/osdi/KoponenCGSPZRIIHS10}, ONOS~\parencite{onos} and OpenDaylight~\parencite{opendaylight} circa 2014
 
-?? Google Jupiter~\parencite{DBLP:conf/sigcomm/SinghOAAABBDFGK15} for datacentres, Espresso~\parencite{DBLP:conf/sigcomm/YapMRPHBHKNJLRR17} for peering, B4 for \gls{acr:wan}~\parencite{DBLP:conf/sigcomm/HongMAZABBJKLMP18}, Orion~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21} for top-level mgmt
+?? Google Jupiter~\parencite{DBLP:conf/sigcomm/SinghOAAABBDFGK15} for datacentres, Espresso~\parencite{DBLP:conf/sigcomm/YapMRPHBHKNJLRR17} for peering, B4 for \gls{acr:wan}~\parencite{DBLP:conf/sigcomm/JainKMOPSVWZZZHSV13,DBLP:conf/sigcomm/HongMAZABBJKLMP18}, Orion~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21} for top-level mgmt
 
 ?? Why the success? iterative, built on existing tech with an easier-to-use interface etc.
 
 \subsection{Modern, Programmable Dataplanes}\label{sec:modern-pdps}
+?? Probably two streams: capable hardware (and its programming), and making host-based solns faster.
+
 ?? Can we plot from \glspl{acr:npu}? incl., e.g., Orig NetFPGA~\parencite{DBLP:conf/mse/LockwoodMWGHNRL07}
 
 ?? Talk about how SmartNICs match what we thought p-switches would be, while p-switches are now ASICs, like you promised. Why did this happen? ?? multi-core can match rates on one or two ports, but getting \qtyrange{1}{2}{\tera\bit\per\second} would need an insane amount of cores (so ASICs are the only valid way to get in some manner of programmability)---also, the exclusion of the idea of `user-given programs' ?? maybe put later.
@@ -260,6 +264,8 @@ We will revisit this quote in due course. ?? quote from smart packets ?? trim
 ?? mention BPFabric~\parencite{DBLP:conf/ancs/JouetP17} somewhere.
 
 later netmap~\parencite{DBLP:conf/usenix/Rizzo12}
+
+?? Morpheus~\parencite{miano-morpheus} for run-time optimisation.
 
 \section{Operation and Management}
 
