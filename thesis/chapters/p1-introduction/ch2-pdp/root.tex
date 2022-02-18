@@ -155,45 +155,101 @@ The repeated emphasis on high-level prototypes reduced the focus on the sorts of
 This likely added to industry scepticism---one gets the sense of a paradigm driven by research trends instead of limiting its own boundaries to produce something truly capable and scalable.
 
 \subsection{Software-defined Networking}
-In parallel, ...
+In parallel, a good many researchers saw a need to innovate (and fight stagnation in) the space of what we now understand as control plane programmability: the ability to deploy and develop new routing protocols, provide bespoke routing for individual packets, flows and applications, and to adapt to changes in the network itself.
+While likely starting out from the same perspective as active networking---enabling new capabilities and development, and network evolution---as years have gone by greater network capacities, usage demands and a need for far greater reliability have introduced challenges manyfold.
+Greater capacities, particularly in bisection bandwidth, typically mean more equipment for network admins to manage through routers and switches, but also in terms of additional cabling for link redundancy and aggregation---neither of which play well with older spanning tree protocols.
+\glsxtrfull{acr:te}---making effective use of this capacity and providing different traffic classes with optimal forwarding---has similarly become more and more important over time.
+The problem is that classical routing protocols such as \gls{acr:ospf} and \gls{acr:rip} are designed for distributed autonomy, offering no support for direct routing rule insertion by administrators.
+Early \gls{acr:te} approaches were thus built on a shaky foundation of hacks and tricks, exploiting routing protocol behaviour to achieve the desired high-level outcomes~\parencite{DBLP:journals/ccr/FeamsterRZ14}.
+Naturally, such workarounds become untenable and impossible to reason about at scale---particularly as failures and misconfigurations creep in and become harder to find and diagnose.
+Effective though these early forays were, they remained hamstrung by the tightly coupled control and data planes of the network hardware of that era.
+The reality and urgency of this problem space has led to the true separation of forwarding elements (the dataplane) from the logical control elements which inform and orchestrate their routing behaviour (the control plane).
+This separation has enabled \glsxtrfull{acr:sdn}---the use of arbitrary machines and logic to define the forwarding behaviour of each and every network element.
+As we shall discuss, this has brought forth a well-developed and successful bevy of innovations in network control and design.
 
-?? What do I want to cover? first: separation of ctl plane, OF and Net OSes (ONOS, OpenDaylight, ...), then bring around to vNFs etc
+\paragraph{Development of the control plane}
+This line of work began in earnest with the \emph{open signalling} movement~\parencite{DBLP:journals/ccr/CampbellKMV99} in \gls{acr:atm} networks, circa 1995, which aimed to standardise the \glspl{acr:api} and protocols for passing routing protocol data to its relevant handler (and rules back to line-cards)---in an era where these elements were still tightly bonded in commercial routing hardware.
+\emph{Tempest}~\parencite{DBLP:journals/network/MerweRLC98} marked its zenith, using these capabilities in tandem with specific functions of these now-obsolete \gls{acr:atm} networks to define a `network control architecture' which would oversee correct forwarding policies and resource allocation.
+Its primary focus, however, was in providing independent virtual network slices---\emph{switchlets}---to users of multi-tenant networks on demand, allowing these users to pass in their own control programs written for host execution in Java, for instance.
+Control plane traffic from control elements to the dataplane was carried \emph{in-band} at this time (i.e., using the same fabric as tenants' datagrams).
 
-Tempest~\parencite{DBLP:journals/network/MerweRLC98} for ATM networks, built on principle of \emph{open signalling}~\parencite{DBLP:journals/ccr/CampbellKMV99} (in ATM) from 1995. IP/Ethernet networks still `bonded' FEs and CEs in routing design.
+%?? What do I want to cover? first: separation of ctl plane, OF and Net OSes (ONOS, OpenDaylight, ...), then bring around to vNFs etc
+%
+%Tempest~\parencite{DBLP:journals/network/MerweRLC98} for ATM networks, built on principle of \emph{open signalling}~\parencite{DBLP:journals/ccr/CampbellKMV99} (in ATM) from 1995. IP/Ethernet networks still `bonded' FEs and CEs in routing design.
+%
+%?? Greater capacity and use forced focus on \gls{acr:te}, which was onerous and required insane workarounds w/ fixed-fn hardware~\parencite{DBLP:journals/ccr/FeamsterRZ14}
 
-?? Greater capacity and use forced focus on \gls{acr:te}, which was onerous and required insane workarounds w/ fixed-fn hardware~\parencite{DBLP:journals/ccr/FeamsterRZ14}
+These ideas were refined into general standardisation for hardware elements along a shared bus via \emph{ForCES}~\parencite{rfc3746}; stripped, of course, of the more visionary aspects such as network slicing, arbitrary control code, and wider resource management.
+Primarily, this was focussed on registration of control plane elements, including key provisions for extensibility and discoverability to announce additional protocols and offer redundancy.
+The move to physically remote control elements was proposed by \emph{SoftRouter}~\parencite{lakshman2004the}, such that forwarding and control elements would communicate with one another in-band over the same network they define (after a simple spanning-tree bootstrap phase) using custom discoverability protocols.
+In particular this allowed its authors to experiment with reducing the number of control elements in a network, from which they observed faster convergence of protocols such as \gls{acr:ospf}.
+Hardware capabilities did not at this point allow this level of control, and as such host-based routers like \emph{XORP}~\parencite{DBLP:journals/ccr/HandleyHK03} (dataplane in kernel, control plane in user space) and simulators such as \emph{ns} reigned in research at this time.
 
-ForCES~\parencite{rfc3746}
+While most of the above work focusses on the \emph{intra}-domain case---routing \emph{within} an \gls{acr:as}---RCP~\parencite{DBLP:conf/nsdi/CaesarCFRSM05,10.1145/1016707.1016709} was instead motivated by how \emph{inter}-domain routing \emph{between} \glspl{acr:as} might benefit from the sorts of centralised control we now associate with \gls{acr:sdn}.
+The problem in this instance is that edge routers must understand and implement \gls{acr:bgp}, each having their own arcane policies to achieve the intended network behaviour with respect to quirks of the protocol, their own hardware, and in the routes forwarded by neighbouring \glspl{acr:as}.
+Their solution was to centralise this logic into one (or a few) host machines, providing a drop-in solution which could act on \emph{all} gathered \gls{acr:bgp} information to produce optimal decisions with better scaling characteristics, reduce administrative overhead and fragility, and which opened the door to later extension if neighbour \glspl{acr:as} also deployed RCP.
 
-RCP~\parencite{DBLP:conf/nsdi/CaesarCFRSM05,10.1145/1016707.1016709}
+With the growing need for \gls{acr:te} and \gls{acr:to} at various layers of the Internet infrastructure, we begin to see a drive for wider coordination in the intra-domain case.
+\emph{PCE}~\parencite{rfc4655} is one of the first serious attempts to formalise a network architecture where the control plane can calculate and install bespoke \emph{paths} at the flow level, given any set of constraints.
+Naturally, this requires far greater coordination of the individual forwarding behaviour of switches, preferably combined with \gls{acr:mpls}.
+\emph{Ethane}~\parencite{DBLP:conf/sigcomm/CasadoFPLMS07} pushed this notion of complete network control further; a dedicated controller overseeing the forwarding rules and paths installed at an entire network of `dumb' switches, containing \emph{only} an action table of \emph{exact} matches.
+Their goal was not one of performant \gls{acr:te}, however, but of policy---complete control over interactions between named entities and their classes, with all flow misses being directed to the controller.\sidenote{It's worth noting that this proposal was intended only for campus networks, hence its obvious scalability limits don't bite quite as badly as they might in, say, an \gls{acr:ixp} or datacentre. In particular, it must upcall to the controller for every new address, and maintain an exact match rule for every live flow due to the lack of longest-prefix matches.}
+The controller then authenticates, authorises and orchestrates all host-to-host connections according to a given policy.
 
-SoftRouter~~\parencite{lakshman2004the}
+The arrival of \emph{OpenFlow}~\parencite{DBLP:journals/ccr/McKeownABPPRST08} marked a watershed moment in \gls{acr:sdn}, iterating on Ethane's key ideas to remove notions of authentication, focussing more on the network itself.
+Motivated to lower the barrier of entry for experimentation and research in the routing domain,\sidenote{In-text, this is again referred to as ossification: here arising from the closed nature of routing hardware coupled with the performance needs of realistic traffic.} OpenFlow decided to change tack compared with XORP and its contemporaries by targeting real hardware (and by tailoring its design to capabilities of commodity devices of the day).
+OpenFlow kept Ethane's \gls{acr:mat} abstraction, as switches of that era stored flow tables internally, and required support for few actions: forward packets on a port, drop packets, encapsulate and send a packet to a delegated controller, or defer to the switch's underlying forwarding logic.
+Each OpenFlow switch then maintains a dedicated, secure connection to at least one controller, though may receive rule insertion from any number.
+This was set apart from its earlier competitors and progenitors by the concerted effort to ensure easy compatibility with commodity hardware, for instance by providing their own open source OpenWRT firmware.
+What it then provided was an open, consistent manner for software to configure the routing behaviour of real hardware at the whim of operators, going so far as to suggest that high-performance dataplane programmability might be enabled via steering to NetFPGA devices elsewhere in the network---eliminating virtualisation.
+The supported capabilities and reach have expanded somewhat since it's initial, academic and limited introduction.
+Indeed, while we now understand that OpenFlow has incredible value in the operation and management of large networks, the vision embodied by the original work is in fact much closer to the `switchlet' model of Tempest where individuals request transit for traffic between their machines, carrying their experimental protocols or enacting their novel policies.
+The specification has thus evolved over time to include features more useful and tailored to complex networks and costlier hardware: conditional support for more expressive actions and matching capabilities, including additional tables, groups, egress processing, and packet header modification~\parencite{openflow-1-5}.
 
-\emph{XORP}~\parencite{DBLP:journals/ccr/HandleyHK03} as a host-based router (dataplane in kernel, control plane in kernel).
+\paragraph{An ongoing legacy}
+The remarkable thing about the field of \gls{acr:sdn}, particularly compared to active networks, is that it's still here.
+Moreso than that, it plays a large role in modern networks of huge scale, as we'll discuss.
+%Why has this worked so much more effectively?
+Why has control plane programmability proven to be so much more effective and attractive to operators in practice?
 
-PCE~\parencite{rfc4655}
+Principally, it is because control plane programming is easier to get right---in the sense of processing speed and volume.
+Routing information, link states, and topology structure changes collectively arrive at a far slower rate than packets, or even simply carried flows.
+An OpenFlow controller is under no obligation or need to, say, react to millions of routing changes per second while adding only microseconds of latency, because the routing \emph{environment} varies at a rate to which is well suited to the processing capabilities of commodity hosts.
 
-Ethane~\parencite{DBLP:conf/sigcomm/CasadoFPLMS07}
+Secondly, the wide reach of open-source software for developing, deploying, and testing \gls{acr:sdn} concepts and ideas has helped these ideas gain traction in both the research community and in real-world deployment.
+Network \glspl{acr:os} and controllers such as  \emph{NOX}~\parencite{DBLP:journals/ccr/GudeKPPCMS08}, \emph{Onix}~\parencite{DBLP:conf/osdi/KoponenCGSPZRIIHS10}, \emph{ONOS}~\parencite{onos} and \emph{OpenDaylight}~\parencite{opendaylight}, and Ryu~\parencite{ryu} provide moderately easy interfaces for programmers to implement their own controllers.
+Network emulators such as \emph{mininet}~\parencite{DBLP:conf/hotnets/LantzHM10} allow researchers to define and operate virtual networks built entirely of OpenFlow-capable switches on their own machines using host programs and standard sockets to generate and use carried traffic, enabling easy prototyping.
+High-performance software switches such as \gls{acr:ovs}~\parencite{DBLP:conf/nsdi/PfaffPKJZRGWSSA15} offer first-class support for OpenFlow and no small number of extensions, and are instrumental in datacentre virtualisation~\parencite{DBLP:conf/sigcomm/TuWAP21}.
 
-OpenFlow~\parencite{DBLP:journals/ccr/McKeownABPPRST08} ?? arrival marked a watershed moment, Current vers~\parencite{openflow-1-5}
+%?? Why the success? iterative, built on existing tech with an easier-to-use interface etc.
+Finally, the movement capitalised on \emph{existing hardware} and its own capabilities, rather than calling for a radical wave of enhancements or brand new, expensive capabilities.
+Providing a higher-level abstraction to manage the infrastructure which networks already contained ensured the adoption and current success of \gls{acr:sdn}.
 
-Controllers like NOX~\parencite{DBLP:journals/ccr/GudeKPPCMS08}, Ryu~\parencite{ryu} (since 2012)
+%?? A survey to mine for stuff~\parencite{DBLP:journals/comsur/NunesMNOT14}
+
+One well-documented, well-published, and arguably ongoing case study of this paradigm in action at scale is the wave of high-impact papers produced by Google.
+Google's \emph{Jupiter} datacentre network design~\parencite{DBLP:conf/sigcomm/SinghOAAABBDFGK15} was developed concurrently with most of the works outlined above, where these techniques have been instrumental in managing the explosive uptick in switch hardware demanded by their larger Clos topologies.\sidenote{Particular issues demanding custom routing and administration include the vast amount of multipath complexity at this scale, heavy per-link state, and potential performance gains from network homogeneity that general-purpose routing algorithms might fail to capture.}
+Additionally, \gls{acr:sdn} techniques have helped to manage phased integration of this new network.
+In \gls{acr:wan} topologies, \emph{B4}~\parencite{DBLP:conf/sigcomm/JainKMOPSVWZZZHSV13} has made direct use of OpenFlow for \gls{acr:te}, to maximise link utilisation and offer resilience (aided by the fact that Google own the \gls{acr:wan} endpoints, too).
+The architecture evolved fairly cleanly over the following 5 years, coping with \qty{100}{\times} bandwidth increases and more stringent reliability bounds~\parencite{DBLP:conf/sigcomm/HongMAZABBJKLMP18}.
+\emph{Espresso}~\parencite{DBLP:conf/sigcomm/YapMRPHBHKNJLRR17} extends this to inter-domain peering arrangements with the Internet and \gls{acr:bgp} session management, finally realising the vision of RCP 13 years on.
+Nowadays, datacentre and \gls{acr:wan} networks are managed by a single higher-level microservice \gls{acr:sdn} architecture, \emph{Orion}~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21}.
+
+\subsection{Modern, Programmable Dataplanes}\label{sec:modern-pdps}
+While active network research may have dried up in the last 20 years, interest in dataplane processing has remained strong.
+Network operators have, in fact, always had a need for complex packet processing, but for reasons altogether more selfish than the community resource envisioned in ...
+
+?? What functions? Firewalls, DPI, intrusion detection, DDoS defence, WAN optimisers...
+
+Most dataplane processing has been through \emph{middleboxes}.
 
 ?? Ossification in today's sense? Middleboxes? i.e. barrier to wider deployment even after standardisation i.e. hobbled SCTP~\parencite{rfc4960}, forced QUIC onto UDP. Also, middleboxes expensive and require work to integrate.\sidenote{Ossification causes: weight of \gls{acr:ietf}, desire for perf causing hardware impls (inflexible), over-reliance on observed behaviours of network \& protocols rather than the specs.}
 
-?? \gls{acr:ovs}~\parencite{DBLP:conf/nsdi/PfaffPKJZRGWSSA15,DBLP:conf/sigcomm/TuWAP21} huge here.
-
-?? A survey to mine for stuff~\parencite{DBLP:journals/comsur/NunesMNOT14}
-
-?? Network \glspl{acr:os}: Onix~\parencite{DBLP:conf/osdi/KoponenCGSPZRIIHS10}, ONOS~\parencite{onos} and OpenDaylight~\parencite{opendaylight} circa 2014
-
-?? Google Jupiter~\parencite{DBLP:conf/sigcomm/SinghOAAABBDFGK15} for datacentres, Espresso~\parencite{DBLP:conf/sigcomm/YapMRPHBHKNJLRR17} for peering, B4 for \gls{acr:wan}~\parencite{DBLP:conf/sigcomm/JainKMOPSVWZZZHSV13,DBLP:conf/sigcomm/HongMAZABBJKLMP18}, Orion~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21} for top-level mgmt
-
-?? Why the success? iterative, built on existing tech with an easier-to-use interface etc.
-
-\subsection{Modern, Programmable Dataplanes}\label{sec:modern-pdps}
 ?? Probably two streams: capable hardware (and its programming), and making host-based solns faster.
 
+\paragraph{Virtualisation}
+
+\paragraph{Hardware}
 ?? Can we plot from \glspl{acr:npu}? incl., e.g., Orig NetFPGA~\parencite{DBLP:conf/mse/LockwoodMWGHNRL07}
 
 ?? Talk about how SmartNICs match what we thought p-switches would be, while p-switches are now ASICs, like you promised. Why did this happen? ?? multi-core can match rates on one or two ports, but getting \qtyrange{1}{2}{\tera\bit\per\second} would need an insane amount of cores (so ASICs are the only valid way to get in some manner of programmability)---also, the exclusion of the idea of `user-given programs' ?? maybe put later.
@@ -212,6 +268,7 @@ Then followed up by  \gls{acr:psa}\parencite{p4-psa}.
 
 ?? Talk more about in-network compute?
 
+\paragraph{Active networking returns?}
 The reader may well be thinking that research community has cycled back around to active networking in a new guise, and in many senses it has.
 While less popular at the time, the programmable switch model we have latched onto did in fact arise as part of this prior movement.
 The remarkable observation is that if we follow the retelling of \Textcite{DBLP:journals/ccr/FeamsterRZ14}, active networking's decline was written in large part by its lack of a ``killer app''.
