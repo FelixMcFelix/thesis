@@ -208,7 +208,8 @@ The specification has thus evolved over time to include features more useful and
 
 \paragraph{An ongoing legacy}
 The remarkable thing about the field of \gls{acr:sdn}, particularly compared to active networks, is that it's still here.
-Moreso than that, it plays a large role in modern networks of huge scale, as we'll discuss.
+Moreso than that, it plays a large role in modern networks of hypergiant scale. 
+We'll discuss a case study shortly.
 %Why has this worked so much more effectively?
 Why has control plane programmability proven to be so much more effective and attractive to operators in practice?
 
@@ -235,7 +236,7 @@ The architecture evolved fairly cleanly over the following 5 years, coping with 
 \emph{Espresso}~\parencite{DBLP:conf/sigcomm/YapMRPHBHKNJLRR17} extends this to inter-domain peering arrangements with the Internet and \gls{acr:bgp} session management, finally realising the vision of RCP 13 years on.
 Nowadays, datacentre and \gls{acr:wan} networks are managed by a single higher-level microservice \gls{acr:sdn} architecture, \emph{Orion}~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21}.
 
-\subsection{Modern, Programmable Dataplanes}\label{sec:modern-pdps}
+\subsection{Modern Programmable Dataplanes}\label{sec:modern-pdps}
 While active network research may have dried up in the last 20 years, interest in dataplane processing has remained strong.
 Network operators have, in fact, always had a need for complex packet processing, but for reasons altogether more selfish than the community resource envisioned in ...
 
@@ -248,6 +249,36 @@ Most dataplane processing has been through \emph{middleboxes}.
 ?? Probably two streams: capable hardware (and its programming), and making host-based solns faster.
 
 \paragraph{Virtualisation}
+
+?? Focus: host-based solns (commodity processors).
+
+?? strengths: can always scale out by addming more machines, easy to program, ...
+
+?? \gls{acr:nfv} and \glspl{acr:vnf}
+
+?? Cite concrete frameworks -- click NF etc., ETSI standards.
+
+?? Stop, restart, move around; capitalise on the strengths of virtualisation while trying to maximise perf subject to environmental limits. Orchestration, clever use of network resources empowered by \gls{acr:sdn}
+
+?? ClickOS \glspl{acr:vnf}~\parencite{DBLP:conf/nsdi/MartinsAROHBH14}, ClickNF~\parencite{DBLP:conf/usenix/GalloL18}
+
+?? Container frameworks~\parencite{DBLP:conf/iscc/CzivaJWP15}
+
+?? SECURITY FOCUS::
+
+SafeBricks~\parencite{DBLP:conf/nsdi/PoddarLPR18} extends the prior NetBricks~\parencite{DBLP:conf/osdi/PandaHJWRS16} to take advantage of TEEs.
+The main framework goals above the benefits of TEEs themselves are to protect traffic from the NF (i.e., inappropriate field/packet accesses) and protect NF source code from the framework.
+The execution model is a directed graph of smaller user functions including branches etc., where each NF is given access to specific packet regions by a framework (attaching a permission set to each sub-NF at build time).
+This executes as a single binary in the TCB/TEE because enclave swaps in/out are particularly costly (complete cache flushes, re-encryption etc.).
+DPDK daemon in userland passes packets in (i.e., Scone below)---one executing pipeline (though surely could be multiple in theory?).
+NF source code (and any pre-encrypted proprietary NF source codes) are given to \emph{trusted binary} which includes all details and attested in the same manner as the compiled program.
+
+AuditBox adds \emph{verified routing protocols} (VRPs) to this~\parencite{DBLP:conf/nsdi/LiuSKPSS21}.
+This enables routing packets \emph{between enclaved NFs} (i.e., explicitly separate machines), and ensuring that the right paths are being followed, the network is not altering packets, and the network is not reordering packets (preventing MITM).
+Additionally, this allows path auditing in a way which is invisible to NFs and the network (i.e., print log for like \qty{1}{\percent} of packets).
+Versus prior VRPs, this enables dynamic routing between NF segments (i.e., selective filtering to a lighter or heavier function based on local state).
+Note that you can do this \emph{in one box} using SafeBricks, the novelty here pertains to adaptively routing \emph{between several boxes}.
+Cost? Halves goodput vs. NetBricks.
 
 \paragraph{Hardware}
 ?? Can we plot from \glspl{acr:npu}? incl., e.g., Orig NetFPGA~\parencite{DBLP:conf/mse/LockwoodMWGHNRL07}
@@ -313,7 +344,7 @@ We will revisit this quote in due course. ?? quote from smart packets ?? trim
 
 %?? Are the tools just sharper now?
 
-\section{Offloading in In-Network Compute}
+\section{Offloading and In-Network Compute}
 
 \gls{acr:ebpf}, \gls{acr:xdp}~\parencite{DBLP:conf/conext/Hoiland-Jorgensen18}
 ?? It should be clear that \gls{acr:ebpf}'s role in the network owes an inestimable debt to \emph{smart packets}.
@@ -554,21 +585,6 @@ Because of this, traditional flooding-based attacks aren't fully alleviated.
 \subsection{Scaling}
 
 \subsection{Fairness}
-
-\section{SFC Notes}
-SafeBricks~\parencite{DBLP:conf/nsdi/PoddarLPR18} extends the prior NetBricks~\parencite{DBLP:conf/osdi/PandaHJWRS16} to take advantage of TEEs.
-The main framework goals above the benefits of TEEs themselves are to protect traffic from the NF (i.e., inappropriate field/packet accesses) and protect NF source code from the framework.
-The execution model is a directed graph of smaller user functions including branches etc., where each NF is given access to specific packet regions by a framework (attaching a permission set to each sub-NF at build time).
-This executes as a single binary in the TCB/TEE because enclave swaps in/out are particularly costly (complete cache flushes, re-encryption etc.).
-DPDK daemon in userland passes packets in (i.e., Scone below)---one executing pipeline (though surely could be multiple in theory?).
-NF source code (and any pre-encrypted proprietary NF source codes) are given to \emph{trusted binary} which includes all details and attested in the same manner as the compiled program.
-
-AuditBox adds \emph{verified routing protocols} (VRPs) to this~\parencite{DBLP:conf/nsdi/LiuSKPSS21}.
-This enables routing packets \emph{between enclaved NFs} (i.e., explicitly separate machines), and ensuring that the right paths are being followed, the network is not altering packets, and the network is not reordering packets (preventing MITM).
-Additionally, this allows path auditing in a way which is invisible to NFs and the network (i.e., print log for like \qty{1}{\percent} of packets).
-Versus prior VRPs, this enables dynamic routing between NF segments (i.e., selective filtering to a lighter or heavier function based on local state).
-Note that you can do this \emph{in one box} using SafeBricks, the novelty here pertains to adaptively routing \emph{between several boxes}.
-Cost? Halves goodput vs. NetBricks.
 
 \section{Programmable Data-Planes}
 
