@@ -15,15 +15,15 @@
 \subsection{Limitations of Programmable Dataplanes}
 While dataplane programming promises easy reconfiguration of network devices, it poses some challenges.
 First, network devices support only a limited set of operations and control flows (no loops) without use of platform-specific \mintinline{rust}{extern}s, and restrict the user to specific primitive data types, \ie, no floating-point units due to tight hardware constraints.
-Second, these devices have limited low-latency memory (on the order of a few tens of \si{\mega\byte}s~\cite{jin2017netcache}) and do not provide dynamic memory management.
-These limitations prohibit complex algorithms from being implemented, but allow certain restricted solutions, such as what is presented in DAPPER~\cite{DBLP:conf/sosr/GhasemiBR17}, where the authors implement a TCP state machine purely in the dataplane.
+Second, these devices have limited low-latency memory (on the order of a few tens of \si{\mega\byte}s~\parencite{DBLP:conf/sosp/JinLZSLFKS17}) and do not provide dynamic memory management.
+These limitations prohibit complex algorithms from being implemented, but allow certain restricted solutions, such as what is presented in DAPPER~\parencite{DBLP:conf/sosr/GhasemiBR17}, where the authors implement a TCP state machine purely in the dataplane.
 
 \subsection{Histogram Generation}
 
 \begin{figure}
     \centering
     \resizebox{0.8\linewidth}{!}{\includegraphics{diagrams/seidr/dp-arch-diagram.pdf}}
-    \caption{\seidr{}'s integration with a PSA-compatible~\cite{p4-psa} dataplane.}
+    \caption{\seidr{}'s integration with a PSA-compatible~\parencite{p4-psa} dataplane.}
     \label{fig:arch}
 \end{figure}
 
@@ -49,7 +49,7 @@ The PSA does not have any mechanisms for generating new packets.
 To circumvent this, any packet which would complete a histogram is tagged for cloning at the end of the ingress pipeline, and recirculation at egress (\cref{algline:recirc}).
 This truncated copy returns to \seidr{}'s table, where we enable the relevant headers, change L2/3 fields, and write out the histogram contents (\crefrange{algline:rewrite-start}{algline:rewrite-end}).
 The P4 deparser outputs the new protocol stack at egress, and transmits the histogram UDP packet into the network.
-Event-driven architecture proposals~\cite{DBLP:conf/hotnets/IbanezABM19} may allow a more natural means of packet generation.
+Event-driven architecture proposals~\parencite{DBLP:conf/hotnets/IbanezABM19} may allow a more natural means of packet generation.
 
 \begin{figure}
 \centering
@@ -153,7 +153,7 @@ To gain collision resistance, Robin Hood hashing could be used up to a maximum d
 
 This design allows runtime configuration of all aspects save for the bucket count; at runtime, the only way to increase bucket resolution is to examine a smaller region of IATs.
 While in theory this could be configured below a maximum compiled into the firmware, the difficulties introduced in classification/data processing make this infeasible.
-Unless using stream-capable classifiers such as LSTMs~\cite{DBLP:journals/neco/HochreiterS97}, changing the input size requires retraining from scratch since new neuron weights must be added and structural properties of the input data change.
+Unless using stream-capable classifiers such as LSTMs~\parencite{DBLP:journals/neco/HochreiterS97}, changing the input size requires retraining from scratch since new neuron weights must be added and structural properties of the input data change.
 Increasing the bucket count requires new firmware installation, as many dataplane P4 implementations cannot allocate variable-length stores due to the lack of a dynamic allocator.
 
 \begin{figure}[t]
@@ -180,9 +180,9 @@ As an example of dataplane-generated histograms, \cref{fig:tcp-hist-app} shows t
 
 Precise timestamps are critical when detecting temporal properties of flow behaviour, such as microbursts or inferring flow congestion control algorithms.
 It is especially important in high speed (\SI{100}{\giga\bit\per\second}) networks, where there can be as little as \SI{6.7}{\nano\second} between packets that need to be analysed.
-With a Linux-based software solution (\eg, reading packets from a link with \emph{tcpdump}), the Linux kernel can only provide microsecond-level accuracy with precision in the order of \SI{100}{\micro\second}~\cite{kundel2020p4sta}.
-DPDK improves on this, increasing the accuracy to \SI{100}{\nano\second} in the best case~\cite{primorac2017measure}.
-However, today's dataplane devices (\eg, Netronome SmartNICs, NetFPGA SUME) allow nanosecond-accurate timestamps to be retrieved from the \emph{Media Access Control} (MAC) modules with a precision of \SI{10}{\nano\second}~\cite{kundel2020p4sta}, a timestamp property \seidr{} relies upon.
+With a Linux-based software solution (\eg, reading packets from a link with \emph{tcpdump}), the Linux kernel can only provide microsecond-level accuracy with precision in the order of \SI{100}{\micro\second}~\parencite{DBLP:conf/noms/KundelSBRK20}.
+DPDK improves on this, increasing the accuracy to \SI{100}{\nano\second} in the best case~\parencite{DBLP:journals/ccr/PrimoracBA17}.
+However, today's dataplane devices (\eg, Netronome SmartNICs, NetFPGA SUME) allow nanosecond-accurate timestamps to be retrieved from the \emph{Media Access Control} (MAC) modules with a precision of \SI{10}{\nano\second}~\parencite{DBLP:conf/noms/KundelSBRK20}, a timestamp property \seidr{} relies upon.
 
 % Some platforms provide picosecond-level precision and many solutions allow time synchronisation between multiple devices using the IEEE 1588-2002 (Precision Time Protocol) standard.
 

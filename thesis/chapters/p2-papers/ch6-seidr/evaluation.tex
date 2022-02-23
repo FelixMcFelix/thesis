@@ -170,6 +170,6 @@ To make this concrete, \SI{100}{\giga\bit\per\second} traffic is reduced to \SI{
 IAT streams, by comparison, reduce to \SI{7.38}{\giga\bit\per\second} (resp.\ \SI{1.24}{\giga\bit\per\second}).
 For a flow at \SI{100}{\mega\bit\per\second}, only \SI{30}{\milli\second} is needed to collect enough packets to make a classification.
 Scaling beyond this, packet processing rates are the bottleneck.
-As commodity machines and today's stream processors have a reasonable upper bound of $\sim$1M PPS processing capacity~\cite{DBLP:conf/sigcomm/GuptaHCFRW18}, \seidr{} could scale up to \SI{1}{\tera\bit\per\second} MTU-size packet traffic on one machine, which would correspond to only 333K PPS histogram packets (55.6K PPS if jumbo-size).
+As commodity machines and today's stream processors have a reasonable upper bound of $\sim$1M PPS processing capacity~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18}, \seidr{} could scale up to \SI{1}{\tera\bit\per\second} MTU-size packet traffic on one machine, which would correspond to only 333K PPS histogram packets (55.6K PPS if jumbo-size).
 Reliably scaling to \SI{10}{\tera\bit\per\second} and beyond requires only that we increase the histogram sequence length to $\ge\num{7000}$ packets.
 

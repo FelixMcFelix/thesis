@@ -115,9 +115,9 @@ In a TCP connection, each machine is free to choose the CCA it uses to send byte
 This choice is local, and so is invisible to the other machine (and the network).
 In datacentre networks, operators choose these to ensure optimal behaviour.
 In a transit network or large WAN however, these hosts (and thus the CCAs in use) are outside the control of network operators, which introduces difficulties when CCA interactions lead to \emph{unfairness}.
-Consider the recent (and widespread) introduction of \emph{TCP BBR}~\cite{cardwell2016bbr}.
+Consider the recent (and widespread) introduction of \emph{TCP BBR}~\parencite{DBLP:journals/queue/CardwellCGYJ16}.
 \emph{BBR} is a delay/model-based CCA which converges on a fair share of bottleneck bandwidth by reducing its rate if the round-trip time increases, while periodically attempting to increase send rate to account for path/load changes.
-However, \emph{BBR} traffic can consume \SI{40}{\percent} of link capacity when multiplexed with loss-based CCAs, regardless of the number of competing flows~\cite{DBLP:conf/imc/WareMSS19}. 
+However, \emph{BBR} traffic can consume \SI{40}{\percent} of link capacity when multiplexed with loss-based CCAs, regardless of the number of competing flows~\parencite{DBLP:conf/imc/WareMSS19}. 
 When ensuring fair transit to all flows, this is hardly a desirable outcome; in fact, it's one which may frustrate clients or violate SLAs.
 
 A curious property of \emph{BBR}'s algorithm which sets it apart from other variants is that packet transmission is \emph{timer-based}.
@@ -130,7 +130,7 @@ As a result, timing behaviour of past CCAs may be influenced by (the lack of) pa
 This high-level analysis of \emph{BBR} gives us a strong feature to use as the basis for classification: the \emph{inter-arrival times} (IATs) for each packet in a flow.
 We have two options for processing this for classification: we may use a compressed, fixed-size representation such as histograms to capture the aggregate distribution, or we may attempt to capture structural behaviour by using a variable-length stream of IATs.
 In many networks, the data and packet rate reduction offered by the former is required to make this possible.
-Indeed, in-switch aggregation has seen great success in aiding ML for training~\cite{DBLP:conf/isca/LiLYCSH19}, and direct execution~\cite{DBLP:conf/hotnets/XiongZ19}.
+Indeed, in-switch aggregation has seen great success in aiding ML for training~\parencite{DBLP:conf/isca/LiLYCSH19}, and direct execution~\parencite{DBLP:conf/hotnets/XiongZ19}.
 We make use of the following standard classification algorithms on a fixed-size representation to attempt to single out the CCA in use:
 
 \begin{itemize}
@@ -138,7 +138,7 @@ We make use of the following standard classification algorithms on a fixed-size 
     
     \item \emph{Convolutional Neural Networks (CNNs)}. A neural network approach which learns convolution kernels to classify fixed-length data, particularly when recognising spatial features. Memory cost is fixed for a given architecture irrespective of training data, with a high training cost.
 \end{itemize}
-% \fakepara{Long Short-Term Memory~\cite{DBLP:journals/neco/HochreiterS97} units (LSTMs)} A class of recurrent neural network used for stream classification, forecasting, and prediction of variable-length data. Memory cost is fixed, with longer training times (and more data required) than similarly sized CNNs.
+% \fakepara{Long Short-Term Memory~\parencite{DBLP:journals/neco/HochreiterS97} units (LSTMs)} A class of recurrent neural network used for stream classification, forecasting, and prediction of variable-length data. Memory cost is fixed, with longer training times (and more data required) than similarly sized CNNs.
 % Of these, we apply $k$-NN and CNNs to histograms of packet IATs, and LSTMS to raw IAT streams.
 
 When examining $k$-NN classifiers, we measured accuracy across choices of $k \in \left[2, 8\right]$.
