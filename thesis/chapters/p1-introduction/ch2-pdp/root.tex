@@ -242,7 +242,7 @@ Network operators have, in fact, always had a need for complex packet processing
 To run through some examples:
 \begin{itemize}
 	\item \emph{Firewalls} are a necessity for filtering unauthorised traffic at stub \glspl{acr:as}, but require line-rate lookups versus large allow- and block-lists across varied protocols.
-	\item Protocol enhancements and \gls{acr:te} solutions, such as \emph{\gls{acr:wan} optimisers} and \emph{application-layer load balancers}.
+	\item Protocol enhancements and \gls{acr:te} solutions, such as \emph{\gls{acr:wan} optimisers} and \emph{application-layer load balancers}, which need to be able to inspect and/or modify traffic based on (possibly complex) transport-layer and application-layer semantics.
 	\item Security functions, such as \glspl{acr:ids} and \gls{acr:ddos} traffic scrubbing solutions. These can require complex, stateful logic (such as regular expression matching and transparent datagram reassembly) that makes them challenging to implement at high performance---particularly when we consider that the \gls{acr:ddos} use case \emph{demands} that we keep up with a high ingress traffic volume.
 \end{itemize}
 At scale, the performance challenges involved in per-packet and per-flow processing for these functions becomes difficult to reconcile with the performance limitations of host machines.
@@ -255,55 +255,79 @@ As a result, they have become a barrier to the wider deployment and introduction
 \gls{acr:sctp}~\parencite{rfc4960} is one recent example of an approved protocol whose deployment has been hobbled by the prevalence of middleboxes that expect only a limited suite of layer-4 protocols~\parencite{sctp-middlebox-bad}.
 Under the same considerations, the \emph{QUIC} transport protocol~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17} must be tunnelled over \gls{acr:udp}, even though its Internet-wide deployment is backed by the weight of hypergiant provider Google.
 
-?? issues w/ their config and integration from an operational perspective
+%?? issues w/ their config and integration from an operational perspective
+These devices also introduce operational and logistical challenges around their configuration and installation within the network.
+%?? Initially, full-on rerouting.
+Although \gls{acr:sdn}-based steering has to some extent obviated the need to physically rewire middleboxes' cabling when they need to be reconfigured, they do still present challenges beyond the above network fragility.
+%?? Now SDN can help simplify
+%?? Still issues with placement, lock-in, reconfig'ability...
+Specialised middleboxes are expensive, demand rack space and introduce their own power and cooling demands, making deployment harder to scale out as network traffic demands increase.
+They are failure-prone, require specialist knowledge to operate, and are vulnerable to vendor lock-in~\parencite{DBLP:conf/sigcomm/SherryHSKRS12}.
+Moreover, their fixed nature makes them difficult to modify, upgrade, and fix; a sunk cost which cannot be recouped or repurposed as network function requirements change or evolve.
 
 %?? Ossification in today's sense? Middleboxes? i.e. barrier to wider deployment even after standardisation i.e. hobbled SCTP~\parencite{rfc4960}, forced QUIC onto UDP. Also, middleboxes expensive and require work to integrate.\sidenote{Ossification causes: weight of \gls{acr:ietf}, desire for perf causing hardware impls (inflexible), over-reliance on observed behaviours of network \& protocols rather than the specs.}
 
-?? Probably two streams: capable hardware (and its programming), and making host-based solns faster.
+The result of these drawbacks is that a constant desire has remained to introduce and capitalise on true dataplane programmability.
+%?? Probably two streams: capable hardware (and its programming), and making host-based solns faster.
+The pursuit of this goal can be divided quite neatly into two streams.
+The first carries on from the use of virtualisation common in active networking research before the introduction of a true programmable dataplane fabric, towards more flexible deployment through \gls{acr:nfv} and \glspl{acr:vnf}.
+The second stream instead follows from asking how we might make switching and forwarding hardware itself more programmable, keeping in the tight form-factor and performance bounds required of high-speed commercial network hardware.
 
 \paragraph{Virtualisation and Commodity Machines}
+Commodity \glspl{acr:cpu} are already arbitrarily programmable yet their dataplane performance has always been at odds with ever-improving Ethernet standards, leading researchers to ask: how can we alleviate the existing performance bottlenecks in host dataplanes?
+How can we take further advantage of the advantages of host machines to allow for multitenancy and make runtime reconfiguration even easier by leaning into the ubiquity of host compute?
+Backed by \gls{acr:sdn} and by innovations in \gls{acr:vm} and container research from the systems community, \glspl{acr:vnf} and similar frameworks have filled a comfortable niche for moderately performant host dataplane programming.
 
-?? Focus: host-based solns (commodity processors).
+\gls{acr:nfv} and \glspl{acr:vnf} envisioned that network functions should be implemented as commodity software programs running within \glspl{acr:vm}, allowing not only the above increases in asset reuse and programmability but also allowing for hardware hetereogeneity, portability of developed functions, and resilience~\parencite{etsi-nfv}.
+Casting dataplane programming in this light has its fair share of advantages.
+%?? strengths: can always scale out by addming more machines, easy to program, ...
+Administrators can always scale horizontally to meet traffic processing demands by acquiring more commodity host machines, and the dataplane functions themselves are easy to program for typical software engineers.
+%?? software: can run commercial software like Snort~\parencite{DBLP:conf/lisa/Roesch99,SnortManual} or Zeek~\parencite{zeek,DBLP:conf/uss/Paxson98}
+Bespoke development is not required either; \glspl{acr:vm} may easily run openly available, widely used \gls{acr:ids} software like Snort~\parencite{DBLP:conf/lisa/Roesch99,SnortManual} or Zeek~\parencite{zeek,DBLP:conf/uss/Paxson98} with minimal effort.
+Moreover, \gls{acr:vnf} setup requires on the order of minutes or less, and \gls{acr:vnf} execution can be dynamically stopped, restart, or moved around; capitalising on the strengths of virtualisation~\parencite{DBLP:conf/nsdi/MartinsAROHBH14,DBLP:conf/iscc/CzivaJWP15}.
+The \gls{acr:vm} model then allows for easy multi-tenancy and resource sharing, governed by a hypervisor \emph{\`{a} la} \emph{Xen}~\parencite{DBLP:conf/sosp/BarhamDFHHHN03} or \emph{KVM}~\parencite{kvm}.
 
-?? strengths: can always scale out by addming more machines, easy to program, ...
+Naturally, more widespread adoption of container frameworks\sidenote{\emph{Containers} are a form of \gls{acr:os}-level virtualisation, with a history reaching back to \emph{FreeBSD Jails}~\parencite{jails}. This is a lighter-weight alternative to full \glspl{acr:vm}, having a single shared \gls{acr:os} which provides filesystem isolation and virtualises access to I/O devices. While isolation guarantees are weaker around performance guarantees, this does enable some runtime benefits, such as fast container-container network communication on the same node.} has percolated into the design of \gls{acr:vnf} deployment strategies.
+Container \gls{acr:vnf} solutions based on \emph{Docker}~\parencite{docker} and \emph{Kubernetes}~\parencite{k8s}, such as \emph{GNF}~\parencite{DBLP:conf/iscc/CzivaJWP15,DBLP:journals/cm/CzivaP17}, have taken advantage of the lightweight virtualisation to offer marked improvements in traffic processing latency and throughput over their priors.
+Their reconfigurability, combined with clever use of network resources empowered by \gls{acr:sdn}, has also opened the door for \emph{orchestration} research which maximises \gls{acr:vnf} performance subject to environmental limits.
+%Orchestration, clever use of network resources empowered by \gls{acr:sdn}
+\glspl{acr:vnf} and the steering between them may be optimised ahead-of-time (or live) to protect users' application latency or \gls{acr:qos}, by \glspl{acr:ilp}~\parencite{DBLP:conf/infocom/CzivaAP18}, heuristics~\parencite{DBLP:conf/im/Iordache-SicaAP21}, or data-driven methods~\parencite{DBLP:conf/netsoft/RieraBBDMPLGPCP16}.
 
-?? \gls{acr:nfv} and \glspl{acr:vnf} --- ETSI report~\parencite{etsi-nfv}
+%?? Orchestration: optimal placement on \gls{acr:qos}~\parencite{DBLP:conf/im/Iordache-SicaAP21}, and ??~\parencite{DBLP:conf/infocom/CzivaAP18}, RL-based in TeNOR~\parencite{DBLP:conf/netsoft/RieraBBDMPLGPCP16}
 
-?? Cite concrete frameworks -- click NF etc., ETSI standards.
 
-?? vnf setup on order of mins or less~\parencite{DBLP:conf/nsdi/MartinsAROHBH14,DBLP:conf/iscc/CzivaJWP15}
 
-?? Stop, restart, move around; capitalise on the strengths of virtualisation while trying to maximise perf subject to environmental limits. Orchestration, clever use of network resources empowered by \gls{acr:sdn}
+%?? Cite concrete frameworks -- click NF etc., ETSI standards.
 
-?? Contrast clicky vs Container-y vs Xen~\parencite{DBLP:conf/sosp/BarhamDFHHHN03} style VMs.
+%?? Contrast clicky vs Container-y vs Xen~\parencite{DBLP:conf/sosp/BarhamDFHHHN03} style VMs.
 
-?? Where does \emph{PISCES}~\parencite{DBLP:conf/sigcomm/ShahbazCPKFMR16} fit into the story?
+%--- CLICKY ---
 
-?? ClickOS \glspl{acr:vnf}~\parencite{DBLP:conf/nsdi/MartinsAROHBH14}, ClickNF~\parencite{DBLP:conf/usenix/GalloL18}, NetBricks~\parencite{DBLP:conf/osdi/PandaHJWRS16}
+While the above works relate mainly to the higher-level composition and interconnection of network functions, a long lineage of works drawn from \emph{Click}~\parencite{DBLP:conf/sosp/MorrisKJK99} have instead focussed on how to build these packet programs from smaller chunks for efficient processing and easier development in the \gls{acr:nfv} framework.
+Click itself views the dataplane as a configurable graph of interconnected, predefined building blocks which are then composed together into a single, pipelined program.
+\emph{ClickOS}~\parencite{DBLP:conf/nsdi/MartinsAROHBH14} introduces a micro-\gls{acr:os} designed only to run Click programs as part of a Xen hypervisor stack, achieving substantial packet rate and spool-up time improvements, while \emph{Fastclick}~\parencite{DBLP:conf/ancs/BarbetteSM15} innovates in performance by migrating Click on standard Linux hosts to use Intel's \gls{acr:dpdk}.
+\emph{ClickNF}~\parencite{DBLP:conf/usenix/GalloL18} then introduces support for higher-level stateful protocols such as the \gls{acr:tcp} stack, enabling \gls{acr:http} caches and proxies as network functions.
+\emph{NetBricks}~\parencite{DBLP:conf/osdi/PandaHJWRS16} maintains the directed graph model and \gls{acr:dpdk} support, however it takes user-generated functions rather than full, pre-specified blocks, and relies upon the \emph{Rust}~\parencite{rust} language compiler to enforce of memory and packet data accesses.
 
-?? Container frameworks~\parencite{DBLP:conf/iscc/CzivaJWP15,DBLP:journals/cm/CzivaP17} based on Docker and Kubernetes as more lightweight than VMs~\parencite{k8s}
-
-?? Orchestration: optimal placement on \gls{acr:qos}~\parencite{DBLP:conf/im/Iordache-SicaAP21}, and ??~\parencite{DBLP:conf/infocom/CzivaAP18}, RL-based in TeNOR~\parencite{DBLP:conf/netsoft/RieraBBDMPLGPCP16}
-
-?? software: can run commercial software like Snort~\parencite{DBLP:conf/lisa/Roesch99,SnortManual} or Zeek~\parencite{zeek,DBLP:conf/uss/Paxson98}
-
-?? SECURITY FOCUS::
-
-SafeBricks~\parencite{DBLP:conf/nsdi/PoddarLPR18} extends the prior NetBricks~\parencite{DBLP:conf/osdi/PandaHJWRS16} to take advantage of TEEs.
-The main framework goals above the benefits of TEEs themselves are to protect traffic from the NF (i.e., inappropriate field/packet accesses) and protect NF source code from the framework.
-The execution model is a directed graph of smaller user functions including branches etc., where each NF is given access to specific packet regions by a framework (attaching a permission set to each sub-NF at build time).
-This executes as a single binary in the TCB/TEE because enclave swaps in/out are particularly costly (complete cache flushes, re-encryption etc.).
-DPDK daemon in userland passes packets in (i.e., Scone below)---one executing pipeline (though surely could be multiple in theory?).
-NF source code (and any pre-encrypted proprietary NF source codes) are given to \emph{trusted binary} which includes all details and attested in the same manner as the compiled program.
-
-AuditBox adds \emph{verified routing protocols} (VRPs) to this~\parencite{DBLP:conf/nsdi/LiuSKPSS21}.
-This enables routing packets \emph{between enclaved NFs} (i.e., explicitly separate machines), and ensuring that the right paths are being followed, the network is not altering packets, and the network is not reordering packets (preventing MITM).
-Additionally, this allows path auditing in a way which is invisible to NFs and the network (i.e., print log for like \qty{1}{\percent} of packets).
-Versus prior VRPs, this enables dynamic routing between NF segments (i.e., selective filtering to a lighter or heavier function based on local state).
-Note that you can do this \emph{in one box} using SafeBricks, the novelty here pertains to adaptively routing \emph{between several boxes}.
-Cost? Halves goodput vs. NetBricks.
+We have also seen specialisation of these frameworks to account for security at varied levels, due to the importance of security functions such as \glspl{acr:ids} and the proliferation of \gls{acr:vnf} chains deployed to remote cloud compute.
+For instance, \gls{acr:vnf} operation must be protected from other \glspl{acr:vnf} and the host machine it runs in (which may be compromised), as must packet data and proprietary \gls{acr:vnf} source code.
+\emph{SafeBricks}~\parencite{DBLP:conf/nsdi/PoddarLPR18} extends the prior NetBricks to take advantage of \glspl{acr:tee}.\sidenote{\glspl{acr:tee} allow secure execution of code on a target machine to be isolated from wither the kernel, typically by using encrypted memory pages accessible only to the \gls{acr:cpu}. Platforms such as Intel SGX also include provisions for binary and machine attestation.}
+%The main framework goals above the benefits of TEEs themselves are to protect traffic from the NF (i.e., inappropriate field/packet accesses) and protect NF source code from the framework.
+%The execution model is a directed graph of smaller user functions including branches etc., where each NF is given access to specific packet regions by a framework (attaching a permission set to each sub-NF at build time).
+This executes as a single binary in the \gls{acr:tee} with another thread running in userland to operate \gls{acr:dpdk} as a dedicated packet relay, due to the prohibitive cost of swaps in or out of the trusted enclave from complete cache flushes, re-encryption, and so on.
+%DPDK daemon in userland passes packets in (i.e., Scone below)---one executing pipeline (though surely could be multiple in theory?).
+%NF source code (and any pre-encrypted proprietary NF source codes) are given to \emph{trusted binary} which includes all details and attested in the same manner as the compiled program.
+\emph{AuditBox} adds verified routing protocols to this~\parencite{DBLP:conf/nsdi/LiuSKPSS21}, enabling packet routing \emph{between enclaved \gls{acr:vnf} chains} on separate machines---ensuring also that packet paths are obeyed, and that the network is not altering or reordering packets.
+Additionally, this allows path auditing in a way which is invisible to \glspl{acr:vnf} and the network.
+%Versus prior VRPs, this enables dynamic routing between NF segments (i.e., selective filtering to a lighter or heavier function based on local state).
+%Note that you can do this \emph{in one box} using SafeBricks, the novelty here pertains to adaptively routing \emph{between several boxes}.
+%Cost? Halves goodput vs. NetBricks.
+However, this latter solution achieves only half the packet forwarding goodput of NetBricks in exchange for these additional guarantees.
 
 \paragraph{Hardware}
+Although host-run functions have indeed improved, their performance still trails unacceptably behind \glspl{acr:asic}---traffic volume can be accounted for up to a limit by horizontal scaling, but this becomes more difficult to operate than a single bump-in the wire solution, or may be impossible at larger port densities.
+Programmable network hardware, beginning with early \glspl{acr:npu} and culminating in today's SmartNICs and programmable \gls{acr:asic}-backed switches, innovates on introducing runtime reconfigurable compute to these devices.
+
 ?? Can we plot from \glspl{acr:npu}? incl., e.g., Orig NetFPGA~\parencite{DBLP:conf/mse/LockwoodMWGHNRL07}
 
 ?? Talk about how SmartNICs match what we thought p-switches would be, while p-switches are now ASICs, like you promised. Why did this happen? ?? multi-core can match rates on one or two ports, but getting \qtyrange{1}{2}{\tera\bit\per\second} would need an insane amount of cores (so ASICs are the only valid way to get in some manner of programmability)---also, the exclusion of the idea of `user-given programs' ?? maybe put later.
@@ -313,6 +337,8 @@ Cost? Halves goodput vs. NetBricks.
 ?? Similar time as RMT: Intel \emph{FlexPipe}~\parencite{flexpipe-fm5000}, Cavium \emph{XPliant}~\parencite{cavium-xpliant}.
 
 P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14} as a language to add many more capabilities...
+
+?? Where does \emph{PISCES}~\parencite{DBLP:conf/sigcomm/ShahbazCPKFMR16} fit into the story? It's OvS using P4 to add new features and design dataplanes. ?? This is probably an aside.
 
 POF as another language that didn't take off~\parencite{DBLP:conf/sigcomm/Song13}
 
