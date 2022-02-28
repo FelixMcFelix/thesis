@@ -237,14 +237,27 @@ The architecture evolved fairly cleanly over the following 5 years, coping with 
 Nowadays, datacentre and \gls{acr:wan} networks are managed by a single higher-level microservice \gls{acr:sdn} architecture, \emph{Orion}~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21}.
 
 \subsection{Modern Programmable Dataplanes}\label{sec:modern-pdps}
-While active network research may have dried up in the last 20 years, interest in dataplane processing has remained strong.
-Network operators have, in fact, always had a need for complex packet processing, but for reasons altogether more selfish than the community resource envisioned in ...
+While active network research may have dried up in the last 20 years,\sidenote{Barring some very obvious throwback works such as \emph{Tiny Packet Programs}~\parencite{DBLP:conf/sigcomm/JeyakumarAGKM14}.} interest in dataplane processing has remained strong.
+Network operators have, in fact, always had a need for complex packet processing, to measure, protect, and enhance \emph{their own} networks---rather than to provide the sort of communal good envisioned by active networks.
+To run through some examples:
+\begin{itemize}
+	\item \emph{Firewalls} are a necessity for filtering unauthorised traffic at stub \glspl{acr:as}, but require line-rate lookups versus large allow- and block-lists across varied protocols.
+	\item Protocol enhancements and \gls{acr:te} solutions, such as \emph{\gls{acr:wan} optimisers} and \emph{application-layer load balancers}.
+	\item Security functions, such as \glspl{acr:ids} and \gls{acr:ddos} traffic scrubbing solutions. These can require complex, stateful logic (such as regular expression matching and transparent datagram reassembly) that makes them challenging to implement at high performance---particularly when we consider that the \gls{acr:ddos} use case \emph{demands} that we keep up with a high ingress traffic volume.
+\end{itemize}
+At scale, the performance challenges involved in per-packet and per-flow processing for these functions becomes difficult to reconcile with the performance limitations of host machines.
+The obvious solution is to fall back to silicon in pursuit of performance, and as a result the market has long included so-called \emph{middleboxes}---bespoke \gls{acr:asic} devices designed to perform one or more pre-defined dataplane functions at line rate.
 
-?? What functions? Firewalls, DPI, intrusion detection, DDoS defence, WAN optimisers...
+An obvious trade-off has been made here: runtime programmability has been sacrificed for performance.
+What is less obvious is that another, hidden, cost has been introduced owing to the fallibility of engineers---our final source of network ossification.
+While effective at their designed tasks, middleboxes are infamous for relying on the \emph{observed} behaviour of network traffic rather than the behaviours actually decreed in the relevant \gls{acr:ietf} standards and specifications.
+As a result, they have become a barrier to the wider deployment and introduction of protocols in the Internet.
+\gls{acr:sctp}~\parencite{rfc4960} is one recent example of an approved protocol whose deployment has been hobbled by the prevalence of middleboxes that expect only a limited suite of layer-4 protocols~\parencite{sctp-middlebox-bad}.
+Under the same considerations, the \emph{QUIC} transport protocol~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17} must be tunnelled over \gls{acr:udp}, even though its Internet-wide deployment is backed by the weight of hypergiant provider Google.
 
-Most dataplane processing has been through \emph{middleboxes}.
+?? issues w/ their config and integration from an operational perspective
 
-?? Ossification in today's sense? Middleboxes? i.e. barrier to wider deployment even after standardisation i.e. hobbled SCTP~\parencite{rfc4960}, forced QUIC onto UDP. Also, middleboxes expensive and require work to integrate.\sidenote{Ossification causes: weight of \gls{acr:ietf}, desire for perf causing hardware impls (inflexible), over-reliance on observed behaviours of network \& protocols rather than the specs.}
+%?? Ossification in today's sense? Middleboxes? i.e. barrier to wider deployment even after standardisation i.e. hobbled SCTP~\parencite{rfc4960}, forced QUIC onto UDP. Also, middleboxes expensive and require work to integrate.\sidenote{Ossification causes: weight of \gls{acr:ietf}, desire for perf causing hardware impls (inflexible), over-reliance on observed behaviours of network \& protocols rather than the specs.}
 
 ?? Probably two streams: capable hardware (and its programming), and making host-based solns faster.
 
