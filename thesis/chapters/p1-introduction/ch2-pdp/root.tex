@@ -53,7 +53,7 @@ Programmability in computer networks tends to be categorised into two distinct f
 \emph{Dataplane} programmability focusses instead on introducing additional logic into the network to be executed by the forwarding elements such as routers---stateless or stateful transformations of packet streams, traffic measurement, and so on.
 There is, of course, vast scope for their interaction. ?? describe
 
-\subsection{Active Networking}
+\subsection{Active Networking}\label{sec:active-networking}
 In response to the expanding scale and widespread reach of the Internet (and computer networks in general), researchers in the early-to-mid '90s increasingly desired the tools to extend, innovate, and research routing and transport protocols.
 To maintain and safeguard interoperability over the Internet, the \gls{acr:ietf} formed to maintain and oversee the development of Internet protocols for all levels of the networking stack.
 The weight of full \gls{acr:ietf} standardisation was seen by many researchers of the period as a lengthy process, which they believed to be the cause of \emph{network ossification}---the Internet becoming inflexible to the design and deployment of new protocols.\sidenote{Authors of this period might be horrified to discover that the \gls{acr:ietf}'s median time to standard publication has more than doubled since 2000~\parencite{DBLP:conf/imc/McQuistinKKPTPH21}. This is not, however, what we understand as ossification in today's Internet, which I'll discuss shortly.}
@@ -328,29 +328,88 @@ However, this latter solution achieves only half the packet forwarding goodput o
 Although host-run functions have indeed improved, their performance still trails unacceptably behind \glspl{acr:asic}---traffic volume can be accounted for up to a limit by horizontal scaling, but this becomes more difficult to operate than a single bump-in the wire solution, or may be impossible at larger port densities.
 Programmable network hardware, beginning with early \glspl{acr:npu} and culminating in today's SmartNICs and programmable \gls{acr:asic}-backed switches, innovates on introducing runtime reconfigurable compute to these devices.
 
-?? Can we plot from \glspl{acr:npu}? incl., e.g., Orig NetFPGA~\parencite{DBLP:conf/mse/LockwoodMWGHNRL07}
+\glspl{acr:npu}, dedicated network cards including general-purpose processors for arbitrary packet processing, first arrived around the year 2000 as we've discussed in \cref{sec:active-networking}, with commercial designs such as the Intel IXP1200~\parencite{intel-ixp}.
+These presented an early middleground between fixed-function (though performant) \glspl{acr:asic} and commodity host (virtualised) packet processing, offering line-rate performance at a smaller form and fanout factor (i.e., 1 or 2 ports).
+By 2008, their architectural space was dominated by multiprocessor \gls{acr:soc}-type designs offered by a good many vendors~\parencite[p.~306]{npu-book}.\sidenote{Following up the fates of these providers paints an interesting picture of monopolisation by traditional network vendors: consider for instance Sandburst's acquisition by Broadcom~\parencite{sandburst-buyout}, or EZchip's acquisition by Mellanox~\parencite{ezchip-buyout}.}
+Yet at this time there was still a high degree of microarchitectural diversity between vendors~\parencite{DBLP:conf/iccd/KeutzerMN02,npu-oos}---pipelined versus symmetric core designs, \gls{acr:vliw} and superscalar alongside one-way designs. and the presence or absence of use case-specific \glspl{acr:fu} and coprocessors.
+Some constants of interest include a large, shared register file to enable zero-cost context switches and mask I/O latencies, and non-trivial programming models.
+%?? lost out to \glspl{acr:asic} for the longest time because chips were cheap and fast, even if their design wasn't!~\parencite[p.~308]{npu-book}
+These devices fell behind \glspl{acr:asic} in deployment and use for the longest time due to the speed and low cost of chips were cheap and fast---even if their design state was costly~\parencite[p.~308]{npu-book}---twinned with the need for deep expertise from software engineers.
 
-?? Talk about how SmartNICs match what we thought p-switches would be, while p-switches are now ASICs, like you promised. Why did this happen? ?? multi-core can match rates on one or two ports, but getting \qtyrange{1}{2}{\tera\bit\per\second} would need an insane amount of cores (so ASICs are the only valid way to get in some manner of programmability)---also, the exclusion of the idea of `user-given programs' ?? maybe put later.
+\emph{SmartNICs} present the logical evolution of this low port-density form factor, offering line-rate packet processing for modern Ethernet (\qtyrange{10}{100}{\giga\bit\per\second}).
+What then sets them apart is that SmartNICs optionally function as a \gls{acr:nic} compatible with common \glspl{acr:os}---supporting for instance the standard offloads such as checksumming and segmentation.
+Modern day SmartNICs such as the NVIDIA/Mellanox BlueField~\parencite{nvidia-bluefield} and Netronome Agilio~\parencite{netronome-smartnic} series trace their lineage back to these \glspl{acr:npu}, to some extent realising the architecture which some past works thought programmable switches might adopt~\parencite{DBLP:journals/jsac/WolfT01}.
+That is to say, large numbers of weaker \emph{general-purpose} \gls{acr:risc} \glspl{acr:cpu} which can route to one another or an output \gls{acr:mac} via a shared interconnect, with ample coprocessors (for e.g., cryptography) and resources like \gls{acr:tcam} for accelerated processing.
+This contrasts the network-specific \glspl{acr:isa} used in their predecessors,\sidenote{Mellanox \glspl{acr:nic} in particular use standard ARM cores, while Netronome's offerings use a proprietary \gls{acr:isa} with full C language compatibility.} while also adding an increased focus on acting as a \gls{acr:nic} for the host machine in addition to their bump-in-the-wire capabilities.
+Packet throughput requirements are met by sheer parallelism in these devices---Netronome's NFP-6480 contains \num{112} cores acting in a non-pipelined way (\cref{adx:nfp-arch})---but such SmartNICs often impose greater latency on carried packets.
 
-?? \gls{acr:rmt}~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13}) arose in response to limits of conventional switches and OpenFlow---became \gls{acr:pisa}~\parencite{barefoot-pisa}?
+However, \glspl{acr:fpga} have become more capable over time and now present a reasonable means of achieving \gls{acr:asic}-like performance (high throughput \emph{and} low latency) and runtime reconfigurability without fabrication.
+The advent of the openly available NetFPGA~\parencite{DBLP:conf/mse/LockwoodMWGHNRL07} design as a platform for network processing research and teaching has been a key driver here, such that the SmartNIC market also includes \gls{acr:fpga}-backed \glspl{acr:nic} such as the Xilinx Alveo~\parencite{xilinx-alveo}.
+NetFPGA processing speeds are also continuously improved in tandem with line rate: see NetFPGA-SUME~\parencite{DBLP:journals/micro/ZilbermanACM14} at \qty{40}{\giga\bit\per\second}, and NetFPGA-PLUS~\parencite{netfpga-plus} at \qty{100}{\giga\bit\per\second}.
 
-?? Similar time as RMT: Intel \emph{FlexPipe}~\parencite{flexpipe-fm5000}, Cavium \emph{XPliant}~\parencite{cavium-xpliant}.
+%?? Talk about how SmartNICs match what we thought p-switches would be\Textcite{DBLP:journals/jsac/WolfT01}, while p-switches are now ASICs, like you promised. Why did this happen? ?? multi-core can match rates on one or two ports, but getting \qtyrange{1}{2}{\tera\bit\per\second} would need an insane amount of cores (so ASICs are the only valid way to get in some manner of programmability)---also, the exclusion of the idea of `user-given programs' ?? maybe put later.
 
-P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14} as a language to add many more capabilities...
+Let us turn now to programmable \emph{switches}.
+I should first state that the path they have taken is altogether different from what \citeauthor{DBLP:journals/jsac/WolfT01} proposed some 21 years ago.
+It should be readily apparent that the designs we seen in modern SmartNICs would be broadly incompatible with high port densities (i.e., 56 ports) as the sum traffic bandwidth rises to \qtyrange{1}{2}{\tera\bit\per\second} and beyond.
+Operating and connecting together hundreds or thousands of general purpose cores then requires vast amounts of power and cooling, to say nothing of the engineering challenge of designing an efficient interconnect for all these \glspl{acr:fu}.
+We quickly reach a point at which \glspl{acr:asic} are the only means to achieve some manner of programmability; we must instead ask \emph{how much} freedom to give programmers, and then architect around this restricted programmability.
 
-?? Where does \emph{PISCES}~\parencite{DBLP:conf/sigcomm/ShahbazCPKFMR16} fit into the story? It's OvS using P4 to add new features and design dataplanes. ?? This is probably an aside.
+Serious contenders began to reach the market in 2013, such as Intel's \emph{FlexPipe}~\parencite{flexpipe-fm5000} and Cavium's \emph{XPliant}~\parencite{cavium-xpliant}---however, due to its publication and later impact we will leave these aside in favour of \gls{acr:rmt}~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13}.
+\gls{acr:rmt}'s motivation followed on from the design and limitations of OpenFlow, asking not only how to make \glspl{acr:mat} faster in hardware but also how a new architecture might allow for new protocols and encapsulations such as VXLAN dynamically.
+To do this, the switch must offer runtime reconfiguration of field definitions and locations, the shapes of \glspl{acr:mat}, actions themselves, and control over output queue selection and disciplines.
+The \gls{acr:rmt} model divides the switch into ingress and egress pipelines with a queue and buffer management element between them, with an array of configurable \gls{acr:tcam}-backed parsers to operate on the inbound packets in each pipeline.
+Pipelines are subdivided into 32 stages, each having 200 action units that act in parallel on the packet header vector using a \gls{acr:vliw} instruction from a \gls{acr:mat} lookup.
+Because of this, each stage can perform a single operation per field, though the control plane can make use of the large number of action units to perform speculative execution and divide and split logical stages between parts of the physical pipeline.
+This design sees wide adoption today.
+Barefoot---now Intel---\emph{Tofino} switches use a switching core built on this architecture, the \gls{acr:pisa}~\parencite{barefoot-pisa}.
 
-POF as another language that didn't take off~\parencite{DBLP:conf/sigcomm/Song13}
+%?? Notes on early HW designs~\parencite{DBLP:conf/iccd/KeutzerMN02,npu-oos}
 
-Ctl planes autogenerated by P4Runtime~\parencite{p4-runtime}
+%?? Very good source on \glspl{acr:npu} while \gls{acr:sdn} was getting off its feet~\parencite{npu-book}---check for history etc.
 
-Then followed up by  \gls{acr:psa}\parencite{p4-psa}.
+%?? Can we plot from \glspl{acr:npu}? incl., e.g., Orig NetFPGA~\parencite{DBLP:conf/mse/LockwoodMWGHNRL07}
 
-?? SCION~\parencite{DBLP:conf/conext/RuiterS21}
+%?? \gls{acr:rmt}~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13}) arose in response to limits of conventional switches and OpenFlow---became \gls{acr:pisa}~\parencite{barefoot-pisa}?
 
-?? Measurement like PINT~\parencite{DBLP:conf/sigcomm/BasatRLAYM20}
+%?? Similar time as RMT: Intel \emph{FlexPipe}~\parencite{flexpipe-fm5000}, Cavium \emph{XPliant}~\parencite{cavium-xpliant}.
 
-?? Talk more about in-network compute?
+The question which then remained was how the control plane, and engineers in general, should actually program these advanced classes of switching hardware to exploit these new features.
+\emph{Protocol-oblivious forwarding}~\parencite{DBLP:conf/sigcomm/Song13} was an early proposal in this regard which failed to launch; a single `flow instruction set' would act as a common compile-time target to govern protocol parsing logic and action implementations, while even allowing in-band modification of \gls{acr:mat} entries by actions.
+In retrospect, its main failing is that it overlooked how ergonomic, high-level programming should be carried out while also advocating a hardware redesign not entirely backed by a sensible implementation.
+\emph{P4}~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14} is a language which instead targets the design of a dataplane---its table layouts, actions, and parser design---from a high, user-friendly level.
+Users program parsers as a finite state machine, while table and action sets are structured as imperative programs based on the classes of match offered by a target switch---switches are supported by defining their architecture in headers and implementing a new backend for the compiler, \emph{p4c}.
+Actions have access to \emph{metadata} (per-packet state) and \emph{registers} (shared dataplane state), where the latter is analogous to OpenFlow's \emph{counters}.
+P4 supports many target dataplanes today:
+\begin{itemize}
+	\item Programmable switches, through either vendor-provided backends such as the \emph{Tofino Native Architecture} or shared targets such as the \gls{acr:psa}~\parencite{p4-psa}.
+	\item SmartNICs, via vendor-specific compiler additions,
+	\item NetFPGA cards, via the P4$\rightarrow$NetFPGA pipeline~\parencite{DBLP:conf/fpga/IbanezBMZ19},
+	\item Software switches such as \emph{bmv2}~\parencite{bmv2}, \emph{PISCES}~\parencite{DBLP:conf/sigcomm/ShahbazCPKFMR16} built on \gls{acr:ovs}, and the more performant \emph{T4P4S}~\parencite{DBLP:conf/hpsr/VorosHKLTL18} which compiles to C code with a \gls{acr:dpdk} backend.
+\end{itemize}
+Any device intrinsics or capabilities which cannot be expressed in P4 may be called out to using \texttt{extern} directives.
+Generating compatible control plane protocols and \glspl{acr:api} is then handled by \emph{P4Runtime}~\parencite{p4-runtime}, restoring the hardware-agnostic control at the core of OpenFlow.
+8 years in P4 has apparently been a runaway success in mush the same vein as OpenFlow, and enjoys use in production edge networks~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21} while also enabling efficient and production-ready implementations of next-generation Internet designs such as \emph{SCION}~\parencite{DBLP:conf/conext/RuiterS21}.
+
+A more important effect of having arbitrary control over actions and manipulation of shared state is that, although limited, the set of programs we can express has grown significantly.
+Although we'll discuss this in more depth in \cref{sec:offloading-and-in-network-compute}, this enables true \emph{in-network compute}---per-packet processing, e.g., in telemetry use cases like \emph{PINT}~\parencite{DBLP:conf/sigcomm/BasatRLAYM20} at rates and volumes hitherto impossible for hosts to achieve.
+Moreover, this enables application acceleration and other new developments with none of the costs of host execution.
+
+%T4P4S~\parencite{DBLP:conf/hpsr/VorosHKLTL18} converts P4 programs into C, which are linked against a target-specific network hardware abstraction layer.
+%This seems to be the most effective host deployment for P4 at the moment, since it buys you DPDK-capable P4 dataplane installation compared to how terribly slow BMv2 is known to be.
+%Slower than native DPDK, but outpaces OvS, and allows definition of HAL binaries in SmartNIC C code as needed too.
+
+%?? Where does \emph{PISCES}~\parencite{DBLP:conf/sigcomm/ShahbazCPKFMR16} fit into the story? It's OvS using P4 to add new features and design dataplanes. ?? This is probably an aside.
+
+%Ctl planes autogenerated by P4Runtime~\parencite{p4-runtime}
+
+%Then followed up by  \gls{acr:psa}\parencite{p4-psa}.
+
+%?? SCION~\parencite{DBLP:conf/conext/RuiterS21}
+
+%?? Measurement like PINT~\parencite{DBLP:conf/sigcomm/BasatRLAYM20}
+
+%?? Talk more about in-network compute?
 
 \paragraph{The return of active networking?}
 The reader may well be thinking that research community has cycled back around to active networking in a new guise, and in many senses it has.
@@ -395,14 +454,16 @@ We will revisit this quote in due course. ?? quote from smart packets ?? trim
 
 ?? What's different? Focus on ctl-plane connected, but essentially limited to individual \glspl{acr:as} in contrast to the augmented end-to-end vision of yore. Did it succeed \emph{because} it's more constrained? i.e. no inter-AS vision, not tied to preselected forwarding paths...
 
-?? Very good source on \glspl{acr:npu} while \gls{acr:sdn} was getting off its feet~\parencite{npu-book}---check for history etc.
-
 %?? Are the tools just sharper now?
 
-\section{Offloading and In-Network Compute}
+\section{Offloading and In-Network Compute}\label{sec:offloading-and-in-network-compute}
 
 \gls{acr:ebpf}, \gls{acr:xdp}~\parencite{DBLP:conf/conext/Hoiland-Jorgensen18}
 ?? It should be clear that \gls{acr:ebpf}'s role in the network owes an inestimable debt to \emph{smart packets}.
+
+?? eBPF also allows exec of user code at various points in kernel for instrumentation etc. via \emph{kprobes} and \emph{tracepoints}.
+
+?? Katran~\parencite{katran} L4 load bal;ancer based on \gls{acr:xdp}
 
 ?? mention BPFabric~\parencite{DBLP:conf/ancs/JouetP17} somewhere.
 
