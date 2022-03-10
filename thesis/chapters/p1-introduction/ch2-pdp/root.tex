@@ -164,7 +164,7 @@ Early \gls{acr:te} approaches were thus built on a shaky foundation of hacks and
 Naturally, such workarounds become untenable and impossible to reason about at scale---particularly as failures and misconfigurations creep in and become harder to find and diagnose.
 Effective though these early forays were, they remained hamstrung by the tightly coupled control and data planes of the network hardware of that era.
 The reality and urgency of this problem space has led to the true separation of forwarding elements (the dataplane) from the logical control elements which inform and orchestrate their routing behaviour (the control plane).
-This separation has enabled \glsxtrfull{acr:sdn}---the use of arbitrary machines and logic to define the forwarding behaviour of each and every network element.
+This separation has enabled \glsxtrfull{acr:sdn}---the use of arbitrary machines and logic to define the forwarding behaviour of each and every network element~\parencite{DBLP:journals/comsur/NunesMNOT14,DBLP:journals/ccr/FeamsterRZ14}.
 As we shall discuss, this has brought forth a well-developed and successful bevy of innovations in network control and design.
 
 \paragraph{Development of the control plane}
@@ -324,6 +324,10 @@ Additionally, this allows path auditing in a way which is invisible to \glspl{ac
 %Cost? Halves goodput vs. NetBricks.
 However, this latter solution achieves only half the packet forwarding goodput of NetBricks in exchange for these additional guarantees.
 
+?? OpenBox?~\parencite{DBLP:conf/sigcomm/Bremler-BarrHH16}
+
+?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
+
 \paragraph{Hardware}
 Although host-run functions have indeed improved, their performance still trails unacceptably behind \glspl{acr:asic}---traffic volume can be accounted for up to a limit by horizontal scaling, but this becomes more difficult to operate than a single bump-in the wire solution, or may be impossible at larger port densities.
 Programmable network hardware, beginning with early \glspl{acr:npu} and culminating in today's SmartNICs and programmable \gls{acr:asic}-backed switches, innovates on introducing runtime reconfigurable compute to these devices.
@@ -345,6 +349,7 @@ Packet throughput requirements are met by sheer parallelism in these devices---N
 
 However, \glspl{acr:fpga} have become more capable over time and now present a reasonable means of achieving \gls{acr:asic}-like performance (high throughput \emph{and} low latency) and runtime reconfigurability without fabrication.
 The advent of the openly available NetFPGA~\parencite{DBLP:conf/mse/LockwoodMWGHNRL07} design as a platform for network processing research and teaching has been a key driver here, such that the SmartNIC market also includes \gls{acr:fpga}-backed \glspl{acr:nic} such as the Xilinx Alveo~\parencite{xilinx-alveo}.
+Similarly, other vendors have produced open \gls{acr:nic} designs, such as AMD/Xilinx's \emph{OpenNIC}~\parencite{amd-opennic} platform.
 NetFPGA processing speeds are also continuously improved in tandem with line rate: see NetFPGA-SUME~\parencite{DBLP:journals/micro/ZilbermanACM14} at \qty{40}{\giga\bit\per\second}, and NetFPGA-PLUS~\parencite{netfpga-plus} at \qty{100}{\giga\bit\per\second}.
 
 %?? Talk about how SmartNICs match what we thought p-switches would be\Textcite{DBLP:journals/jsac/WolfT01}, while p-switches are now ASICs, like you promised. Why did this happen? ?? multi-core can match rates on one or two ports, but getting \qtyrange{1}{2}{\tera\bit\per\second} would need an insane amount of cores (so ASICs are the only valid way to get in some manner of programmability)---also, the exclusion of the idea of `user-given programs' ?? maybe put later.
@@ -390,6 +395,9 @@ P4 supports many target dataplanes today:
 Any device intrinsics or capabilities which cannot be expressed in P4 may be called out to using \texttt{extern} directives.
 Generating compatible control plane protocols and \glspl{acr:api} is then handled by \emph{P4Runtime}~\parencite{p4-runtime}, restoring the hardware-agnostic control at the core of OpenFlow.
 8 years in P4 has apparently been a runaway success in mush the same vein as OpenFlow, and enjoys use in production edge networks~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21} while also enabling efficient and production-ready implementations of next-generation Internet designs such as \emph{SCION}~\parencite{DBLP:conf/conext/RuiterS21}.
+G\'{e}ant's RARE project~\parencite{geant-rare-article} in national research and education networks
+
+?? NetFPGA devices and SmartNICs used in NRNEs like ESnet6 for telemetry gathering use-cases~\parencite{esnet6-hts,esnet6-htp} and P4 in future.
 
 A more important effect of having arbitrary control over actions and manipulation of shared state is that, although limited, the set of programs we can express has grown significantly.
 Although we'll discuss this in more depth in \cref{sec:offloading-and-in-network-compute}, this enables true \emph{in-network compute}---per-packet processing, e.g., in telemetry use cases like \emph{PINT}~\parencite{DBLP:conf/sigcomm/BasatRLAYM20} at rates and volumes hitherto impossible for hosts to achieve.
@@ -410,13 +418,6 @@ Moreover, this enables application acceleration and other new developments with 
 %?? Measurement like PINT~\parencite{DBLP:conf/sigcomm/BasatRLAYM20}
 
 %?? Talk more about in-network compute?
-
-?? Mention more recent lang and HW developments.
-?? Tofino 2~\parencite{tofino2}---\qty{12.8}{\tera\bit\per\second} with support for \qty{400}{\giga\bit\per\second} Ethernet.
-?? Nokia's fabric?
-?? Intel's other new thing Dimitris mentioned?
-
-?? Move forward the stuff on, e.g., $\mu$P4... cites like that to show still innov. in language space.
 
 \paragraph{The return of active networking?}
 The reader may well be thinking that research community has cycled back around to active networking in a new guise, and in many senses it has.
@@ -461,9 +462,61 @@ We will revisit this quote in due course. ?? quote from smart packets ?? trim
 
 ?? What's different? Focus on ctl-plane connected, but essentially limited to individual \glspl{acr:as} in contrast to the augmented end-to-end vision of yore. Did it succeed \emph{because} it's more constrained? i.e. no inter-AS vision, not tied to preselected forwarding paths...
 
+\subsection{Frontiers in Programmable Networks}
+?? Mention more recent lang and HW developments.
+?? Tofino 2~\parencite{tofino2}---\qty{12.8}{\tera\bit\per\second} with support for \qty{400}{\giga\bit\per\second} Ethernet.
+?? Nokia's fabric?~\parencite{nokia-fp5}
+?? Intel's other new thing Dimitris mentioned?~\parencite{intel-ipu}
+
+?? Move forward the stuff on, e.g., $\mu$P4... cites like that to show still innov. in language space.
+
+?? Things like Lucid built on top of P4?~\parencite{DBLP:conf/sigcomm/SonchackLRW21}
+
+?? P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14} and \emph{programmable dataplane} (PDP) hardware~\parencite{DBLP:journals/micro/ZilbermanACM14, netronome-smartnic, xilinx-alveo, barefoot-intel}
+
+?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
+
+
+\paragraph{Language design}
+Huh.
+
+$\mu$P4~\parencite{DBLP:conf/sigcomm/SoniR0DF20} extends P4C to decompose parser and action code into independent subprograms, to simplify porting behaviours between different switch models (V1Model, PSA, SUME, ...).
+
+Lyra~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running Network Programming Language friendly programs (i.e., same constraints as P4 programs) across heterogeneous switch hardware, plus placement constraints.
+
+?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
+
+\paragraph{Hardware design}
+Hmm.
+
+\emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} places a routing fabric between distinct packet/data processing elements \emph{in a SmartNIC}.
+Such designs would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded ME relationships.
+Event-driven versions of P4 have been suggested~\parencite{DBLP:conf/hotnets/IbanezABM19}.
+Timer events and device state changes would empower in-network RL use-cases, signalling timesteps for RL agents or new, effective, fine-grained sources of input state.
+
+?? Taurus moved out of representations section~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22}
+
 %?? Are the tools just sharper now?
 
 \section{Offloading and In-Network Compute}\label{sec:offloading-and-in-network-compute}
+
+\gls{acr:xdp}
+
+\begin{figure}
+	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/steering-draft}}
+	\caption{text}\label{fig:pdp-lit-steering}
+\end{figure}
+
+\begin{figure}
+	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/pci-draft}}
+	\caption{text}\label{fig:pdp-lit-pci}
+\end{figure}
+
+\begin{figure}
+%	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/offloading-draft}}
+	\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/offloading}}
+	\caption[The packet processing stack on host machines, and how the DPDK and XDP frameworks interface with user code.]{The packet processing stack on host machines, and how the \gls{acr:dpdk} and \gls{acr:xdp} frameworks interface with user code. Offload frameworks are useful because they either allow \gls{acr:os} kernel code to be bypassed altogether (\gls{acr:dpdk}), or for packet modification and transmission to be pushed further down the stack (\gls{acr:xdp}). Offloaded \gls{acr:ebpf} user code may typically pass packets to the network stack after some amount of processing, send packets directly back to the \gls{acr:nic} for transmission, or pass packets to user code using a zero-copy mechanism such as \texttt{AF\_XDP}. Crucially, all these mechanisms excise various amounts of processing or imprecise waiting for  interrupts, reducing latencies and increasing packet processing throughput. More details on the logical portion of the stack are presented by \Textcite{DBLP:conf/sigcomm/CaiCVH021}.}\label{fig:pdp-lit-offloading}
+\end{figure}
 
 \gls{acr:ebpf}, \gls{acr:xdp}~\parencite{DBLP:conf/conext/Hoiland-Jorgensen18}
 ?? It should be clear that \gls{acr:ebpf}'s role in the network owes an inestimable debt to \emph{smart packets}.
@@ -476,37 +529,41 @@ We will revisit this quote in due course. ?? quote from smart packets ?? trim
 
 later netmap~\parencite{DBLP:conf/usenix/Rizzo12}
 
-?? Morpheus~\parencite{miano-morpheus} for run-time optimisation.
+?? Morpheus~\parencite{DBLP:conf/asplos/MianoSRRA22} for run-time optimisation.
 
-\section{Operation and Management}
+?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
 
-?? network-network comms? BGP
+?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
 
-?? IGP?
+%\section{Operation and Management}
+%
+%?? network-network comms? BGP
+%
+%?? IGP?
+%
+%?? packets routed on a per-hop basis from their perspective: may be higher level in practice (MPLS, path switching within a gateway)
+%
+%?? How can we examine this? High-level (above), mid-level ()
+%
+%?? Two axes: end-to-end protocol and fabric behaviour. interact in a very delicate way (i.e., host )
+%
+%?? named-data networking as potential structure of the Internet?~\parencite{DBLP:journals/ccr/0001ABJcCPWZ14}
+%?? Can I use this to suggest/outline problems which might be solved/encountered in a future Internet?
+%
+%?? Talk about \gls{acr:as} families here: \glspl{acr:isp}, hypergiants~\parencite{DBLP:conf/sigcomm/GigisCMNKDKS21}...
+%?? Data centres: refer to e.g. google Espresso [sigcomm 2017] as big SDN deployments, Jupiter, recent paper too?
 
-?? packets routed on a per-hop basis from their perspective: may be higher level in practice (MPLS, path switching within a gateway)
-
-?? How can we examine this? High-level (above), mid-level ()
-
-?? Two axes: end-to-end protocol and fabric behaviour. interact in a very delicate way (i.e., host )
-
-?? named-data networking as potential structure of the Internet?~\parencite{DBLP:journals/ccr/0001ABJcCPWZ14}
-?? Can I use this to suggest/outline problems which might be solved/encountered in a future Internet?
-
-?? Talk about \gls{acr:as} families here: \glspl{acr:isp}, hypergiants~\parencite{DBLP:conf/sigcomm/GigisCMNKDKS21}...
-?? Data centres: refer to e.g. google Espresso [sigcomm 2017] as big SDN deployments, Jupiter, recent paper too?
-
-\subsection{Fixed-Function Hardware}
-
-\subsection{Software-Defined Networking}
-
-?? Run through the historical context. Why? What led into P4 (OpenFlow, network operating systems...)
-
-?? \gls{acr:ovs}~\parencite{DBLP:conf/nsdi/PfaffPKJZRGWSSA15} huge here.
-
-?? A survey to mine for stuff~\parencite{DBLP:journals/comsur/NunesMNOT14}
-
-?? Tie into PDP here: active networking and TPP . Think about the concept of protocol boosters~\parencite{DBLP:journals/jsac/FeldmeierMSBMR98}. (NOT READ)
+%\subsection{Fixed-Function Hardware}
+%
+%\subsection{Software-Defined Networking}
+%
+%?? Run through the historical context. Why? What led into P4 (OpenFlow, network operating systems...)
+%
+%?? \gls{acr:ovs}~\parencite{DBLP:conf/nsdi/PfaffPKJZRGWSSA15} huge here.
+%
+%?? A survey to mine for stuff~\parencite{DBLP:journals/comsur/NunesMNOT14}
+%
+%?? Tie into PDP here: active networking and TPP . Think about the concept of protocol boosters~\parencite{DBLP:journals/jsac/FeldmeierMSBMR98}. (NOT READ)
 
 \section{Traffic Characteristics}
 
@@ -709,83 +766,65 @@ Because of this, traditional flooding-based attacks aren't fully alleviated.
 
 \subsection{Fairness}
 
-\section{Programmable Data-Planes}
+%\section{Programmable Data-Planes}
+%
+%?? 2021 --- crucial to sell the why! What can be gained moving to this level, new state measures enable new applications, in-nic/switch exec reduces latencies, increases throughputs, etc...
+%?? Probably want a worked example showing how in-network compute helps. I.e., network graph, show processing at nodes
+%
+%?? Explain \gls{acr:npu} here...
+%
+%?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
+%
+%?? Evidence of deployment in real, huge transit networks~\sidenote{\url{https://wiki.geant.org/display/RARE/Home}, \url{https://wiki.geant.org/display/NETDEV}}
+%
+%?? arbitrarily reconfigurable hardware located directly on the data path
+%
+%?? OvS?~\parencite{DBLP:conf/sigcomm/TuWAP21}
 
-\begin{figure}
-	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/steering-draft}}
-	\caption{text}\label{fig:pdp-lit-steering}
-\end{figure}
+%?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
+%?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
+%
+%?? new ways to implement stateful + stateless packet processing.
+%
+%?? History? RMT~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13}, ClickNP, GPU offload papers. See Metron paper for cites.
+%
+%?? NetFPGA~\parencite{DBLP:conf/fpga/IbanezBMZ19}
+%
+%?? Getting even faster?~\parencite{nokia-fp5}
 
-\begin{figure}
-	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/pci-draft}}
-	\caption{text}\label{fig:pdp-lit-pci}
-\end{figure}
+%\section{Control and Management}
+%
+%?? Refer back to History through OpenFlow -- what prompted the evolution?
+%
+%?? Control of these devices has a lot in common with OpenFlow -- controller, except using commodity hardware to install firmwares, and so on,
 
-\begin{figure}
-	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/offloading-draft}}
-	\caption{text}\label{fig:pdp-lit-offloading}
-\end{figure}
-
-?? 2021 --- crucial to sell the why! What can be gained moving to this level, new state measures enable new applications, in-nic/switch exec reduces latencies, increases throughputs, etc...
-?? Probably want a worked example showing how in-network compute helps. I.e., network graph, show processing at nodes
-
-?? Explain \gls{acr:npu} here...
-
-?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
-
-?? Evidence of deployment in real, huge transit networks~\sidenote{\url{https://wiki.geant.org/display/RARE/Home}, \url{https://wiki.geant.org/display/NETDEV}}
-
-?? arbitrarily reconfigurable hardware located directly on the data path
-
-?? OvS?~\parencite{DBLP:conf/sigcomm/TuWAP21}
-
-?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron paper for good discussion of RSS, etc., which solve these problems in their own way)
-
-?? new ways to implement stateful + stateless packet processing.
-
-?? History? RMT~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13}, ClickNP, GPU offload papers. See Metron paper for cites.
-
-?? NetFPGA~\parencite{DBLP:conf/fpga/IbanezBMZ19}
-
-?? Getting even faster?~\parencite{nokia-fp5}
-
-\sidenote{Test text hello.}
-
-?? RMT was the first big innovation over OpenFlow --- read this!!
-
-\section{Control and Management}
-
-?? Refer back to History through OpenFlow -- what prompted the evolution?
-
-?? Control of these devices has a lot in common with OpenFlow -- controller, except using commodity hardware to install firmwares, and so on,
-
-\section{Software Frameworks}
-
-\subsection{eBPF}
-?? eBPF
-
-?? BPFabric
-
-\subsection{P4}
-?? P4
-
-?? Others who lost?
-
-?? How do these differ? What do they share?
-
-?? Popular frameworks now support this -- ONOS, eBPF translators, behavioural model software switch...
-
-?? Things like Lucid built on top of P4?~\parencite{DBLP:conf/sigcomm/SonchackLRW21}
-
-?? P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14} and \emph{programmable dataplane} (PDP) hardware~\parencite{DBLP:journals/micro/ZilbermanACM14, netronome-smartnic, xilinx-alveo, barefoot-intel}
-
-?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
-
-\fakepara{PDP design for asynchronous compute}
-\emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} places a routing fabric between distinct packet/data processing elements \emph{in a SmartNIC}.
-Such designs would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded ME relationships.
-Event-driven versions of P4 have been suggested~\parencite{DBLP:conf/hotnets/IbanezABM19}.
-Timer events and device state changes would empower in-network RL use-cases, signalling timesteps for RL agents or new, effective, fine-grained sources of input state.
+%\section{Software Frameworks}
+%
+%\subsection{eBPF}
+%?? eBPF
+%
+%?? BPFabric
+%
+%\subsection{P4}
+%?? P4
+%
+%?? Others who lost?
+%
+%?? How do these differ? What do they share?
+%
+%?? Popular frameworks now support this -- ONOS, eBPF translators, behavioural model software switch...
+%
+%?? Things like Lucid built on top of P4?~\parencite{DBLP:conf/sigcomm/SonchackLRW21}
+%
+%?? P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14} and \emph{programmable dataplane} (PDP) hardware~\parencite{DBLP:journals/micro/ZilbermanACM14, netronome-smartnic, xilinx-alveo, barefoot-intel}
+%
+%?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
+%
+%\fakepara{PDP design for asynchronous compute}
+%\emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} places a routing fabric between distinct packet/data processing elements \emph{in a SmartNIC}.
+%Such designs would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded ME relationships.
+%Event-driven versions of P4 have been suggested~\parencite{DBLP:conf/hotnets/IbanezABM19}.
+%Timer events and device state changes would empower in-network RL use-cases, signalling timesteps for RL agents or new, effective, fine-grained sources of input state.
 
 \section{Offloading frameworks}
 \emph{ClickNP}~\parencite{DBLP:conf/sigcomm/LiTLPLXXC16} targets NetFPGAs: DAG of predefined Click-like blocks, i.e. VHDL segments.
@@ -819,28 +858,26 @@ Preliminary work on splitting eBPF programs between an XDP part and userland par
 This considers both horizontal (i.e., chunks in driver with XDP tail-calls) or vertical (user$\leftrightarrow$kernel) splits of code.
 I think their XDP vs.~AF\_XDP split test confirms that the first handler in the XDP hook is basically single-threaded, which probably has some implications for our use of it as an offload.
 
-\paragraph{Misc P4 translations.}
-T4P4S~\parencite{DBLP:conf/hpsr/VorosHKLTL18} converts P4 programs into C, which are linked against a target-specific network hardware abstraction layer.
-This seems to be the most effective host deployment for P4 at the moment, since it buys you DPDK-capable P4 dataplane installation compared to how terribly slow BMv2 is known to be.
-Slower than native DPDK, but outpaces OvS, and allows definition of HAL binaries in SmartNIC C code as needed too.
-
-$\mu$P4~\parencite{DBLP:conf/sigcomm/SoniR0DF20} extends P4C to decompose parser and action code into independent subprograms, to simplify porting behaviours between different switch models (V1Model, PSA, SUME, ...).
-
-Lyra~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running Network Programming Language friendly programs (i.e., same constraints as P4 programs) across heterogeneous switch hardware, plus placement constraints.
-
-?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
+%\paragraph{Misc P4 translations.}
+%T4P4S~\parencite{DBLP:conf/hpsr/VorosHKLTL18} converts P4 programs into C, which are linked against a target-specific network hardware abstraction layer.
+%This seems to be the most effective host deployment for P4 at the moment, since it buys you DPDK-capable P4 dataplane installation compared to how terribly slow BMv2 is known to be.
+%Slower than native DPDK, but outpaces OvS, and allows definition of HAL binaries in SmartNIC C code as needed too.
+%
+%$\mu$P4~\parencite{DBLP:conf/sigcomm/SoniR0DF20} extends P4C to decompose parser and action code into independent subprograms, to simplify porting behaviours between different switch models (V1Model, PSA, SUME, ...).
+%
+%Lyra~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running Network Programming Language friendly programs (i.e., same constraints as P4 programs) across heterogeneous switch hardware, plus placement constraints.
+%
+%?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
 
 \section{Use Cases}
 
-?? On-switch (Tofino) DDoS detection and defence \url{https://www.usenix.org/conference/usenixsecurity21/presentation/liu-zaoxing}
+?? On-switch (Tofino) DDoS detection and defence~\parencite{DBLP:conf/uss/LiuNNLK0BYS21}
 
 \subsection{In-Network Computation}\label{sec:in-network-computation}
 ?? In-network computation.\sidenote{Test text hello.}
 
 iSwitch~\cite{DBLP:conf/isca/LiLYCSH19} uses programmable switches to combine model updates between RL agents acting as part of a distributed RL training system.
 Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this is properly explained in the PDP seciton: source is `report-yr2.tex'.}
-
-?? Taurus moved out of representations section~\parencite{DBLP:journals/corr/abs-2002-08987}
 
 ?? A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
 ?? \emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
@@ -862,21 +899,21 @@ NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
 \subsection{ML in PDP}
 ?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
 
-\section{Hardware Designs}
-
-?? Mention FPGA vs many-core
-
-?? P4 etc. can actually all run on commodity hardware, which offers a third (suboptimal) hardware class.
-
-?? Ref the paper that Haruna presented \parencite{DBLP:conf/icc/MafiolettikDMRV20}: pareto front of work-division optimality for SmartNICs (i.e., addition of high-latency cores).
-
-?? How do these limit and influence what code can be run on different device classes? The time taken to adapt the network?
-
-\subsection{Models of Parallelism}
-
-\subsection{Flexibility}
-
-\subsection{Mapping Software Frameworks}
+%\section{Hardware Designs}
+%
+%?? Mention FPGA vs many-core
+%
+%?? P4 etc. can actually all run on commodity hardware, which offers a third (suboptimal) hardware class.
+%
+%?? Ref the paper that Haruna presented \parencite{DBLP:conf/icc/MafiolettikDMRV20}: pareto front of work-division optimality for SmartNICs (i.e., addition of high-latency cores).
+%
+%?? How do these limit and influence what code can be run on different device classes? The time taken to adapt the network?
+%
+%\subsection{Models of Parallelism}
+%
+%\subsection{Flexibility}
+%
+%\subsection{Mapping Software Frameworks}
 
 \section{Summary}
 Eh.

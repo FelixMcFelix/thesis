@@ -1,0 +1,45 @@
+\colorlet{ol-phys}{uofgforest}
+\colorlet{ol-log}{uofglavendar}
+\colorlet{ol-user}{uofgrust}
+\colorlet{ol-userland}{ol-user!75}
+
+\colorlet{ol-arrow}{black}
+\colorlet{ol-user-arrow}{ol-user}
+
+\begin{tikzpicture}
+	\draw[color=ol-phys,fill=ol-phys!10] (0,0) rectangle ++(2,1) node[pos=.5] (mac) {\gls{acr:mac}};
+	\draw[color=ol-phys,fill=ol-phys!10] ($(mac) + (2, -0.5)$) rectangle ++(2,1) node[pos=.5] (nic) {\gls{acr:nic}};
+	\draw[color=ol-phys,fill=ol-phys!10,align=center,text=black] ($(nic) + (2, -0.5)$) rectangle ++(2,1) node[pos=.5] (mem) {Memory\\\& Cache};
+
+	\draw[color=ol-log,fill=ol-log!10,align=center,text=black] ($(mem) + (2, -0.5)$) rectangle ++(2,1) node[pos=.5] (rx-tx) {Driver\\Rx/Tx};
+	\draw[color=ol-log,fill=ol-log!10,align=center,text=black] ($(rx-tx) + (-1, -2.5)$) rectangle ++(2,1) node[pos=.5] (skb) {Kernel\\SKB Alloc};
+	\draw[color=ol-log,fill=ol-log!10,align=center,text=black] ($(skb) + (-1, -2.5)$) rectangle ++(2,1) node[pos=.5] (ns) {Network\\Stack};
+
+	\draw[color=ol-userland, fill=ol-userland,align=center, text=white, rounded corners] ($(ns) + (-5, -0.5)$) rectangle ++(2,1) node[pos=.5] (userland) {Userland\\Code};
+
+	\draw[color=ol-user, fill=ol-user,align=center,text=white, rounded corners] ($(nic) + (-2, -3.5)$) rectangle ++(2,1) node[pos=.5] (smartnic-offload) {Offload\\P4/\glslink{acr:ebpf}{\color{white}eBPF}};
+
+	\draw[color=ol-user, fill=ol-user,align=center,text=white, rounded corners] ($(skb) + (-5, -0.5)$) rectangle ++(2,1) node[pos=.5] (xdp-offload) {Offload\\\glslink{acr:ebpf}{\color{white}eBPF} (\glslink{acr:xdp}{\color{white}XDP})};
+
+	% --------
+
+	\node[color=ol-phys] at (0.75, 1.35) {\large{}Physical};
+	\node[color=ol-log, rotate=270] at (11.5, 0.5) {\large{}Logical};
+
+	% --------
+
+	\draw[<->, thick, color=ol-arrow] (mac) -- (nic);
+	\draw[<->, thick, color=ol-arrow] (nic) -- (mem);
+	\draw[<->, thick, color=ol-arrow] (mem) -- (rx-tx);
+	\draw[<->, thick, color=ol-arrow] (rx-tx) -- (skb);
+	\draw[<->, thick, color=ol-arrow] (skb) -- (ns);
+
+
+	\draw[<->, thick, color=ol-user-arrow, shorten >=0.25cm,shorten <=0.3cm] (ns) -- (userland) node[midway, below] {\small{}Socket};
+	\draw[<->, thick, color=ol-user-arrow, shorten >=0.12cm,shorten <=0.17cm] (nic) -- (smartnic-offload) node[midway, left, align=center] {\small{}SmartNIC\\Offload};
+	\draw[<->, thick, color=ol-user-arrow, shorten >=0.12cm,shorten <=0.12cm] (rx-tx) -- (xdp-offload) node[midway, above, sloped] {\small{}Native \glslink{acr:xdp}{\color{ol-user-arrow}XDP}};
+	\draw[<->, thick, color=ol-user-arrow, shorten >=0.05cm,shorten <=0.12cm] (skb) -- (xdp-offload) node[midway, above] {\small{}Generic \glslink{acr:xdp}{\color{ol-user-arrow}XDP}};
+	\draw[<->, thick, color=ol-user-arrow, shorten >=0.12cm,shorten <=0.12cm] (userland) -- (xdp-offload) node[midway, right] {\small{}\texttt{AF\_XDP}};
+
+	\draw[<->, thick, color=ol-user-arrow, shorten >=0.12cm,shorten <=0.12cm, out=200,in=150] (mem) to node[left] {\small{}\glslink{acr:dpdk}{\color{ol-user-arrow}DPDK}} (userland);
+\end{tikzpicture}
