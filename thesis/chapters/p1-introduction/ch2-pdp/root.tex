@@ -278,7 +278,7 @@ Commodity \glspl{acr:cpu} are already arbitrarily programmable yet their datapla
 How can we take further advantage of the advantages of host machines to allow for multitenancy and make runtime reconfiguration even easier by leaning into the ubiquity of host compute?
 Backed by \gls{acr:sdn} and by innovations in \gls{acr:vm} and container research from the systems community, \glspl{acr:vnf} and similar frameworks have filled a comfortable niche for moderately performant host dataplane programming.
 
-\gls{acr:nfv} and \glspl{acr:vnf} envisioned that network functions should be implemented as commodity software programs running within \glspl{acr:vm}, allowing not only the above increases in asset reuse and programmability but also allowing for hardware hetereogeneity, portability of developed functions, and resilience~\parencite{etsi-nfv}.
+\gls{acr:nfv} and \glspl{acr:vnf} envisioned that \glspl{acr:nf} should be implemented as commodity software programs running within \glspl{acr:vm}, allowing not only the above increases in asset reuse and programmability but also allowing for hardware hetereogeneity, portability of developed functions, and resilience~\parencite{etsi-nfv}.
 Casting dataplane programming in this light has its fair share of advantages.
 %?? strengths: can always scale out by addming more machines, easy to program, ...
 Administrators can always scale horizontally to meet traffic processing demands by acquiring more commodity host machines, and the dataplane functions themselves are easy to program for typical software engineers.
@@ -287,7 +287,7 @@ Bespoke development is not required either; \glspl{acr:vm} may easily run openly
 Moreover, \gls{acr:vnf} setup requires on the order of minutes or less, and \gls{acr:vnf} execution can be dynamically stopped, restart, or moved around; capitalising on the strengths of virtualisation~\parencite{DBLP:conf/nsdi/MartinsAROHBH14,DBLP:conf/iscc/CzivaJWP15}.
 The \gls{acr:vm} model then allows for easy multi-tenancy and resource sharing, governed by a hypervisor \emph{\`{a} la} \emph{Xen}~\parencite{DBLP:conf/sosp/BarhamDFHHHN03} or \emph{KVM}~\parencite{kvm}.
 
-Naturally, more widespread adoption of container frameworks\sidenote{\emph{Containers} are a form of \gls{acr:os}-level virtualisation, with a history reaching back to \emph{FreeBSD Jails}~\parencite{jails}. This is a lighter-weight alternative to full \glspl{acr:vm}, having a single shared \gls{acr:os} which provides filesystem isolation and virtualises access to I/O devices. While isolation guarantees are weaker around performance guarantees, this does enable some runtime benefits, such as fast container-container network communication on the same node.} has percolated into the design of \gls{acr:vnf} deployment strategies.
+Naturally, more widespread adoption of container frameworks\sidenote{\emph{Containers} are a form of \gls{acr:os}-level virtualisation, with a history reaching back to \emph{FreeBSD Jails}~\parencite{jails}. This is a lighter-weight alternative to full \glspl{acr:vm}, having a single shared \gls{acr:os} which provides filesystem isolation and virtualises access to I/O devices. While isolation guarantees are weaker around \gls{acr:nf} performance, this does enable some runtime benefits, such as fast container-container network communication on the same node.} has percolated into the design of \gls{acr:vnf} deployment strategies.
 Container \gls{acr:vnf} solutions based on \emph{Docker}~\parencite{docker} and \emph{Kubernetes}~\parencite{k8s}, such as \emph{GNF}~\parencite{DBLP:conf/iscc/CzivaJWP15,DBLP:journals/cm/CzivaP17}, have taken advantage of the lightweight virtualisation to offer marked improvements in traffic processing latency and throughput over their priors.
 Their reconfigurability, combined with clever use of network resources empowered by \gls{acr:sdn}, has also opened the door for \emph{orchestration} research which maximises \gls{acr:vnf} performance subject to environmental limits.
 %Orchestration, clever use of network resources empowered by \gls{acr:sdn}
@@ -308,6 +308,8 @@ Click itself views the dataplane as a configurable graph of interconnected, pred
 \emph{ClickOS}~\parencite{DBLP:conf/nsdi/MartinsAROHBH14} introduces a micro-\gls{acr:os} designed only to run Click programs as part of a Xen hypervisor stack, achieving substantial packet rate and spool-up time improvements, while \emph{Fastclick}~\parencite{DBLP:conf/ancs/BarbetteSM15} innovates in performance by migrating Click on standard Linux hosts to use Intel's \gls{acr:dpdk}.
 \emph{ClickNF}~\parencite{DBLP:conf/usenix/GalloL18} then introduces support for higher-level stateful protocols such as the \gls{acr:tcp} stack, enabling \gls{acr:http} caches and proxies as network functions.
 \emph{NetBricks}~\parencite{DBLP:conf/osdi/PandaHJWRS16} maintains the directed graph model and \gls{acr:dpdk} support, however it takes user-generated functions rather than full, pre-specified blocks, and relies upon the \emph{Rust}~\parencite{rust} language compiler to enforce of memory and packet data accesses.
+\emph{OpenBox}~\parencite{DBLP:conf/sigcomm/Bremler-BarrHH16} makes use of a similar framework of smaller configurable processing blocks, though its main focus lies in fusing \gls{acr:nf} components in larger chains across several machines.
+When functions are co-hosted on any machine, OpenBox merges their processing graphs to deduplicate more expensive operations (reducing processing latency) while allowing some degree of metadata transfer between hardware-optimised processing and commodity hosts.
 
 We have also seen specialisation of these frameworks to account for security at varied levels, due to the importance of security functions such as \glspl{acr:ids} and the proliferation of \gls{acr:vnf} chains deployed to remote cloud compute.
 For instance, \gls{acr:vnf} operation must be protected from other \glspl{acr:vnf} and the host machine it runs in (which may be compromised), as must packet data and proprietary \gls{acr:vnf} source code.
@@ -323,10 +325,6 @@ Additionally, this allows path auditing in a way which is invisible to \glspl{ac
 %Note that you can do this \emph{in one box} using SafeBricks, the novelty here pertains to adaptively routing \emph{between several boxes}.
 %Cost? Halves goodput vs. NetBricks.
 However, this latter solution achieves only half the packet forwarding goodput of NetBricks in exchange for these additional guarantees.
-
-?? OpenBox?~\parencite{DBLP:conf/sigcomm/Bremler-BarrHH16}
-
-?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
 
 \paragraph{Hardware}
 Although host-run functions have indeed improved, their performance still trails unacceptably behind \glspl{acr:asic}---traffic volume can be accounted for up to a limit by horizontal scaling, but this becomes more difficult to operate than a single bump-in the wire solution, or may be impossible at larger port densities.
@@ -394,10 +392,9 @@ P4 supports many target dataplanes today:
 \end{itemize}
 Any device intrinsics or capabilities which cannot be expressed in P4 may be called out to using \texttt{extern} directives.
 Generating compatible control plane protocols and \glspl{acr:api} is then handled by \emph{P4Runtime}~\parencite{p4-runtime}, restoring the hardware-agnostic control at the core of OpenFlow.
-8 years in P4 has apparently been a runaway success in mush the same vein as OpenFlow, and enjoys use in production edge networks~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21} while also enabling efficient and production-ready implementations of next-generation Internet designs such as \emph{SCION}~\parencite{DBLP:conf/conext/RuiterS21}.
-G\'{e}ant's RARE project~\parencite{geant-rare-article} in national research and education networks
 
-?? NetFPGA devices and SmartNICs used in NRNEs like ESnet6 for telemetry gathering use-cases~\parencite{esnet6-hts,esnet6-htp} and P4 in future.
+8 years on, P4 has apparently been a runaway success in much the same vein as OpenFlow, and enjoys use in production edge networks~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21} while also enabling efficient and production-ready implementations of next-generation Internet designs such as \emph{SCION}~\parencite{DBLP:conf/conext/RuiterS21}.
+These technologies, including SmartNICs, are also seeing use in national research and education networks---for control and network design such as G\'{e}ant's RARE project~\parencite{geant-rare-article}, and for fine-grained network telemetry and future P4-backed processing in ESnet6~\parencite{esnet6-hts,esnet6-htp}.
 
 A more important effect of having arbitrary control over actions and manipulation of shared state is that, although limited, the set of programs we can express has grown significantly.
 Although we'll discuss this in more depth in \cref{sec:offloading-and-in-network-compute}, this enables true \emph{in-network compute}---per-packet processing, e.g., in telemetry use cases like \emph{PINT}~\parencite{DBLP:conf/sigcomm/BasatRLAYM20} at rates and volumes hitherto impossible for hosts to achieve.
@@ -419,29 +416,31 @@ Moreover, this enables application acceleration and other new developments with 
 
 %?? Talk more about in-network compute?
 
-\paragraph{The return of active networking?}
+\subsection{The Return of Active Networking?}
 The reader may well be thinking that research community has cycled back around to active networking in a new guise, and in many senses it has.
 While less popular at the time, the programmable switch model we have latched onto did in fact arise as part of this prior movement.
 The remarkable observation is that if we follow the retelling of \Textcite{DBLP:journals/ccr/FeamsterRZ14}, active networking's decline was written in large part by its lack of a ``killer app''.
 Of course, its main use cases at the time were touted as enabling cacheing and \gls{acr:cdn}-like behaviour, content processing, network management, and fine-grained telemetry.
 These are strikingly similar to the use cases which have driven the recent upsurge of \gls{acr:pdp} applications, and in fact see real use in production edge networks~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}.
 Modern measurement schemes like \emph{P4 INT}~\parencite{p4-int} have returned to the model of injecting per-packet actions into the packet headers themselves.
-\Textcite{DBLP:journals/ccr/WetherallT19} also recognise that we've come ``full circle'', and reaffirm the main drivers of \gls{acr:sdn}---\emph{economics} of a malleable software layer exploiting affordable commodity hardware (where talented software engineers are commonplace), and \emph{virtualisation} as a tool for introducing more capability into the network.
+
+\Textcite{DBLP:journals/ccr/WetherallT19} also recognise this resurgence, and reaffirm the main drivers of \gls{acr:sdn}---\emph{economics} of a malleable software layer exploiting affordable commodity hardware (where talented software engineers are commonplace), and \emph{virtualisation} as a tool for introducing more capability into the network.
 What they don't really discuss are the concrete reasons for why the field appears to have successfully taken off this time, while it foundered before.
 So, what changed?
 My personal interpretation and opinion is that this arises from several angles: 
 \begin{itemize}
-	\item Virtualisation introduced the capability to install novel and reconfigurable packet processing to networks, but modern deployments and the constant need to `scale up' have emphasised that performance really is a necessity. This doesn't only hark back to the logical cost involved in moving packets around the software or \gls{acr:os} stack in a machine (added latency), but also via the falloff of Moore's law~\parencite{moore-law} and Dennard scaling~\parencite{dennard-paper}. Although host capabilities have always fallen behind line-rate, they are falling even further back due to the constant, inexorable increase in Ethernet data rates.\sidenote{Of course, dedicated silicon always offers a performance edge over an arbitrary computer, at the cost of flexibility. The design, fabrication, and engineering costs are high enough that this has only ever really been justified in common use-cases (e.g., firewalls and \glspl{acr:ids}) or where there really is a business case as with modern hypergiant providers.} `Line-rate' has increased from its initial \qty{10}{\mega\bit\per\second} to \qty{1}{\giga\bit\per\second}~\parencite{gbe-standard}, to \qty{100}{\giga\bit\per\second}~\parencite{100-gbe}, with ongoing work to standardise \qty{400}{\giga\bit\per\second} links. When we consider that Ethernet frame sizes have in the same period expanded on \emph{some} deployments from \qty{1560}{\byte} to \qty{9000}{\byte} `jumbo' frames, it is plainly visible that per-packet processing deadlines simply cannot be met by commodity hosts on smaller packets.
-	\item The unforeseen capabilities, reach and business needs of hypergiant network operators such as Google and Meta, pushing the boundaries of scalability~\parencite{DBLP:conf/sigcomm/GigisCMNKDKS21}, have also played a key role. Crucially, their business needs include not only the administration of such large networks but also rely on accelerating cloud compute workloads, large-scale \gls{acr:ml} model training and inference, and distributed computation within their datacentre networks. In environments such as these where all aspects of distributed computation can be controlled and optimised, such hyper-converged infrastructure is not only possible but necessary from an economic standpoint---particularly when in-network compute becomes the only way to increase performance further. While such companies have the capability and precedent to develop their own hardware---e.g., network-connected accelerators like Microsoft BrainWave~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18}---these organisations already had an abundance of engineers familiar with \gls{acr:sdn} who were poised to make great use of the joint flexibility and performance offered by \glspl{acr:pdp}.
+	\item Virtualisation introduced the capability to install novel and reconfigurable packet processing to networks, but modern deployments and the constant need to `scale up' have emphasised that performance truly is a necessity. This doesn't only hark back to the logical cost involved in moving packets around the software or \gls{acr:os} stack in a machine (added latency), but also via the falloff of Moore's law~\parencite{moore-law} and Dennard scaling~\parencite{dennard-paper}. Although host capabilities have always fallen behind line-rate, they are falling even further back due to the constant, inexorable increase in Ethernet data rates.\sidenote{Of course, dedicated silicon always offers a performance edge over an arbitrary computer, at the cost of flexibility. The design, fabrication, and engineering costs are high enough that this has only ever really been justified in common use-cases (e.g., firewalls and \glspl{acr:ids}) or where there really is a business case as with modern hypergiant providers.} `Line-rate' has increased from its initial \qty{10}{\mega\bit\per\second} to \qty{1}{\giga\bit\per\second}~\parencite{gbe-standard}, to \qty{100}{\giga\bit\per\second}~\parencite{100-gbe}, with ongoing work to standardise \qty{400}{\giga\bit\per\second} links. When we consider that Ethernet frame sizes have in the same period expanded on \emph{some} deployments from \qty{1560}{\byte} to \qty{9000}{\byte} `jumbo' frames, it is plainly visible that per-packet processing deadlines simply cannot be met by commodity hosts on smaller packets.
+	\item The unforeseen capabilities, reach and business needs of hypergiant network operators such as Google and Meta, pushing the boundaries of scalability~\parencite{DBLP:conf/sigcomm/GigisCMNKDKS21}, have also played a key role. Crucially, their business needs include not only the administration of such large networks but also rely on accelerating cloud compute workloads, large-scale \gls{acr:ml} model training and inference, and distributed computation within their datacentre networks. As we'll cover in \cref{sec:offloading-and-in-network-compute}, in-network compute allows specific optimisations for these tasks: for instance gradient aggregation in-network, or \glspl{acr:cca} managed co-operatively by the routing infrastructure. In environments such as these where all aspects of distributed computation can be controlled and optimised, such hyper-converged infrastructure is not only possible but necessary from an economic standpoint---particularly when in-network compute becomes the only way to increase performance further. While such companies have the capability and precedent to develop their own hardware---e.g., network-connected accelerators like Microsoft BrainWave~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18}---these organisations already had an abundance of engineers familiar with \gls{acr:sdn} who were poised to make great use of the joint flexibility and performance offered by \glspl{acr:pdp}.
 \end{itemize}
-Alternatively, we might argue that it's the control plane innovations of \gls{acr:sdn} that made this possible in the first place; beforehand, the design schism of capsules versus programmable switches was indeed an open question (one might say between `pragmatic' and `interesting' approaches to the task).
-The literature's evolution back towards programmable switches (and now \glspl{acr:nic}) offers a healthy does of pragmatism, ensuring that today's model is performant---but almost entirely focussed on allowing runtime reconfigurable specificity over which packets are fed to a pre-set array of dataplane programs, as opposed to totally arbitrary packet-level programs.
-Regardless, the old paradigm of active networking has been realised in the form of \glspl{acr:pdp} and in-network compute.
+Alternatively, we might argue that it is the control plane innovations of \gls{acr:sdn} that made this possible in the first place; beforehand, the design schism of capsules versus programmable switches was indeed an open question (one might say between `pragmatic' and `interesting' approaches to the task).
+The field's re-evolution of programmable switches (and now \glspl{acr:nic}) offers a healthy does of pragmatism, ensuring that today's model is performant---but almost entirely focussed on allowing runtime reconfigurable specificity over which packets are fed to a pre-set array of dataplane programs, as opposed to totally arbitrary packet-level programs.
 
-?? Fit into above some mention of `obvious throwbacks' like \emph{TPP}~\parencite{DBLP:conf/sigcomm/JeyakumarAGKM14}
+%?? Fit into above some mention of `obvious throwbacks' like \emph{TPP}~\parencite{DBLP:conf/sigcomm/JeyakumarAGKM14}
 
-?? Fit this in wrt. moore's law observations.
-?? How? They believed the way to make it feasible was to limit scope to management. Now we knoe this is valid, but so too is in-network compute?
+%?? Fit this in wrt. moore's law observations.
+%?? How? They believed the way to make it feasible was to limit scope to management. Now we knoe this is valid, but so too is in-network compute?
+Yet the model of in-network compute we have converged on remains radically different from early estimates, even though it may feel like the community is simply retreading the `programmable switches' high-level concept.
+Consider the motivation behind \emph{SmartPackets}:
 \begin{quotation}
 	\noindent
 	%	A major motivation behind Active Networks was the theory that there is an exponential growth of computing power in the network suggested by Moore’s Law, which states that the speed of electronic components doubles every 18 months.
@@ -451,56 +450,91 @@ Regardless, the old paradigm of active networking has been realised in the form 
 	%	The average device is not generating, processing, or receiving drastically more network management traffic than it was a year or two ago.
 	%	We can hope, therefore, that there is more per-device processing power available for network management than there was in the past.
 	%	A major motivation behind Active Networks was the theory that there is an exponential growth of computing power in the network suggested by Moore’s Law, which states that the speed of electronic components doubles every 18 months.
-	Unfortunately, in most parts of the Internet, the traffic growth rates far exceed the growth rate of Moore’s Law. ...
+%	Unfortunately, in most parts of the Internet, the traffic growth rates far exceed the growth rate of Moore’s Law. ...
 	There are places, however, where Moore’s Law is winning.
 	One place is network management and monitoring.
 	The average device is not generating, processing, or receiving drastically more network management traffic than it was a year or two ago.
 	We can hope, therefore, that there is more per-device processing power available for network management than there was in the past.
+	
 	\strut\hfill\parencite[p. 68]{DBLP:journals/tocs/SchwartzJSZRP00}
 \end{quotation}
-We will revisit this quote in due course. ?? quote from smart packets ?? trim
+At that time too, Moore's law was insufficient to allow per-packet processing at cutting-edge Ethernet speeds (before its falloff really came to pass).
+As such, the only time that \emph{full, general-purpose compute} could be deployed in this context was when the infrastructure had already aggregated or reduced the data frequency in some way.
+The authors here make two key, and arguably fatal, assumptions.
+The first hinges on a perceived status quo: that management and telemetry data would \emph{and must} remain low-frequency (e.g., flow-level, link-level, or sampled measurements).
+\Cref{sec:offloading-and-in-network-compute} shows that for many applications this cannot be the case, as per-packet processing and telemetry are essential in accelerating distinct use cases and diagnosing insidious network faults and behaviours such as microbursts.
+The second is that the compute model itself should be equivalent to host machines, able to express any packet processing programs an engineer might dream of.
+We see this in other programmable switch proposals of the era~\parencite{DBLP:journals/jsac/WolfT01}, but time has shown that \gls{acr:npu}-like SmartNICs of today can only achieve this for one or two ports---let alone the full fanout of a rack-mounted switch.
+The first key difference lies in how, at scale, we must make use of advanced (though highly programmable) \glspl{acr:asic} rather than full-fledged \glspl{acr:cpu}.
+While the design of SmartNICs allows us to dispel the first assumption and enable exciting new use cases, in the switch form factor we have come to accept \emph{constrained}, yet still capable, programmability to meet line-rate processing.
+The other key difference between the modern \gls{acr:pdp} ecosystem and active networks is that the scope of deployment has narrowed considerably.
+While early proponents dreamed of a fully participative network, inclusive of end-hosts' in-network programs, \gls{acr:pdp} devices must be programmed ahead-of-time and managed by an attached controller machine---both for performance and for management of the associated control-plane machinery such as \gls{acr:mat} structure.
+In turn, the scope of deploying in-network compute has become far more insular, and effectively bound to the \gls{acr:as} level.
+%?? Bound to the \gls{acr:as} level. Insular.
 
-?? What's different? Focus on ctl-plane connected, but essentially limited to individual \glspl{acr:as} in contrast to the augmented end-to-end vision of yore. Did it succeed \emph{because} it's more constrained? i.e. no inter-AS vision, not tied to preselected forwarding paths...
+%?? What's different? Focus on ctl-plane connected, but essentially limited to individual \glspl{acr:as} in contrast to the augmented end-to-end vision of yore. Did it succeed \emph{because} it's more constrained? i.e. no inter-AS vision, not tied to preselected forwarding paths...
+%
+%?? Regardless, the old paradigm of active networking has been realised in the form of \glspl{acr:pdp} and in-network compute.
 
 \subsection{Frontiers in Programmable Networks}
-?? Mention more recent lang and HW developments.
-?? Tofino 2~\parencite{tofino2}---\qty{12.8}{\tera\bit\per\second} with support for \qty{400}{\giga\bit\per\second} Ethernet.
-?? Nokia's fabric?~\parencite{nokia-fp5}
-?? Intel's other new thing Dimitris mentioned?~\parencite{intel-ipu}
+Commercial developments along the same lines as the modern \gls{acr:pdp} hardware covered in \cref{sec:modern-pdps} are proceeding apace as network bandwidth demands grow larger.
+Intel's Tofino 2~\parencite{tofino2} represents the latest product in the lineage of \gls{acr:rmt} hardware, offering \qty{12.8}{\tera\bit\per\second} with support for \qty{400}{\giga\bit\per\second} Ethernet.
+Nokia's FP5~\parencite{nokia-fp5} similarly promises full programmability for high-density switching and routing at \qty{800}{\giga\bit\per\second} Ethernet, while Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
+However, there is still concerted research effort in further developing the tooling used to program these devices and in how future hardware designs might evolve to incorporate new models of packet processing.
 
-?? Move forward the stuff on, e.g., $\mu$P4... cites like that to show still innov. in language space.
-
-?? Things like Lucid built on top of P4?~\parencite{DBLP:conf/sigcomm/SonchackLRW21}
-
-?? P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14} and \emph{programmable dataplane} (PDP) hardware~\parencite{DBLP:journals/micro/ZilbermanACM14, netronome-smartnic, xilinx-alveo, barefoot-intel}
-
-?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
-
+%?? Mention more recent lang and HW developments.
+%?? Tofino 2~\parencite{tofino2}---\qty{12.8}{\tera\bit\per\second} with support for \qty{400}{\giga\bit\per\second} Ethernet.
+%?? Nokia's fabric?~\parencite{nokia-fp5}
+%?? Intel's other new thing Dimitris mentioned?~\parencite{intel-ipu}
 
 \paragraph{Language design}
-Huh.
+At present, P4 and the \gls{acr:psa} are restrictive in the sense that the only events which can drive user-provided code are packet arrivals and departures.
+Event-driven languages have been suggested~\parencite{DBLP:conf/hotnets/IbanezABM19}, built on the need for timer, link state, and queue state events to enable useful applications.
+Workarounds in P4 exist to emulate these capabilities, such as queue size estimation and costly packet recirculations, but these inflate the amount of state needed by applications or incur their own runtime penalities.
+The authors explicitly include these events into the pipeline model and modify the P4 language to support their processing by additional logical pipelines; however, this demands hardware support in non-NetFPGA environments.
+%Timer events and device state changes would empower in-network RL use-cases, signalling timesteps for RL agents or new, effective, fine-grained sources of input state.
+\emph{Lucid}~\parencite{DBLP:conf/sigcomm/SonchackLRW21} builds a new, high-level language which expresses many of these capabilities by compiling down to the P4-\gls{acr:psa} architecture.
+In particular, it allows for event handlers to be triggered between devices while enabling more flexible control and modification of shared datastructures behind reliability measures like fast reroute.
 
-$\mu$P4~\parencite{DBLP:conf/sigcomm/SoniR0DF20} extends P4C to decompose parser and action code into independent subprograms, to simplify porting behaviours between different switch models (V1Model, PSA, SUME, ...).
+The P4 language is currently incompatible with heterogeneous hardware, to some extent; written dataplane programs are typically tied to a particular switch model, for instance V1Model, \gls{acr:psa}, NetFPGA SUME, or the Tofino Native Architecture.
+Network architects typically factor in hardware from several manufacturers to prevent vendor lock-in, but the P4 model for each of these has its own metadata types, hardware constraints and quirks which developers must be aware of.
+While architectures such as the \gls{acr:psa} are more general and should, in principle, support several target switches, it is often preferable to use a switch's own architecture for performance or specific optimisation reasons.
+As a result it is currently tedious to write and maintain a unified dataplane that is provably uniform across different packet processing devices.
+$\mu$\emph{P4}~\parencite{DBLP:conf/sigcomm/SoniR0DF20} extends the P4 compiler to decompose parser and action code into independent subprograms which may be composed together in a more simple manner by programmers.
+This simplifies porting behaviours between different switch models---particularly in separating out (and integrating) complex interactions and dependencies between parser, deparser and action code stages.
+\emph{Lyra}~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running switch programs e.g., P4 and Broadcom's \emph{NPL}~\parencite{broadcom-npl}, across heterogeneous switch hardware, while also handling placement constraints.
+Lyra expresses the entire network dataplane using the `one big switch' abstraction, and compiles from its own higher-level language to an intermediate representation and then to P4 or NPL.
+Compilation is combined with topology information about the target network, as well as placement constraints, to generate an optimal embedding in the network using a \gls{acr:smt} solver.
 
-Lyra~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running Network Programming Language friendly programs (i.e., same constraints as P4 programs) across heterogeneous switch hardware, plus placement constraints.
-
-?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
+As is the case when programming host machines, verifying that a dataplane program behaves correctly---both within a single switch and the wider dataplane with regards to code and \gls{acr:mat} contents---presents its own set of challenges.
+In particular, fully programmable dataplanes enable new classes of bugs such as header malformations which existing network verification tools are not designed to handle.
+This is complicated further still by the fact that a P4 program's operation is determined also by the control plane and the contents of its \glspl{acr:mat}.
+\emph{P4-NoD}~\parencite{mckeown2016automatically} is an earlier solution to the problem, translating invariants into Datalog for verification by older tooling while modelling correctly emitted packets via pairwise `packet acceptance' constraints between switches.
+\emph{p4v}~\parencite{DBLP:conf/sigcomm/LiuHSSLSWCMF18} combines guarantees about the bounds of control plane values with expected output invariants to detect counter-example packets using a \gls{acr:smt} solver.
+\emph{bf4}~\parencite{DBLP:conf/sigcomm/DumitrescuSNR20} endeavours to make the annotation task considerably easier for programmers, again relying on \gls{acr:smt} solvers to also produce control plane rule filters and candidate bug fixes.
+\emph{Aquila}~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21} achieves a similar class of \gls{acr:smt}-solver based verification, using a new language which makes it easier to express dataplane invariants across one or more switches.
+Aquila further innovates in using \gls{acr:smt} counterexamples to localise likely locations and fixes for bugs, as well as developing numerous domain-specific optimisations to generated logical formulae.
 
 \paragraph{Hardware design}
-Hmm.
+While the pipelined model of the \gls{acr:psa} is undeniably effective, it can be restrictive for many classes of dataplane program; for instance cases where processing is based on more than raw packet events, or where more complex dataflow is required between functions.
+\emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} offers one solution by placing a routing fabric between distinct packet and data processing elements in a SmartNIC.
+Such a design would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded \gls{acr:me} relationships or ordering dependencies between subprograms across pipelines.
 
-\emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} places a routing fabric between distinct packet/data processing elements \emph{in a SmartNIC}.
-Such designs would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded ME relationships.
-Event-driven versions of P4 have been suggested~\parencite{DBLP:conf/hotnets/IbanezABM19}.
-Timer events and device state changes would empower in-network RL use-cases, signalling timesteps for RL agents or new, effective, fine-grained sources of input state.
-
-?? Taurus moved out of representations section~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22}
+%?? Taurus moved out of representations section~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22}
+Although \gls{acr:ml} can be made feasible in \gls{acr:pdp} hardware as we'll discuss shortly, achieving more complex or higher-precision inference at line-rate can only be enabled by dedicated architectural support.
+\emph{Taurus}~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22} is a proposal to add compute and memory units to the \gls{acr:psa} as part of a map-reduce block specifically designed to optimise per-packet \gls{acr:ml} inference.
+In particular, it demonstrates that efficient line-rate inference can be achieved using a \gls{acr:cgra} of map-reduce units between the ingress and egress pipelines---implementing \glspl{acr:nn}, \gls{acr:lstm} networks, or \glspl{acr:svm} which process every packet header vector.
+In turn, the outputs of any classifiers in this block become available to later pipeline stages, which are able to act upon packets accordingly.
 
 %?? Are the tools just sharper now?
 
 \section{Offloading and In-Network Compute}\label{sec:offloading-and-in-network-compute}
 
+?? Explain rationale first...
+
 \gls{acr:xdp}
+
+?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
 
 \begin{figure}
 	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/steering-draft}}
@@ -534,6 +568,8 @@ later netmap~\parencite{DBLP:conf/usenix/Rizzo12}
 ?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
 
 ?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
+
+\Textcite{DBLP:conf/cloud/SapioACK17} have shown an interest in performing \emph{aggregate} step of \emph{partition-aggregate} workloads (\ie, MapReduce) in programmable switches.
 
 %\section{Operation and Management}
 %
