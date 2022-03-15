@@ -32,7 +32,7 @@ In-network compute is founded on the growing idea that in-path network elements 
 %What we have now are a wide variety of ways to run programs of varying levels of complexity at ?? many levels of the stack ?? to aid application and networkr performance
 
 In this chapter, I'll...
-\section{From Fixed-Function to Fully-Programmable}
+\section{From Fixed-Function to Fully-Programmable}\label{sec:from-fixed-function-to-fully-programmable}
 
 ?? What are networks?
 
@@ -525,21 +525,132 @@ Although \gls{acr:ml} can be made feasible in \gls{acr:pdp} hardware as we'll di
 \emph{Taurus}~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22} is a proposal to add compute and memory units to the \gls{acr:psa} as part of a map-reduce block specifically designed to optimise per-packet \gls{acr:ml} inference.
 In particular, it demonstrates that efficient line-rate inference can be achieved using a \gls{acr:cgra} of map-reduce units between the ingress and egress pipelines---implementing \glspl{acr:nn}, \gls{acr:lstm} networks, or \glspl{acr:svm} which process every packet header vector.
 In turn, the outputs of any classifiers in this block become available to later pipeline stages, which are able to act upon packets accordingly.
+Training \gls{acr:ml} models online using Taurus requires sampling from input packets to be directed towards a cooperating host machine, and cannot be performed unassisted.
 
 %?? Are the tools just sharper now?
 
 \section{Offloading and In-Network Compute}\label{sec:offloading-and-in-network-compute}
-
-?? Explain rationale first...
-
-\gls{acr:xdp}
-
-?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
+%?? Explain rationale first...
+As we've explored in \cref{sec:from-fixed-function-to-fully-programmable}, modern networks now have a large variety of tools to enable traffic and packet processing, including hosts, programmable switches, SmartNIC devices, and middleboxes---all in tandem with control plane programmability.
+%?? Diverse set of devices having different perf characteristics in latency/tput, reachability, prioce points, degrees of programmabiklity
+This diverse set of devices also means that market silicon now offers a wide variety in performance characteristics such as latency and throughput, connectivity, price points, and degrees of programmability.
+%Explain \cref{fig:pdp-lit-steering} more fully in-text
+%?? (a) has some benefits: if both close to each other, then most of path is the same---key for CDNs, DDoS scubbing etc. or when we want to use PDP provided by others' infra.
+%?? (b) is a necessity -- pkts must be moved away 
+%?? (c) can be bump-in-wire host or dedicated device, but minimum impact on path. Or AS. When can (c) not be achieved?
+Accordingly, network architects must also consider how best to integrate \glspl{acr:nf} backed by these capabilities into their networks.
+Consider \cref{fig:pdp-lit-steering}: to minimise extra latency costs imposed on carried traffic as well as control plane complexity, we want to minimise the amount of \emph{traffic steering} required.
+In the worst case, traffic may need to be routed to another organisation to make use of high-volume services like \gls{acr:ddos} traffic scrubbing, \glspl{acr:cdn}, or \gls{acr:pdp} capabilities exposed by cloud compute\sidenote{These classes of service tend to have enough geographical replication that the network function and the target server are reasonably close to one another, for instance in proximity to a shared \gls{acr:ixp}. As such, users' paths to both nodes are likely to be similar, the last few hops excepted.} (\cref{fig:pdp-lit-steering:off}).
+Steering within \glspl{acr:as} as in \cref{fig:pdp-lit-steering:semi-on} is a necessity to enable \gls{acr:vnf} chaining between host machines in a way which is reliably reconfigurable, but this naturally increases routing and processing latency as well as bandwidth demands in the \gls{acr:as} in question.
+The only way to eliminate steering costs completely is to place dataplane programs \emph{on-path} (\cref{fig:pdp-lit-steering:on})---but this has key drawbacks.
+If we place commodity hosts in-line like this, then they will be unable to meet line-rate demands in faster networks; we have also given up the flexible reconfiguration and horizontal scalability that steering bought us.
+\gls{acr:pdp} innovations like programmable \gls{acr:asic}-backed switches and SmartNICs are the best tools for performing processing here, but not every application can be run at these locations due to the limits of their respective compute models.
 
 \begin{figure}
-	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/steering-draft}}
-	\caption{text}\label{fig:pdp-lit-steering}
+	\centering
+	%	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/steering-draft}}
+	\begin{subfigure}{0.49\linewidth}
+		\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/steering-1}}
+		\caption{Off-path.\label{fig:pdp-lit-steering:off}}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+		\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/steering-2}}
+		\caption{On-\gls{acr:as}-path (steering).\label{fig:pdp-lit-steering:semi-on}}
+	\end{subfigure}
+	
+	\begin{subfigure}{0.65\linewidth}
+		\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/steering-3}}
+		\caption{On-path (direct).\label{fig:pdp-lit-steering:on}}
+	\end{subfigure}
+	\caption[The spectrum of on-path traffic processing.]{To introduce packet processing to the network, engineers must make a conscious decision about where such processing may be installed, and if needed how traffic can be steered there---this leads to spectrum of how on-path processing may be. The main sizes and types of redirections are shown here: (a) having to redirect to another network for packet processing, (b) internally rerouting and steering packets to reach one or more processing machines (i.e., in \gls{acr:vnf} scenarios), and (c) placing processing \emph{directly in-path}. Generally speaking, smaller path deviations have a smaller latency impact. Paths and \gls{acr:as} relationships here are purely for demonstration, and may be longer in practice (similarly, case (b) may occur entirely within a single data centre \gls{acr:as}). Appliances performing packet processing are coloured {\color{uofgrust} in rust}.\label{fig:pdp-lit-steering}}
 \end{figure}
+
+These new, specialised devices are a double-edged sword---making efficient use of \emph{all} network resources becomes non-trivial due to device heterogeneity in architecture and capabilities.
+Ideally, we want to maximise the number of packets which are served by on-path, in-network functions such as in \cref{fig:pdp-lit-steering:on}.
+Even when using consistent programming models like P4, using all of a device's capabilities is difficult, requiring hardware-specific expertise, training, microarchitectural knowledge and experience.
+At the same time, organisations would prefer to accelerate the code they already have rather than re-architect solutions from the ground up.
+%Operators and engineers can choose from these according to their needs, enabling new in-network use cases, but this is also something of a double-edged sword.
+%?? Double-edged sword: how to use it all?
+Can we then accelerate \emph{individual parts} of a packet processing stack?
+
+%?? Such power is a double edged sword; how to use. Difficult; expertise, training, microarchitectural knowledge and experience, languages...
+%?? Not just all of a packet program, but at the granularity of *parts* of such a program
+%?? Notion extends within the host stack, also
+%?? Offloading was originally used to refer to simple accelerations which could be delegated to the hardware to free up host machine resources: packet splitting to MTU size, diving requests among coresa (RSS), and checksumming at various levels
+%?? Maximise proportion of traffic served by best-case deplyoments
+
+%Offloading: Moving part or all of a program to execute elsewhere (why? improved latency, perf, tput, take advantage of existing heterogeneous hardware). Good even if just partial: especially if slow path is uncommon. I.e., early-exit good. Can be in-host, or between host and devices. OR to fall back to a more capable/accurate computation env. Relate to above: enables routing through low-latency, high-tput in-network routes.
+
+\emph{Offloading} is the process of moving part or all of a packet processing function elsewhere to improve overall performance---reducing latency or increasing throughput---typically by taking advantage of novel heterogeneous hardware.
+Originally, this referred to simpler transport-level accelerations which \glspl{acr:nic} could perform in hardware which would free up \gls{acr:cpu} cycles on a host machine, such as checksum offloads, large send \& receive offloads to split \& coalesce larger than \gls{acr:mtu}-size packets, and receive-side scaling.
+Both existing \gls{acr:sdn} switches and \gls{acr:pdp} hardware can be taken advantage of to optimise a target dataplane, enabling a very generic and useful kind of offloading.
+This extends also to host machines, which have no shortage of technologies for improving packet processing by shifting user code into the network stack or skipping the kernel entirely, and may use attached SmartNICs to accelerate applications or transport logic.
+
+For argument's sake suppose that we want to process packets using a firewall, followed by a primitive statistical or \gls{acr:ml} model, and followed again by a \gls{acr:dpi} block in the event that the second stage emits a warning.
+Naturally, the simplest deployment is to have all three functions installed on host machines, but this is also the most wasteful.
+While I'll introduce specific examples later, the only function here which would currently require a host machine would be the final \gls{acr:dpi} block; even then, this is only required by a small subset of packets which trip an earlier-stage alarm.
+As such, routing all packets via a \gls{acr:vnf} chain imposes steering and the higher costs of host-based execution upon all packets, to say nothing of the reduced throughput per box.
+A more optimal solution is to install the firewall rules into the \gls{acr:tcam}-backed \glspl{acr:mat} of commodity switches, which \emph{can} perform these checks at line-rate, and to offload the statistical logic into similarly on-path programmable switches or \glspl{acr:nic} at a lower arithmetic precision.
+In this case we have a hardware-accelerated fast path without any unneeded steering, while only packets which need to fall back to a more capable or accurate computation environment take the (less likely) slow path.
+
+%The concept of offloading extends also to host machines, where...
+The key problem is that automatically offloading arbitrary functions is an open research challenge.
+Different devices expose different programming models and languages, and have unique capabilities and limitations; additional or missing \glspl{acr:fu}, code store size limits, threading models, and other resources.
+\gls{acr:pdp} devices have additional constraints on reconfiguration: firmware installation can take from seconds to minutes, limiting a chain's pliability as nodes cease to function for extended periods of time without ample provisioning to handle transition states.
+Individual functions are also tricky to interconnect (i.e., passing variable state between \gls{acr:nf} stages), to compute the ideal layout of in the network, and to provision even in single tenant scenarios.
+%?? tricky to interconnect, layout, provision.
+
+\emph{In-network compute} is a connected concept, exploring novel applications which can be enabled or made scalable entirely through \gls{acr:pdp} hardware.
+Rather than moving subprograms and arbitrary logical snippets down the stack, in-network compute seeks to move dedicated, complex, or involved applications onto \gls{acr:pdp} hardware, asking how to take advantage of intrinsic capabilities of dataplane devices.
+Such research demands more careful exploration in algorithms and data formats, pushing the limits of what programs may be expressed in restricted environments such as P4.
+What makes this an exciting area of study is that in-network applications often are defined by a tangled net of benefits and costs.
+Suppose in \cref{fig:pdp-lit-steering:on} the two endpoint machines first check or update state using another service (i.e., key-value store) before communicating with one another.
+By moving this service \emph{completely into the \gls{acr:pdp} infrastructure}, entire \glspl{acr:rtt} worth of communication delay can be eliminated.
+In data centre networks, where \glspl{acr:rtt} are already $\mathcal{O}\left(\unit{\micro\second}\right)$, simply placing a host in-line would undo most of this latency reduction\sidenote{While host offloading frameworks have come a long way, there are data transfer costs which cannot be elided which we'll discuss in \cref{sec:wtf}.} while being unable to meet rack-scale fanout.
+Further example services may also aggregate data from many sources to allow a single host to process it, or apply per-packet \gls{acr:ml} inference at line rate; when end-hosts and the network fabric are all jointly owned, there is great scope for tighter network-app integration and what it might enable.
+Notably, handcrafted in-network services such as \gls{acr:ml} inference might replace entire blocks in an \gls{acr:nf} chain, better supporting \gls{acr:vnf} offloading by making better use of the underlying hardware.
+The costs incurred by such services are also interesting.
+In-network \gls{acr:ml} must sacrifice accuracy---the lack of \glspl{acr:fpu} in network hardware forces implementers to employ fixed-point arithmetic or other data formats.
+Not all programs may be moved down to \gls{acr:pdp} hardware unaltered.
+
+%-- eliminate entire services (eliminating one or more RTTs), data aggregation to enable the work of host machines, or... ?? typifcally when both ends owned by same operator? ?? tighter integration w/ appliocations, or what is enabled by it.
+
+%?? elim RTTs -- DC scale on order micros with RPC-type workloads -- every us counts so can't e.g. host.
+
+%?? INC includes capabilities which enable offload. i.e., accel'd ml
+%
+%?? focus on what can be enabled that takes adv. of specific, intrinsics of dataplane devices
+%?? less on arbitrary compute
+%?? studies the tradeoffs needed to install in these envs
+%?? installation of entire services
+%?? pushing the limits of what can be expressed in restricted envs like P4 -- handcrafted
+%?? aids in offloading, e.g., entire fns
+
+We'll cover here technologies in use for host offloading, such as \gls{acr:xdp}, as well as the rationale and costs of host processing (\cref{sec:host-offloading-technologies}).
+Through \cref{sec:frameworks-for-automatic-offloading}, I'll cover recent works making use of host offloading techniques and \gls{acr:pdp} hardware to provide automatic acceleration and for dataplane programs.
+Although in-network compute has been justified and explained here, its use cases will be left until later (\cref{sec:in-network-compute-use-cases}).
+
+\subsection{Host Offloading Technologies}\label{sec:host-offloading-technologies}
+
+\paragraph{Costs in the host stack.}
+
+\paragraph{Misc.}
+later netmap~\parencite{DBLP:conf/usenix/Rizzo12}
+
+\paragraph{DPDK}
+test text hello
+
+\paragraph{eBPF and XDP}
+test text hello
+
+\gls{acr:ebpf}, \gls{acr:xdp}~\parencite{DBLP:conf/conext/Hoiland-Jorgensen18}
+?? It should be clear that \gls{acr:ebpf}'s role in the network owes an inestimable debt to \emph{smart packets}.
+
+?? eBPF also allows exec of user code at various points in kernel for instrumentation etc. via \emph{kprobes} and \emph{tracepoints}.
+
+?? mention BPFabric~\parencite{DBLP:conf/ancs/JouetP17} somewhere.
+
+?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
 
 \begin{figure}
 	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/pci-draft}}
@@ -547,29 +658,110 @@ In turn, the outputs of any classifiers in this block become available to later 
 \end{figure}
 
 \begin{figure}
-%	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/offloading-draft}}
+	%	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/offloading-draft}}
 	\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/offloading}}
-	\caption[The packet processing stack on host machines, and how the DPDK and XDP frameworks interface with user code.]{The packet processing stack on host machines, and how the \gls{acr:dpdk} and \gls{acr:xdp} frameworks interface with user code. Offload frameworks are useful because they either allow \gls{acr:os} kernel code to be bypassed altogether (\gls{acr:dpdk}), or for packet modification and transmission to be pushed further down the stack (\gls{acr:xdp}). Offloaded \gls{acr:ebpf} user code may typically pass packets to the network stack after some amount of processing, send packets directly back to the \gls{acr:nic} for transmission, or pass packets to user code using a zero-copy mechanism such as \texttt{AF\_XDP}. Crucially, all these mechanisms excise various amounts of processing or imprecise waiting for  interrupts, reducing latencies and increasing packet processing throughput. More details on the logical portion of the stack are presented by \Textcite{DBLP:conf/sigcomm/CaiCVH021}.}\label{fig:pdp-lit-offloading}
+	\caption[The packet processing stack on host machines, and how the DPDK and XDP frameworks interface with user code.]{The packet processing stack on host machines, and how the \gls{acr:dpdk} and \gls{acr:xdp} frameworks interface with user code. Rounded, filled boxes represent user-specified code. Offload frameworks are useful because they either allow \gls{acr:os} kernel code to be bypassed altogether (\gls{acr:dpdk}), or for packet modification and transmission to be pushed further down the stack (\gls{acr:xdp}). Offloaded \gls{acr:ebpf} user code may typically pass packets to the network stack after some amount of processing, send packets directly back to the \gls{acr:nic} for transmission, or pass packets to user code using a zero-copy mechanism such as \texttt{AF\_XDP}. Crucially, all these mechanisms excise various amounts of processing or imprecise waiting for  interrupts, reducing latencies and increasing packet processing throughput. More details on the logical portion of the stack are presented by \Textcite{DBLP:conf/sigcomm/CaiCVH021}.}\label{fig:pdp-lit-offloading}
 \end{figure}
 
-\gls{acr:ebpf}, \gls{acr:xdp}~\parencite{DBLP:conf/conext/Hoiland-Jorgensen18}
-?? It should be clear that \gls{acr:ebpf}'s role in the network owes an inestimable debt to \emph{smart packets}.
+\subsection{Frameworks for Automatic Offloading}\label{sec:frameworks-for-automatic-offloading}
 
-?? eBPF also allows exec of user code at various points in kernel for instrumentation etc. via \emph{kprobes} and \emph{tracepoints}.
-
-?? Katran~\parencite{katran} L4 load bal;ancer based on \gls{acr:xdp}
-
-?? mention BPFabric~\parencite{DBLP:conf/ancs/JouetP17} somewhere.
-
-later netmap~\parencite{DBLP:conf/usenix/Rizzo12}
+?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
 
 ?? Morpheus~\parencite{DBLP:conf/asplos/MianoSRRA22} for run-time optimisation.
 
 ?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
 
-?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
+\emph{ClickNP}~\parencite{DBLP:conf/sigcomm/LiTLPLXXC16} targets NetFPGAs: DAG of predefined Click-like blocks, i.e. VHDL segments.
+Why?
+The C$\rightarrow$VHDL pipeline leads to awful code, so this achieves better FPGA usage.
 
-\Textcite{DBLP:conf/cloud/SapioACK17} have shown an interest in performing \emph{aggregate} step of \emph{partition-aggregate} workloads (\ie, MapReduce) in programmable switches.
+\emph{Floem}~\parencite{DBLP:conf/osdi/PhothilimthanaL18} presents a DSL in python, which compiles to C for host and specific target NIC.
+This does require specific dev effort per-target-NIC.
+
+\emph{iPipe}~\parencite{DBLP:conf/sigcomm/LiuCSKPG19} runs C language programs on SmartNIC (intended) and host (emergency) according to whether traffic is at-risk of suffering from SmartNIC resource contention.
+Processing is dynamically `unoffloaded' back to the host machine if SmartNIC load is too great.
+This requires identical language support on both accelerator and host---which is very much not guaranteed.
+
+\emph{hXDP}~\parencite{DBLP:conf/osdi/BrunellaBBPSBCP20} allows eBPF execution on FPGA---supports expanded eBPF ISA rather than converting program into a complete pipelined circuit (i.e., this runs as a coprocessor).
+Why?
+Fast redesign/reinstall time: a complete circuit bake takes ages, while JITing and compiling an eBPF program into their new ISA is pretty fast.
+This includes some very cool details on around VLIW instruction-level parallelism built into their ISA and figured out during compile-time.
+
+\emph{Gallium}~\parencite{DBLP:conf/sigcomm/ZhangZK20} converts a C++ (ClickNF program)$\rightarrow$auto-leverage PDP (P4 + C++ + P4).
+Split into pre- and post-host P4 segments, with a host C++ program.
+Gallium uses LLVM IR to determine read-write dependencies between variables/basic-blocks, account for PDP capabilities of packet reads (i.e., PDP can't touch packet body past $\sim$\qty{300}{\byte}), can move about \qty{100}{\byte} metadata between sites.
+Identifies fast/slow paths if offloading can be elided.
+Main drawback is that some annotation needed to translate Click primitives into MATs etc., otherwise the conversion to P4 means minimal additional work per target accelerator.
+
+\emph{Flightplan}~\parencite{DBLP:conf/nsdi/SultanaSGPHSBDL21} splits P4 program into subchunks placed and routed between \{PDP, FPGA, host, server, NPU, ASIC\} for pipelining (i.e., performance) or redundancy.
+Their disaggregation inserts blocks before and after splits to handle metadata (state) passing.
+Their compiler breaks the programs on basic blocks with user annotations, where specific implementations manually given for some \texttt{extern}s to enable device-specific acceleration.
+Data dependencies between basic blocks are extracted from the P4 IR in P4C compiler.
+
+Preliminary work on splitting eBPF programs between an XDP part and userland part has been proposed~\parencite{DBLP:conf/conext/ShahinfarMSSBA21}.
+This considers both horizontal (i.e., chunks in driver with XDP tail-calls) or vertical (user$\leftrightarrow$kernel) splits of code.
+I think their XDP vs.~AF\_XDP split test confirms that the first handler in the XDP hook is basically single-threaded, which probably has some implications for our use of it as an offload.
+
+%\paragraph{Misc P4 translations.}
+%T4P4S~\parencite{DBLP:conf/hpsr/VorosHKLTL18} converts P4 programs into C, which are linked against a target-specific network hardware abstraction layer.
+%This seems to be the most effective host deployment for P4 at the moment, since it buys you DPDK-capable P4 dataplane installation compared to how terribly slow BMv2 is known to be.
+%Slower than native DPDK, but outpaces OvS, and allows definition of HAL binaries in SmartNIC C code as needed too.
+%
+%$\mu$P4~\parencite{DBLP:conf/sigcomm/SoniR0DF20} extends P4C to decompose parser and action code into independent subprograms, to simplify porting behaviours between different switch models (V1Model, PSA, SUME, ...).
+%
+%Lyra~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running Network Programming Language friendly programs (i.e., same constraints as P4 programs) across heterogeneous switch hardware, plus placement constraints.
+%
+%?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
+
+\section{In-Network Compute Use Cases}\label{sec:in-network-compute-use-cases}
+
+?? \Textcite{DBLP:conf/cloud/SapioACK17} have shown an interest in performing \emph{aggregate} step of \emph{partition-aggregate} workloads (\ie, MapReduce) in programmable switches.
+
+?? Katran~\parencite{katran} L4 load bal;ancer based on \gls{acr:xdp}
+
+?? On-switch (Tofino) DDoS detection and defence~\parencite{DBLP:conf/uss/LiuNNLK0BYS21}
+
+\paragraph{In-Network Computation}\label{sec:in-network-computation}
+?? In-network computation.\sidenote{Test text hello.}
+
+iSwitch~\cite{DBLP:conf/isca/LiLYCSH19} uses programmable switches to combine model updates between RL agents acting as part of a distributed RL training system.
+Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this is properly explained in the PDP seciton: source is `report-yr2.tex'.}
+
+?? A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
+?? \emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
+
+\paragraph{Network Telemetry}
+?? Others (try to avoid DDN cases here).
+
+?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
+
+\paragraph{Transport Layer Optimisation}
+?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
+
+\paragraph{Active Queue Management}
+Turns out that you can't just write it in P4, you need to co-design for the target environment---with meaningful performance cost to boot, based on the tradeoffs you need to make~\parencite{Kunze-P4-AQM}.
+
+\paragraph{KV Stores}
+NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
+
+\paragraph{ML in PDP}
+?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
+
+%\section{Hardware Designs}
+%
+%?? Mention FPGA vs many-core
+%
+%?? P4 etc. can actually all run on commodity hardware, which offers a third (suboptimal) hardware class.
+%
+%?? Ref the paper that Haruna presented \parencite{DBLP:conf/icc/MafiolettikDMRV20}: pareto front of work-division optimality for SmartNICs (i.e., addition of high-latency cores).
+%
+%?? How do these limit and influence what code can be run on different device classes? The time taken to adapt the network?
+%
+%\subsection{Models of Parallelism}
+%
+%\subsection{Flexibility}
+%
+%\subsection{Mapping Software Frameworks}
 
 %\section{Operation and Management}
 %
@@ -862,94 +1054,52 @@ Because of this, traditional flooding-based attacks aren't fully alleviated.
 %Event-driven versions of P4 have been suggested~\parencite{DBLP:conf/hotnets/IbanezABM19}.
 %Timer events and device state changes would empower in-network RL use-cases, signalling timesteps for RL agents or new, effective, fine-grained sources of input state.
 
-\section{Offloading frameworks}
-\emph{ClickNP}~\parencite{DBLP:conf/sigcomm/LiTLPLXXC16} targets NetFPGAs: DAG of predefined Click-like blocks, i.e. VHDL segments.
-Why?
-The C$\rightarrow$VHDL pipeline leads to awful code, so this achieves better FPGA usage.
 
-\emph{Floem}~\parencite{DBLP:conf/osdi/PhothilimthanaL18} presents a DSL in python, which compiles to C for host and specific target NIC.
-This does require specific dev effort per-target-NIC.
-
-\emph{iPipe}~\parencite{DBLP:conf/sigcomm/LiuCSKPG19} runs C language programs on SmartNIC (intended) and host (emergency) according to whether traffic is at-risk of suffering from SmartNIC resource contention.
-Processing is dynamically `unoffloaded' back to the host machine if SmartNIC load is too great.
-This requires identical language support on both accelerator and host---which is very much not guaranteed.
-
-\emph{hXDP}~\parencite{DBLP:conf/osdi/BrunellaBBPSBCP20} allows eBPF execution on FPGA---supports expanded eBPF ISA rather than converting program into a complete pipelined circuit (i.e., this runs as a coprocessor).
-Why?
-Fast redesign/reinstall time: a complete circuit bake takes ages, while JITing and compiling an eBPF program into their new ISA is pretty fast.
-This includes some very cool details on around VLIW instruction-level parallelism built into their ISA and figured out during compile-time.
-
-\emph{Gallium}~\parencite{DBLP:conf/sigcomm/ZhangZK20} converts a C++ (ClickNF program)$\rightarrow$auto-leverage PDP (P4 + C++ + P4).
-Split into pre- and post-host P4 segments, with a host C++ program.
-Gallium uses LLVM IR to determine read-write dependencies between variables/basic-blocks, account for PDP capabilities of packet reads (i.e., PDP can't touch packet body past $\sim$\qty{300}{\byte}), can move about \qty{100}{\byte} metadata between sites.
-Identifies fast/slow paths if offloading can be elided.
-Main drawback is that some annotation needed to translate Click primitives into MATs etc., otherwise the conversion to P4 means minimal additional work per target accelerator.
-
-\emph{Flightplan}~\parencite{DBLP:conf/nsdi/SultanaSGPHSBDL21} splits P4 program into subchunks placed and routed between \{PDP, FPGA, host, server, NPU, ASIC\} for pipelining (i.e., performance) or redundancy.
-Their disaggregation inserts blocks before and after splits to handle metadata (state) passing.
-Their compiler breaks the programs on basic blocks with user annotations, where specific implementations manually given for some \texttt{extern}s to enable device-specific acceleration.
-Data dependencies between basic blocks are extracted from the P4 IR in P4C compiler.
-
-Preliminary work on splitting eBPF programs between an XDP part and userland part has been proposed~\parencite{DBLP:conf/conext/ShahinfarMSSBA21}.
-This considers both horizontal (i.e., chunks in driver with XDP tail-calls) or vertical (user$\leftrightarrow$kernel) splits of code.
-I think their XDP vs.~AF\_XDP split test confirms that the first handler in the XDP hook is basically single-threaded, which probably has some implications for our use of it as an offload.
-
-%\paragraph{Misc P4 translations.}
-%T4P4S~\parencite{DBLP:conf/hpsr/VorosHKLTL18} converts P4 programs into C, which are linked against a target-specific network hardware abstraction layer.
-%This seems to be the most effective host deployment for P4 at the moment, since it buys you DPDK-capable P4 dataplane installation compared to how terribly slow BMv2 is known to be.
-%Slower than native DPDK, but outpaces OvS, and allows definition of HAL binaries in SmartNIC C code as needed too.
+%\section{Use Cases}
 %
-%$\mu$P4~\parencite{DBLP:conf/sigcomm/SoniR0DF20} extends P4C to decompose parser and action code into independent subprograms, to simplify porting behaviours between different switch models (V1Model, PSA, SUME, ...).
+%?? On-switch (Tofino) DDoS detection and defence~\parencite{DBLP:conf/uss/LiuNNLK0BYS21}
 %
-%Lyra~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running Network Programming Language friendly programs (i.e., same constraints as P4 programs) across heterogeneous switch hardware, plus placement constraints.
+%\subsection{In-Network Computation}\label{sec:in-network-computation}
+%?? In-network computation.\sidenote{Test text hello.}
 %
-%?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
-
-\section{Use Cases}
-
-?? On-switch (Tofino) DDoS detection and defence~\parencite{DBLP:conf/uss/LiuNNLK0BYS21}
-
-\subsection{In-Network Computation}\label{sec:in-network-computation}
-?? In-network computation.\sidenote{Test text hello.}
-
-iSwitch~\cite{DBLP:conf/isca/LiLYCSH19} uses programmable switches to combine model updates between RL agents acting as part of a distributed RL training system.
-Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this is properly explained in the PDP seciton: source is `report-yr2.tex'.}
-
-?? A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
-?? \emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
-
-\subsection{Network Telemetry}
-?? Others (try to avoid DDN cases here).
-
-?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
-
-\subsection{Transport Layer Optimisation}
-?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
-
-\subsection{Active Queue Management}
-Turns out that you can't just write it in P4, you need to co-design for the target environment---with meaningful performance cost to boot, based on the tradeoffs you need to make~\parencite{Kunze-P4-AQM}.
-
-\subsection{KV Stores}
-NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
-
-\subsection{ML in PDP}
-?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
-
-%\section{Hardware Designs}
+%iSwitch~\cite{DBLP:conf/isca/LiLYCSH19} uses programmable switches to combine model updates between RL agents acting as part of a distributed RL training system.
+%Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this is properly explained in the PDP seciton: source is `report-yr2.tex'.}
 %
-%?? Mention FPGA vs many-core
+%?? A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
+%?? \emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
 %
-%?? P4 etc. can actually all run on commodity hardware, which offers a third (suboptimal) hardware class.
+%\subsection{Network Telemetry}
+%?? Others (try to avoid DDN cases here).
 %
-%?? Ref the paper that Haruna presented \parencite{DBLP:conf/icc/MafiolettikDMRV20}: pareto front of work-division optimality for SmartNICs (i.e., addition of high-latency cores).
+%?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
 %
-%?? How do these limit and influence what code can be run on different device classes? The time taken to adapt the network?
+%\subsection{Transport Layer Optimisation}
+%?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
 %
-%\subsection{Models of Parallelism}
+%\subsection{Active Queue Management}
+%Turns out that you can't just write it in P4, you need to co-design for the target environment---with meaningful performance cost to boot, based on the tradeoffs you need to make~\parencite{Kunze-P4-AQM}.
 %
-%\subsection{Flexibility}
+%\subsection{KV Stores}
+%NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
 %
-%\subsection{Mapping Software Frameworks}
+%\subsection{ML in PDP}
+%?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
+%
+%%\section{Hardware Designs}
+%%
+%%?? Mention FPGA vs many-core
+%%
+%%?? P4 etc. can actually all run on commodity hardware, which offers a third (suboptimal) hardware class.
+%%
+%%?? Ref the paper that Haruna presented \parencite{DBLP:conf/icc/MafiolettikDMRV20}: pareto front of work-division optimality for SmartNICs (i.e., addition of high-latency cores).
+%%
+%%?? How do these limit and influence what code can be run on different device classes? The time taken to adapt the network?
+%%
+%%\subsection{Models of Parallelism}
+%%
+%%\subsection{Flexibility}
+%%
+%%\subsection{Mapping Software Frameworks}
 
 \section{Summary}
 Eh.

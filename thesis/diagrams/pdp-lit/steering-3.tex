@@ -1,0 +1,11 @@
+\begin{tikzpicture}
+	\node (server) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/standard host}};
+	\node at ($(server) + (2,0)$) (scrub) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/programmable switch rust}};
+	\node at ($(scrub) + (2,0)$) (client) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/pc}};
+
+	\draw[<->, thick, color=uofgrust, out=30,in=150] (server) to (scrub);
+	\draw[<->, thick, color=uofgrust, out=30,in=150] (scrub) to (client);
+
+	\draw[<->, thick, dashed, color=uofgslate, out=330,in=210] (server) to (scrub);
+	\draw[<->, thick, dashed, color=uofgslate, out=330,in=210] (scrub) to (client);
+\end{tikzpicture}

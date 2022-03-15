@@ -1,0 +1,28 @@
+\begin{tikzpicture}
+	\node[draw, circle, color=uofgslate, label=left:{\gls{acr:as} 1}] (server) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/standard host}};
+	\node[draw, circle, color=uofgslate, label=left:{\gls{acr:as} 2}] at ($(server) + (0,-6)$) (client) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/pc}};
+
+	\node at ($(server) + (1,-2)$) (sw1) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/router}};
+	\node at ($(server) + (1,-4)$) (sw2) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/router}};
+	\node at ($(server) + (2.5,-3)$) (sw3) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/router}};
+
+	\node at ($(sw3) + (2,0)$) (scrub) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/ios firewall rust}};
+
+	\begin{scope}[on background layer]
+		\draw[color=uofgslate] (sw3) ellipse (3cm and 1cm);
+	\end{scope}
+	\node at ($(scrub) + (0, 1.25)$) {\gls{acr:as} 3};
+
+	\draw[<->, thick, color=uofgrust, out=90,in=240] (client) to (sw2);
+	\draw[<->, thick, color=uofgrust, out=60,in=240] (sw2) to (sw3);
+	\draw[<->, thick, color=uofgrust, out=120,in=300] (sw3) to (sw1);
+	\draw[<->, thick, color=uofgrust, out=120,in=270] (sw1) to (server);
+
+	\draw[<->, thick, color=uofgrust, out=30,in=150] (sw3) to (scrub);
+	\draw[<->, thick, color=uofgrust, out=330,in=210] (sw3) to (scrub);
+
+	\draw[<->, thick, color=uofgslate, dashed] (client) to (sw2);
+	\draw[<->, thick, color=uofgslate, dashed, shorten >=-0.12cm,shorten <=-0.12cm] (sw2) to (sw3);
+	\draw[<->, thick, color=uofgslate, dashed, shorten >=-0.12cm,shorten <=-0.12cm] (sw3) to (sw1);
+	\draw[<->, thick, color=uofgslate, dashed] (sw1) to (server);
+\end{tikzpicture}

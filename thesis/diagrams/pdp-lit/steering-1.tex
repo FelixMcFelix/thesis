@@ -1,0 +1,9 @@
+\begin{tikzpicture}
+	\node[draw, circle, color=uofgslate, label=left:{\gls{acr:as} 1}] (server) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/standard host}};
+	\node[draw, circle, color=uofgslate, label=left:{\gls{acr:as} 2}] at ($(server) + (0,-4)$) (client) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/pc}};
+	\node[draw, circle, color=uofgslate, label=right:{\gls{acr:as} 3}] at ($(server) + (2,-1)$) (scrub) {\includegraphics[width=1cm, height=1cm, keepaspectratio]{diagrams/cisco-icons/ios firewall rust}};
+
+	\draw[<->, thick, color=uofgslate, dashed, out=260,in=90] (server) to node[left] {Shortest path} (client);
+	\draw[<->, thick, color=uofgrust, out=90,in=200] (client) to node[right] {Taken path} (scrub);
+	\draw[<->, thick, color=uofgrust] (server) to (scrub);
+\end{tikzpicture}
