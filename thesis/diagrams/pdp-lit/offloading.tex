@@ -30,7 +30,7 @@
 
 	\draw[<->, thick, color=ol-arrow] (mac) -- (nic);
 	\draw[<->, thick, color=ol-arrow] (nic) -- (mem);
-	\draw[<->, thick, color=ol-arrow] (mem) -- (rx-tx);
+	\draw[<->, thick, color=ol-arrow] (mem) -- (rx-tx) node[midway, above] {\small{}\glspl{acr:irq}};
 	\draw[<->, thick, color=ol-arrow] (rx-tx) -- (skb);
 	\draw[<->, thick, color=ol-arrow] (skb) -- (ns);
 

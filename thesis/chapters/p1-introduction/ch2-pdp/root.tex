@@ -632,7 +632,32 @@ Although in-network compute has been justified and explained here, its use cases
 
 \subsection{Host Offloading Technologies}\label{sec:host-offloading-technologies}
 
-\paragraph{Costs in the host stack.}
+While
+
+?? Analogous to steering.
+
+?? \cref{fig:pdp-lit-pci} phys, \cref{fig:pdp-lit-offloading} logical.
+
+?? Include representative numbers for e.g. PCIe and so on.
+
+?? PCIe~\parencite{DBLP:conf/sigcomm/NeugebauerAZAL018}
+
+?? Host stack~\parencite{DBLP:conf/sigcomm/CaiCVH021}
+
+?? Intel DDIO~\parencite{intel-ddio} -- L3 Cache
+
+?? Mention \gls{acr:dma} somehow.
+
+\begin{figure}
+	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/pci-draft}}
+	\caption[A simplified view of the physical packet path on host machines.]{A simplified view of the physical packet path on host machines. Moving packets between the \gls{acr:nic} and \gls{acr:cpu} is more involved than simple steering, as packets must be moved across the \gls{acr:pcie} bus and \gls{acr:dma}'d into host memory. The host \gls{acr:cpu} is made aware of packet arrivals by either \glspl{acr:irq} or polling ring buffers in memory which the \gls{acr:nic} writes into. This introduces additional latency, even when the networking stack supports direct insertion into the \gls{acr:cpu} cache. Note that this figure leaves aside \gls{acr:numa} constraints and costs arising from having several \glspl{acr:cpu}.}\label{fig:pdp-lit-pci}
+\end{figure}
+
+\begin{figure}
+	%	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/offloading-draft}}
+	\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/offloading}}
+	\caption[The logical packet processing stack on host machines, and how the DPDK and XDP frameworks interface with it and user code.]{The logical packet processing stack on host machines, and how the \gls{acr:dpdk} and \gls{acr:xdp} frameworks interface with it and user code. Rounded, filled boxes represent user-specified code. Offload frameworks are useful because they either allow \gls{acr:os} kernel code to be bypassed altogether (\gls{acr:dpdk}), or for packet modification and transmission to be pushed further down the stack (\gls{acr:xdp}). Offloaded \gls{acr:ebpf} user code may typically pass packets to the network stack after some amount of processing, send packets directly back to the \gls{acr:nic} for transmission, or pass packets to user code using a zero-copy mechanism such as \texttt{AF\_XDP}. Crucially, all these mechanisms excise various amounts of processing or imprecise waiting for  interrupts, reducing latencies and increasing packet processing throughput. More details on the logical portion of the stack are presented by \Textcite{DBLP:conf/sigcomm/CaiCVH021}.}\label{fig:pdp-lit-offloading}
+\end{figure}
 
 \paragraph{Misc.}
 later netmap~\parencite{DBLP:conf/usenix/Rizzo12}
@@ -651,17 +676,6 @@ test text hello
 ?? mention BPFabric~\parencite{DBLP:conf/ancs/JouetP17} somewhere.
 
 ?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
-
-\begin{figure}
-	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/pci-draft}}
-	\caption{text}\label{fig:pdp-lit-pci}
-\end{figure}
-
-\begin{figure}
-	%	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/offloading-draft}}
-	\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/offloading}}
-	\caption[The packet processing stack on host machines, and how the DPDK and XDP frameworks interface with user code.]{The packet processing stack on host machines, and how the \gls{acr:dpdk} and \gls{acr:xdp} frameworks interface with user code. Rounded, filled boxes represent user-specified code. Offload frameworks are useful because they either allow \gls{acr:os} kernel code to be bypassed altogether (\gls{acr:dpdk}), or for packet modification and transmission to be pushed further down the stack (\gls{acr:xdp}). Offloaded \gls{acr:ebpf} user code may typically pass packets to the network stack after some amount of processing, send packets directly back to the \gls{acr:nic} for transmission, or pass packets to user code using a zero-copy mechanism such as \texttt{AF\_XDP}. Crucially, all these mechanisms excise various amounts of processing or imprecise waiting for  interrupts, reducing latencies and increasing packet processing throughput. More details on the logical portion of the stack are presented by \Textcite{DBLP:conf/sigcomm/CaiCVH021}.}\label{fig:pdp-lit-offloading}
-\end{figure}
 
 \subsection{Frameworks for Automatic Offloading}\label{sec:frameworks-for-automatic-offloading}
 
