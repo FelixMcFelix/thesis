@@ -32,7 +32,7 @@ In-network compute is founded on the growing idea that in-path network elements 
 %What we have now are a wide variety of ways to run programs of varying levels of complexity at ?? many levels of the stack ?? to aid application and networkr performance
 
 In this chapter, I'll...
-\section{From Fixed-Function to Fully-Programmable}\label{sec:from-fixed-function-to-fully-programmable}
+\section{From Fixed-Function to Control-Plane-Programmable}\label{sec:from-fixed-function-to-fully-programmable}
 
 ?? What are networks?
 
@@ -236,7 +236,7 @@ The architecture evolved fairly cleanly over the following 5 years, coping with 
 \emph{Espresso}~\parencite{DBLP:conf/sigcomm/YapMRPHBHKNJLRR17} extends this to inter-domain peering arrangements with the Internet and \gls{acr:bgp} session management, finally realising the vision of RCP 13 years on.
 Nowadays, datacentre and \gls{acr:wan} networks are managed by a single higher-level microservice \gls{acr:sdn} architecture, \emph{Orion}~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21}.
 
-\subsection{Modern Programmable Dataplanes}\label{sec:modern-pdps}
+\section{Modern Programmable Dataplanes}\label{sec:modern-pdps}
 While active network research may have dried up in the last 20 years,\sidenote{Barring some very obvious throwback works such as \emph{Tiny Packet Programs}~\parencite{DBLP:conf/sigcomm/JeyakumarAGKM14}.} interest in dataplane processing has remained strong.
 Network operators have, in fact, always had a need for complex packet processing, to measure, protect, and enhance \emph{their own} networks---rather than to provide the sort of communal good envisioned by active networks.
 To run through some examples:
@@ -273,7 +273,7 @@ The pursuit of this goal can be divided quite neatly into two streams.
 The first carries on from the use of virtualisation common in active networking research before the introduction of a true programmable dataplane fabric, towards more flexible deployment through \gls{acr:nfv} and \glspl{acr:vnf}.
 The second stream instead follows from asking how we might make switching and forwarding hardware itself more programmable, keeping in the tight form-factor and performance bounds required of high-speed commercial network hardware.
 
-\paragraph{Virtualisation and Commodity Machines}
+\subsection{Virtualisation and Commodity Machines}
 Commodity \glspl{acr:cpu} are already arbitrarily programmable yet their dataplane performance has always been at odds with ever-improving Ethernet standards, leading researchers to ask: how can we alleviate the existing performance bottlenecks in host dataplanes?
 How can we take further advantage of the advantages of host machines to allow for multitenancy and make runtime reconfiguration even easier by leaning into the ubiquity of host compute?
 Backed by \gls{acr:sdn} and by innovations in \gls{acr:vm} and container research from the systems community, \glspl{acr:vnf} and similar frameworks have filled a comfortable niche for moderately performant host dataplane programming.
@@ -326,10 +326,11 @@ Additionally, this allows path auditing in a way which is invisible to \glspl{ac
 %Cost? Halves goodput vs. NetBricks.
 However, this latter solution achieves only half the packet forwarding goodput of NetBricks in exchange for these additional guarantees.
 
-\paragraph{Hardware}
+\subsection{Specialised Hardware}
 Although host-run functions have indeed improved, their performance still trails unacceptably behind \glspl{acr:asic}---traffic volume can be accounted for up to a limit by horizontal scaling, but this becomes more difficult to operate than a single bump-in the wire solution, or may be impossible at larger port densities.
 Programmable network hardware, beginning with early \glspl{acr:npu} and culminating in today's SmartNICs and programmable \gls{acr:asic}-backed switches, innovates on introducing runtime reconfigurable compute to these devices.
 
+\paragraph{NIC programmability}
 \glspl{acr:npu}, dedicated network cards including general-purpose processors for arbitrary packet processing, first arrived around the year 2000 as we've discussed in \cref{sec:active-networking}, with commercial designs such as the Intel IXP1200~\parencite{intel-ixp}.
 These presented an early middleground between fixed-function (though performant) \glspl{acr:asic} and commodity host (virtualised) packet processing, offering line-rate performance at a smaller form and fanout factor (i.e., 1 or 2 ports).
 By 2008, their architectural space was dominated by multiprocessor \gls{acr:soc}-type designs offered by a good many vendors~\parencite[p.~306]{npu-book}.\sidenote{Following up the fates of these providers paints an interesting picture of monopolisation by traditional network vendors: consider for instance Sandburst's acquisition by Broadcom~\parencite{sandburst-buyout}, or EZchip's acquisition by Mellanox~\parencite{ezchip-buyout}.}
@@ -352,6 +353,7 @@ NetFPGA processing speeds are also continuously improved in tandem with line rat
 
 %?? Talk about how SmartNICs match what we thought p-switches would be\Textcite{DBLP:journals/jsac/WolfT01}, while p-switches are now ASICs, like you promised. Why did this happen? ?? multi-core can match rates on one or two ports, but getting \qtyrange{1}{2}{\tera\bit\per\second} would need an insane amount of cores (so ASICs are the only valid way to get in some manner of programmability)---also, the exclusion of the idea of `user-given programs' ?? maybe put later.
 
+\paragraph{Switch programmability}
 Let us turn now to programmable \emph{switches}.
 I should first state that the path they have taken is altogether different from what \citeauthor{DBLP:journals/jsac/WolfT01} proposed some 21 years ago.
 It should be readily apparent that the designs we seen in modern SmartNICs would be broadly incompatible with high port densities (i.e., 56 ports) as the sum traffic bandwidth rises to \qtyrange{1}{2}{\tera\bit\per\second} and beyond.
@@ -385,13 +387,19 @@ Users program parsers as a finite state machine, while table and action sets are
 Actions have access to \emph{metadata} (per-packet state) and \emph{registers} (shared dataplane state), where the latter is analogous to OpenFlow's \emph{counters}.
 P4 supports many target dataplanes today:
 \begin{itemize}
-	\item Programmable switches, through either vendor-provided backends such as the \emph{Tofino Native Architecture} or shared targets such as the \gls{acr:psa}~\parencite{p4-psa}.
+	\item Programmable switches, through either vendor-provided backends such as the \emph{Tofino Native Architecture} or shared targets such as the \gls{acr:psa}~\parencite{p4-psa}---a higher-level abstraction over Barefoot's \gls{acr:pisa}. \Cref{fig:p4-psa} demonstrates the \gls{acr:psa} in particular.
 	\item SmartNICs, via vendor-specific compiler additions,
 	\item NetFPGA cards, via the P4$\rightarrow$NetFPGA pipeline~\parencite{DBLP:conf/fpga/IbanezBMZ19},
 	\item Software switches such as \emph{bmv2}~\parencite{bmv2}, \emph{PISCES}~\parencite{DBLP:conf/sigcomm/ShahbazCPKFMR16} built on \gls{acr:ovs}, and the more performant \emph{T4P4S}~\parencite{DBLP:conf/hpsr/VorosHKLTL18} which compiles to C code with a \gls{acr:dpdk} backend.
 \end{itemize}
 Any device intrinsics or capabilities which cannot be expressed in P4 may be called out to using \texttt{extern} directives.
 Generating compatible control plane protocols and \glspl{acr:api} is then handled by \emph{P4Runtime}~\parencite{p4-runtime}, restoring the hardware-agnostic control at the core of OpenFlow.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth,keepaspectratio]{diagrams/pdp-lit/p4-psa}
+	\caption[Pipeline stages and forwarding paths of the P4 PSA.]{Pipeline stages and forwarding paths of the P4 \gls{acr:psa}. User programmable blocks are coloured in orange, where \gls{acr:mat} blocks comprise the `Ingress' and `Egress' stages. While an \gls{acr:rmt}-like action model is common, the \gls{acr:psa} abstracts over how actions should be implemented in any target dataplane. Instead, it specifically determines the high-level structure of ingress and egress processing---as two separate parse-\gls{acr:mat}-deparse pipelines---and how packets may be moved and cloned between these pipelines. For instance, a packet may only be cloned at the beginning of the egress pipeline, and may only repeat processing by returning to the start of ingress. Some packet processing or aggregation programs may only be expressed using workarounds in this structure.\label{fig:p4-psa}}
+\end{figure}
 
 8 years on, P4 has apparently been a runaway success in much the same vein as OpenFlow, and enjoys use in production edge networks~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21} while also enabling efficient and production-ready implementations of next-generation Internet designs such as \emph{SCION}~\parencite{DBLP:conf/conext/RuiterS21}.
 These technologies, including SmartNICs, are also seeing use in national research and education networks---for control and network design such as G\'{e}ant's RARE project~\parencite{geant-rare-article}, and for fine-grained network telemetry and future P4-backed processing in ESnet6~\parencite{esnet6-hts,esnet6-htp}.
@@ -520,6 +528,10 @@ While the pipelined model of the \gls{acr:psa} is undeniably effective, it can b
 \emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} offers one solution by placing a routing fabric between distinct packet and data processing elements in a SmartNIC.
 Such a design would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded \gls{acr:me} relationships or ordering dependencies between subprograms across pipelines.
 
+?? PANIC also allows multi-tenancy now?~\parencite{DBLP:conf/osdi/LinPSSA20}
+
+?? Multitenant PSA?~\parencite{DBLP:conf/conext/StoyanovZ20}
+
 %?? Taurus moved out of representations section~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22}
 Although \gls{acr:ml} can be made feasible in \gls{acr:pdp} hardware as we'll discuss shortly, achieving more complex or higher-precision inference at line-rate can only be enabled by dedicated architectural support.
 \emph{Taurus}~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22} is a proposal to add compute and memory units to the \gls{acr:psa} as part of a map-reduce block specifically designed to optimise per-packet \gls{acr:ml} inference.
@@ -631,27 +643,59 @@ Through \cref{sec:frameworks-for-automatic-offloading}, I'll cover recent works 
 Although in-network compute has been justified and explained here, its use cases will be left until later (\cref{sec:in-network-compute-use-cases}).
 
 \subsection{Host Offloading Technologies}\label{sec:host-offloading-technologies}
-
-While
-
-?? Analogous to steering.
-
-?? \cref{fig:pdp-lit-pci} phys, \cref{fig:pdp-lit-offloading} logical.
-
-?? Include representative numbers for e.g. PCIe and so on.
-
-?? PCIe~\parencite{DBLP:conf/sigcomm/NeugebauerAZAL018}
-
-?? Host stack~\parencite{DBLP:conf/sigcomm/CaiCVH021}
-
-?? Intel DDIO~\parencite{intel-ddio} -- L3 Cache
-
-?? Mention \gls{acr:dma} somehow.
+Commodity host machines are designed in such a way that packet processing often incurs higher latency than using an \gls{acr:asic} positioned at the same point in the network.
+Consider \cref{fig:pdp-lit-pci}, which shows the physical interconnect between a \gls{acr:nic} and \gls{acr:cpu}.
+Network connectivity is a \emph{peripheral} function, and so \gls{acr:nic} are connected over the \gls{acr:pcie} bus.
+To be processed by host machines, the \gls{acr:nic} must move packet data across the \gls{acr:pcie} bus by \gls{acr:dma} into \gls{acr:ram}, where the host \gls{acr:cpu}(s) can make use of this data---this may be accelerated by copying the data also into L3 cache in the same step, via functionality like Intel DDIO~\parencite{intel-ddio}.
+While \gls{acr:pcie} offers extraordinary bandwidth (\qty{63.015}{\giga\byte\per\second} in \gls{acr:pcie} \num{5.0}), moving data across the bus adds $\mathcal{O}\left(\unit{\micro\second}\right)$ of latency.
+Quoting figures from \Textcite{DBLP:conf/sigcomm/NeugebauerAZAL018}, \qtyrange{64}{1500}{\byte} packets spend \qtyrange{0.8}{1.8}{\micro\second} solely in \gls{acr:pcie}, comprising \qtyrange{90.6}{77.2}{\percent} of the total one-way delay (\qtyrange{0.883}{2.331}{\micro\second})---dwarfing the latency contribution of the \gls{acr:nic}.
+These physical costs cannot be removed with standard \glspl{acr:nic}: the host \gls{acr:cpu} must have the packet body entirely resident in its own memory to act upon it.
 
 \begin{figure}
-	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/pci-draft}}
-	\caption[A simplified view of the physical packet path on host machines.]{A simplified view of the physical packet path on host machines. Moving packets between the \gls{acr:nic} and \gls{acr:cpu} is more involved than simple steering, as packets must be moved across the \gls{acr:pcie} bus and \gls{acr:dma}'d into host memory. The host \gls{acr:cpu} is made aware of packet arrivals by either \glspl{acr:irq} or polling ring buffers in memory which the \gls{acr:nic} writes into. This introduces additional latency, even when the networking stack supports direct insertion into the \gls{acr:cpu} cache. Note that this figure leaves aside \gls{acr:numa} constraints and costs arising from having several \glspl{acr:cpu}.}\label{fig:pdp-lit-pci}
+	\centering
+	\colorlet{pci-pktpath}{uofgcobalt}
+	%	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/pci-draft}}
+	\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/pci}}
+	\caption[A simplified view of the physical packet path on host machines.]{A simplified view of the physical packet path on host machines, shown {\color{pci-pktpath} in blue}. Moving packets between the \gls{acr:nic} and \gls{acr:cpu} is more involved than simple steering, as packets must be moved across the \gls{acr:pcie} bus and \gls{acr:dma}'d into host memory. The host \gls{acr:cpu} is made aware of packet arrivals by either \glspl{acr:irq} or polling ring buffers in memory which the \gls{acr:nic} writes into. This introduces additional latency, even when the networking stack supports direct insertion into the \gls{acr:cpu} cache. Note that this figure leaves aside \gls{acr:numa} constraints and costs arising from having several \glspl{acr:cpu}.}\label{fig:pdp-lit-pci}
 \end{figure}
+
+Most of the impact on traffic processing originates also from logical costs due to the \gls{acr:os}'s device and network stack management.
+\Cref{fig:pdp-lit-offloading} lays out some of these stages in the Linux environment.
+Primarily, the \gls{acr:os} kernel is notified that packet \glspl{acr:dma} have completed via \glspl{acr:irq}, at which point a kernel thread is awoken and the device driver is called to transfer the packet contents into a \gls{acr:skb} usable by the stack.\sidenote{The conventional network stack does not poll for packets---while this reduces any additional delays associated with the interrupt model, running a device driver in a busy loop is not generally considered feasible or acceptable. This model does drive specialist frameworks like \gls{acr:dpdk}, which we'll cover, but this requires care and significant changes in userland code.}
+Awaking a thread does not guarantee that it will be instantly ready to serve the packet, adding latency, while readying packet \glspl{acr:skb} adds additional per-packet overheads which harm receive-side latency and throughput.
+The Linux network stack itself must then inspect \glspl{acr:skb} to handle, for instance, decapsulation, transport logic such as \gls{acr:tcp} and \gls{acr:cca} management, and connection handling---among other functions related in more much detail by existing work~\parencite{DBLP:conf/sigcomm/CaiCVH021}.
+Finally, the packet is served over a socket to a (possibly sleeping) userland thread, who may require a context switch before the received data may be finally used---again, another source of processing latency.
+
+%?? IRQs enable, but can take time for CPU to awaken.
+%?? Linux network stack -- encapsulations, segmentation, \gls{acr:tcp} and transport logic, connection management etc.
+%?? typical sockets: sleep rather than poll (and again, await context switch).
+
+Interestingly, these additional hardware and software costs are analogous to route-level steering on a smaller scale.
+%?? Make the argument around existing doftware needing a reasonable OS?
+A more specialised packet processing stack might be one way to remove as many of the software costs as possible, but such a clean-slate proposition would lock packet processing functions out of access to software reliant on functions exposed by typical \glspl{acr:os}.
+%Instead, recent years have brought greater kernel support for eliminating as many of these stages as possible.
+\emph{Host offloading frameworks} aim instead to reduce this steering as far as possible with support from the \gls{acr:os} or hardware; either by eliminating as much of the logical packet processing invoked by the \gls{acr:os} kernel as possible, or moving user code to an earlier point in the stack.
+Returning to \cref{fig:pdp-lit-offloading}, we now turn our focus on the user programmable blocks.
+In the best case, hardware such as SmartNICs allow for user code to be moved onto the \gls{acr:nic}, removing \gls{acr:pcie} bus transfer latency as packet processing no longer needs to touch the \gls{acr:cpu}.
+Of course SmartNICs are typically less capable than hosts (in clock speeds and included \glspl{acr:fu}), and for that reason we'll briefly discuss kernel bypass methods such as \gls{acr:dpdk} and offloads enabled by \gls{acr:ebpf}.
+As before offloaded user code may be some or all of a larger program, potentially divided into fast and slow paths according to whether host compute is needed.
+
+
+%?? \cref{fig:pdp-lit-pci} phys, \cref{fig:pdp-lit-offloading} logical.
+%
+%?? Include representative numbers for e.g. PCIe and so on.
+%
+%?? \gls{acr:pcie}~\parencite{DBLP:conf/sigcomm/NeugebauerAZAL018}
+%
+%?? \gls{acr:ram}
+%
+%?? Host stack~\parencite{DBLP:conf/sigcomm/CaiCVH021}
+%
+%?? Intel DDIO~\parencite{intel-ddio} -- L3 Cache
+%
+%?? Mention \gls{acr:dma} somehow.
+
+%?? Offloading to SmartNIC good at eliding \gls{acr:pcie} costs.
 
 \begin{figure}
 	%	\resizebox{\linewidth}{!}{\includegraphics{diagrams/pdp-lit/offloading-draft}}
@@ -659,23 +703,24 @@ While
 	\caption[The logical packet processing stack on host machines, and how the DPDK and XDP frameworks interface with it and user code.]{The logical packet processing stack on host machines, and how the \gls{acr:dpdk} and \gls{acr:xdp} frameworks interface with it and user code. Rounded, filled boxes represent user-specified code. Offload frameworks are useful because they either allow \gls{acr:os} kernel code to be bypassed altogether (\gls{acr:dpdk}), or for packet modification and transmission to be pushed further down the stack (\gls{acr:xdp}). Offloaded \gls{acr:ebpf} user code may typically pass packets to the network stack after some amount of processing, send packets directly back to the \gls{acr:nic} for transmission, or pass packets to user code using a zero-copy mechanism such as \texttt{AF\_XDP}. Crucially, all these mechanisms excise various amounts of processing or imprecise waiting for  interrupts, reducing latencies and increasing packet processing throughput. More details on the logical portion of the stack are presented by \Textcite{DBLP:conf/sigcomm/CaiCVH021}.}\label{fig:pdp-lit-offloading}
 \end{figure}
 
-\paragraph{Misc.}
+\paragraph{Kernel bypass and DPDK}
 later netmap~\parencite{DBLP:conf/usenix/Rizzo12}
 
-\paragraph{DPDK}
-test text hello
+\gls{acr:dpdk}~\parencite{dpdk,dpdk-ad-paper}
 
 \paragraph{eBPF and XDP}
 test text hello
 
-\gls{acr:ebpf}, \gls{acr:xdp}~\parencite{DBLP:conf/conext/Hoiland-Jorgensen18}
+\gls{acr:ebpf}~\parencite{ebpf-history}, \gls{acr:xdp}~\parencite{DBLP:conf/conext/Hoiland-Jorgensen18}
 ?? It should be clear that \gls{acr:ebpf}'s role in the network owes an inestimable debt to \emph{smart packets}.
+
+?? Came from BPF~\parencite{bpf}
 
 ?? eBPF also allows exec of user code at various points in kernel for instrumentation etc. via \emph{kprobes} and \emph{tracepoints}.
 
 ?? mention BPFabric~\parencite{DBLP:conf/ancs/JouetP17} somewhere.
 
-?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
+?? afxdp~\parencite{lwn-af-xdp}
 
 \subsection{Frameworks for Automatic Offloading}\label{sec:frameworks-for-automatic-offloading}
 
@@ -807,7 +852,17 @@ NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
 %
 %?? Tie into PDP here: active networking and TPP . Think about the concept of protocol boosters~\parencite{DBLP:journals/jsac/FeldmeierMSBMR98}. (NOT READ)
 
-\section{Traffic Characteristics}
+%\section{Traffic Characteristics}
+%
+%\subsection{Evolution}
+%
+%\subsection{Emerging Protocols}
+%
+%\subsection{Limitations}
+
+\section{Problems in Modern Networks}\label{sec:problems-in-modern-networks}
+
+?? Motive: this stuff is from old ``traffic characteristics'' section
 
 ?? Can (and should probably) discuss different traffic classes here: congestion-aware, -unaware...
 
@@ -827,17 +882,15 @@ NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
 ?? congestion-aware traffic makes up at least \qtyrange{73}{82}{\percent} of packets\sidenote{\url{https://github.com/FelixMcFelix/caida-stats}}
 ?? Also talk about QUIC's prevalence here
 
-\subsection{Evolution}
-
-\subsection{Emerging Protocols}
-
 ?? QUIC~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}
 
 ?? QUIC carries \gls{acr:http} traffic, mostly...
 
-\subsection{Limitations}
-
-\section{Problems in Modern Networks}\label{sec:problems-in-modern-networks}
+?? ----------------
+?? IDEA: 2022. How to present:
+?? Problem at big scale: DoS attacks
+?? Problem at small scale: Measurement, microburst, fairness etc.
+?? ----------------
 
 \subsection{Denial of Service Attacks}
 ---

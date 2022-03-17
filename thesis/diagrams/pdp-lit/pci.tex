@@ -1,0 +1,71 @@
+\colorlet{pci-nic}{uofgforest}
+\colorlet{pci-nic-inner}{white}
+\colorlet{pci-cpu}{uofglavendar}
+\colorlet{pci-cpu-inner}{white}
+\colorlet{pci-subcpu}{pci-cpu!20}
+
+\colorlet{pci-conn}{black}
+\colorlet{pci-pcie}{uofgrust}
+\colorlet{pci-pktpath}{uofgcobalt}
+
+\begin{tikzpicture}
+	\node at (0,0) (nic-box) {};
+	\draw[color=pci-nic,fill=pci-nic!10] (nic-box) rectangle ++(5,-2);
+	\node at ($(nic-box) + (0.5,-0.3)$) {\gls{acr:nic}};
+
+	\draw[color=black,fill=pci-nic-inner!10] ($(nic-box) - (1,1.75)$) rectangle ++(2,1) node[pos=.5] (mac) {\gls{acr:mac}};
+	\draw[color=black,fill=pci-nic-inner!10] ($(mac) + (1.5,-0.5)$) rectangle ++(2,1) node[pos=.5,align=center] (asic) {\gls{acr:asic}/\\\gls{acr:cpu}};
+	\draw[color=black,fill=pci-nic-inner!10] ($(asic) + (1.5,-0.5)$) rectangle ++(2,1) node[pos=.5,align=center] (nic-pci) {\gls{acr:pcie}\\Bridge};
+
+	\draw[color=black,fill=pci-nic-inner!10] ($(nic-pci) + (2.5,-1.5)$) rectangle ++(2,1) node[pos=.5,align=center] (ram-pci) {\gls{acr:pcie}\\Bridge};
+	\draw[color=black,fill=pci-nic-inner!10] ($(ram-pci) + (1.5,-0.5)$) rectangle ++(2,1) node[pos=.5,align=center] (mem-ctl) {Memory\\Controller};
+	\draw[color=black,fill=pci-nic-inner!10] ($(mem-ctl) + (-1,1)$) rectangle ++(2,1) node[pos=.5,align=center] (ram) {\gls{acr:ram}};
+
+	\node at ($(nic-box) + (12.5,0)$) (cpu-box) {};
+	\draw[color=pci-cpu,fill=pci-cpu!30] (cpu-box) rectangle ++(4,-3);
+	\node at ($(cpu-box) + (0.5,-0.3)$) {\gls{acr:cpu}};
+
+	\begin{scope}[on background layer]
+		\draw[color=pci-cpu,fill=pci-cpu!10] ($(cpu-box) + (0.25, 0.25)$) rectangle ++(4,-3);
+		\draw[color=pci-cpu,fill=pci-cpu!20] ($(cpu-box) + (0.125, 0.125)$) rectangle ++(4,-3);
+	\end{scope}
+
+	\draw[color=black,fill=pci-nic-inner!10] ($(cpu-box) + (0.5,-2.75)$) rectangle ++(3,0.75) node[pos=.5,align=center] (l3) {L3 Cache};
+
+	\node at ($(cpu-box) + (0.5,-0.5)$) (subcpu-box) {};
+	\draw[color=pci-cpu,fill=pci-subcpu!30] (subcpu-box) rectangle ++(2,-1.25);
+	\node at ($(subcpu-box) + (0.75,-0.3)$) {Core 1};
+
+	\draw[color=black,fill=pci-nic-inner!10] ($(subcpu-box) + (0.125,-1.15)$) rectangle ++(1.75,0.55) node[pos=.5,align=center] (l1-l2) {\small{}L1/L2};
+
+	\node[text=black] at ($(subcpu-box)+(2.7,-0.75)$) {\huge$\cdots$};
+
+	% pci-cpu
+
+	\node at ($(nic-pci) + (1.75, 1.5)$) (pcie-top) {};
+	\node at ($(pcie-top) - (0, 3.5)$) (pcie-bot) {};
+	\draw[very thick, color=pci-pcie] (pcie-top) -- (pcie-bot);
+	\draw[very thick, color=pci-pcie] ($(pcie-top) - (0,1.5)$) -- (nic-pci);
+	\draw[very thick, color=pci-pcie] ($(pcie-top) - (0,2.5)$) -- (ram-pci);
+
+	\node[text=pci-pcie] at ($(pcie-top)+(0,0.1)$) {\glslink{acr:pcie}{\color{pci-pcie}PCIe}};
+
+	% --------------
+
+	\draw[transform canvas={yshift=-1.5pt}, color=pci-conn, very thick] (mac) -- (asic);
+	\draw[transform canvas={yshift=-1.5pt}, color=pci-conn, very thick] (asic) -- (nic-pci);
+
+	\draw[transform canvas={yshift=-1.5pt}, color=pci-conn, very thick] (ram-pci) -- (mem-ctl);
+	\draw[transform canvas={xshift=-1.5pt}, color=pci-conn, very thick] (mem-ctl) -- (ram);
+	\draw[transform canvas={yshift=-1.5pt}, color=pci-conn, very thick] (mem-ctl.east) -- ($(mem-ctl.east) + (1,0)$);
+
+	\draw[color=pci-pktpath, very thick] (mac.west) -- ($(mac.west) - (1,0)$);
+	\draw[transform canvas={yshift=1.5pt}, color=pci-pktpath, very thick] (mac) -- (asic);
+	\draw[transform canvas={yshift=1.5pt}, color=pci-pktpath, very thick] (asic) -- (nic-pci);
+
+	\draw[transform canvas={yshift=1.5pt}, color=pci-pktpath, very thick] (ram-pci) -- (mem-ctl);
+	\draw[transform canvas={xshift=1.5pt}, color=pci-pktpath, very thick] (mem-ctl) -- (ram);
+	\draw[transform canvas={yshift=1.5pt}, color=pci-pktpath, very thick] (mem-ctl.east) -- ($(mem-ctl.east) + (1,0)$);
+
+	\draw[transform canvas={yshift=3pt}, color=pci-pktpath, very thick] (nic-pci) -| ++(1.85,0) |- (ram-pci);
+\end{tikzpicture}
