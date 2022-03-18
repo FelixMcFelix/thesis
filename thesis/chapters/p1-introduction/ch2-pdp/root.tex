@@ -703,11 +703,18 @@ As before offloaded user code may be some or all of a larger program, potentiall
 	\caption[The logical packet processing stack on host machines, and how the DPDK and XDP frameworks interface with it and user code.]{The logical packet processing stack on host machines, and how the \gls{acr:dpdk} and \gls{acr:xdp} frameworks interface with it and user code. Rounded, filled boxes represent user-specified code. Offload frameworks are useful because they either allow \gls{acr:os} kernel code to be bypassed altogether (\gls{acr:dpdk}), or for packet modification and transmission to be pushed further down the stack (\gls{acr:xdp}). Offloaded \gls{acr:ebpf} user code may typically pass packets to the network stack after some amount of processing, send packets directly back to the \gls{acr:nic} for transmission, or pass packets to user code using a zero-copy mechanism such as \texttt{AF\_XDP}. Crucially, all these mechanisms excise various amounts of processing or imprecise waiting for  interrupts, reducing latencies and increasing packet processing throughput. More details on the logical portion of the stack are presented by \Textcite{DBLP:conf/sigcomm/CaiCVH021}.}\label{fig:pdp-lit-offloading}
 \end{figure}
 
-\paragraph{Kernel bypass and DPDK}
-?? First: what does each do.
-later netmap~\parencite{DBLP:conf/usenix/Rizzo12}
+\paragraph{Early optimised network stacks}
+Although less relevant in today's landscape, we'll discuss here some older frameworks offering varying degrees of network stack bypass for completeness.
+%?? First: what does each do.
+\texttt{PF\_RING}~\parencite{pf-ring} was motivated by changes in the kernel to prevent \gls{acr:irq} livelock at high speeds, which were insufficient to achieve true line-rate receive.
+It created a kernel-user ring buffer per-socket, where received packets are copied into all ring buffers allocated to the \gls{acr:nic} with remaining space, bypassing the network stack.
+\emph{Netmap}~\parencite{DBLP:conf/usenix/Rizzo12} made use of shared kernel and user memory over ring buffers, to place userland code between the \gls{acr:nic} driver and the host networking stack for a given interface (i.e., a packet bound from the \gls{acr:nic} to the network stack would traverse kernel$\rightarrow$user$\rightarrow$kernel).
+It offered specific innovations in copy elimination, batching of syscalls, and effective preallocation of packet buffers and metadata versus \gls{acr:skb}-based packet buffer management.
+Specifically, netmap's rings contain memory descriptors which point into a shared buffer, as compared with \texttt{PF\_RING}'s explicit byte buffers (which must be copied into).
 
-\gls{acr:dpdk}~\parencite{dpdk,dpdk-ad-paper}
+\paragraph{Kernel bypass and DPDK}
+Intel's \glsxtrfull{acr:dpdk}~\parencite{dpdk,dpdk-ad-paper} bypasses the kernel entirely, by ...
+?? In constrast to the above, runs NIC in userland using poll-mode drivers.
 
 \paragraph{eBPF and XDP}
 The \glsxtrfull{acr:ebpf}~\parencite{ebpf-history} is a register-based \gls{acr:risc} \gls{acr:vm} and assembly language, used today for moving packet programs early into the kernel, instrumenting standard kernel functions using tracepoints, and offloading owing to its simple and easily-implemented design.
@@ -740,7 +747,7 @@ Moreover, \gls{acr:xdp} is flexible enough to fit into a wide variety of packet 
 
 This is accompanied by the \texttt{AF\_XDP}~\parencite{lwn-af-xdp} socket family, which may circumvent the remainder of the network stack by sending the packet directly to user code from an \gls{acr:xdp} hook.
 The file descriptors of these sockets are placed in an \gls{acr:ebpf} map, enabling faster packet processing by reducing the time delta between the fast and slow packet paths.
-User and kernel code share a set of ring buffers and queues to pass packet-sized buffers between another in response to completions and demand.
+User and kernel code share a set of ring buffers, queues, and a large block of preallocated UMEM to pass packet-sized buffers between another in response to completions and demand, and are outwardly similar to netmap in that UMEM descriptors are passed via these queues and rings.
 While map sizes are fixed at compile time, sockets have a many-to-one relationship with the actual hook program, enabling per-core or per-application service of packets to make better use of cache coherence.
 \texttt{AF\_XDP} sockets support both poll- and \gls{acr:irq}-mode at the user level.
 
