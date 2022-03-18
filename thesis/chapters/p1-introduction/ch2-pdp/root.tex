@@ -704,25 +704,55 @@ As before offloaded user code may be some or all of a larger program, potentiall
 \end{figure}
 
 \paragraph{Kernel bypass and DPDK}
+?? First: what does each do.
 later netmap~\parencite{DBLP:conf/usenix/Rizzo12}
 
 \gls{acr:dpdk}~\parencite{dpdk,dpdk-ad-paper}
 
 \paragraph{eBPF and XDP}
-test text hello
+The \glsxtrfull{acr:ebpf}~\parencite{ebpf-history} is a register-based \gls{acr:risc} \gls{acr:vm} and assembly language, used today for moving packet programs early into the kernel, instrumenting standard kernel functions using tracepoints, and offloading owing to its simple and easily-implemented design.
+\gls{acr:ebpf} is derived from the earlier \emph{BSD Packet Filter}~\parencite{DBLP:conf/usenix/McCanneJ93}, which was a two-register \gls{acr:vm} designed to allow user-written programs to be safely executed at the kernel level---in this case, for preventing unnecessary packet copies for unwanted traffic or packet contents in monitoring applications like \emph{tcpdump}.
+`Arbitrary, sandboxed user code in the kernel' was certainly an idea with potential, and owing to its uptake in other regions of the kernel it was modified to become more capable and closer in architecture to modern \glspl{acr:cpu}: for instance ten \qty{64}{\bit} registers, atomic instructions, maps, and function call opcodes to make use of functions exposed by the kernel.
 
-\gls{acr:ebpf}~\parencite{ebpf-history}, \gls{acr:xdp}~\parencite{DBLP:conf/conext/Hoiland-Jorgensen18}
-?? It should be clear that \gls{acr:ebpf}'s role in the network owes an inestimable debt to \emph{smart packets}.
+Today the \gls{acr:vm} abstraction enables fast and safe execution of such programs by \gls{acr:jit} compilation and verification, and is now well-suited for offloading to SmartNICs and similar devices as industry-standard compilers support \gls{acr:ebpf} as a compile target from languages such as C and Rust.
+%\gls{acr:ebpf} is now a compiler target for simple platform-agnostic programs, which are well-suited for offloading due to their bounded size, verifiable semantics, and the simplicity of the underlying \gls{acr:vm}. ?? ebabling JIT?
+In the Linux \gls{acr:os} kernel, \gls{acr:ebpf} programs may be triggered by \emph{hooks} for instrumenting its operation via \emph{kprobes} and \emph{tracepoints}---a program specifies its type with respect to its intended hook, from which the kernel knows which functions an \gls{acr:ebpf} program may call (effectively enforcing an \gls{acr:api}).
+Programs are accepted if and only if they are loop-free, terminate, have bounded size, and simulated bounds checks on array accesses are well-defined.
+Larger programs may be constructed by building chains of tail calls between these smaller \gls{acr:ebpf} blocks.
+Userland and \gls{acr:ebpf} programs communicate using \emph{maps}, which are a generic abstraction around containers such as arrays, hash tables, and longest-prefix match tables which may be read and modified by user and kernel code.
 
-?? Came from BPF~\parencite{bpf}
+%\gls{acr:ebpf}~\parencite{ebpf-history}, 
+%?? It should be clear that \gls{acr:ebpf}'s role in the network owes an inestimable debt to \emph{smart packets}.
 
-?? eBPF also allows exec of user code at various points in kernel for instrumentation etc. via \emph{kprobes} and \emph{tracepoints}.
+%?? Came from BPF~\parencite{DBLP:conf/usenix/McCanneJ93}
 
-?? mention BPFabric~\parencite{DBLP:conf/ancs/JouetP17} somewhere.
+%?? eBPF also allows exec of user code at various points in kernel for instrumentation etc. via \emph{kprobes} and \emph{tracepoints}.
 
-?? afxdp~\parencite{lwn-af-xdp}
+Linux's \glsxtrfull{acr:xdp}~\parencite{DBLP:conf/conext/Hoiland-Jorgensen18} uses \gls{acr:ebpf} to place user-specified code into the packet processing path.
+Naturally, these programs undergo the same verification and \gls{acr:jit} compilation as traditional \gls{acr:ebpf} hook programs, and run one instance per \gls{acr:nic} receive queue.\sidenote{This can present a bottleneck for the amount of code offloaded to this stage in \glspl{acr:nic} without support for several receive queues---the \gls{acr:xdp} hook must meet strict timing constraints. \qty{1}{\giga\bit\per\second} integrated \glspl{acr:nic} present this problem, in my experience.}
+\gls{acr:xdp} hook programs however have a slightly more privileged role, and are called before the network stack for all packets arriving on an interface to determine their ultimate fate.
+For instance, packets may be modified and immediately transmitted back on the wire, dropped, passed on to the remainder of the host networking stack, or redirected to another \gls{acr:xdp} program or user-land socket.
+Consider once more \cref{fig:pdp-lit-offloading}.
+If driver support is offered, offloaded code may be run before any \gls{acr:skb} management or creation with zero memory copies (\emph{Native}).
+Otherwise, the program runs after \gls{acr:skb} creation (\emph{Generic}), but before any part of the remainder of the networking stack.
+Note that packets may be served \emph{entirely} in the \gls{acr:xdp} hook by making use of maps, packet modification, and the \texttt{XDP\_TX} immediate transmit action, minimising latencies as far as possible in an \gls{acr:irq}-based system.
+Moreover, \gls{acr:xdp} is flexible enough to fit into a wide variety of packet processing stacks.
+
+This is accompanied by the \texttt{AF\_XDP}~\parencite{lwn-af-xdp} socket family, which may circumvent the remainder of the network stack by sending the packet directly to user code from an \gls{acr:xdp} hook.
+The file descriptors of these sockets are placed in an \gls{acr:ebpf} map, enabling faster packet processing by reducing the time delta between the fast and slow packet paths.
+User and kernel code share a set of ring buffers and queues to pass packet-sized buffers between another in response to completions and demand.
+While map sizes are fixed at compile time, sockets have a many-to-one relationship with the actual hook program, enabling per-core or per-application service of packets to make better use of cache coherence.
+\texttt{AF\_XDP} sockets support both poll- and \gls{acr:irq}-mode at the user level.
+
+%?? Umem lmao
+
+\paragraph{Some Numbers}
+?? Quick description of the experimental setup.
+?? Maybe plot and run through the experimentes I'm doing atm?
 
 \subsection{Frameworks for Automatic Offloading}\label{sec:frameworks-for-automatic-offloading}
+
+?? mention BPFabric~\parencite{DBLP:conf/ancs/JouetP17} somewhere.
 
 ?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
 
