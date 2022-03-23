@@ -388,6 +388,7 @@ Actions have access to \emph{metadata} (per-packet state) and \emph{registers} (
 P4 supports many target dataplanes today:
 \begin{itemize}
 	\item Programmable switches, through either vendor-provided backends such as the \emph{Tofino Native Architecture} or shared targets such as the \gls{acr:psa}~\parencite{p4-psa}---a higher-level abstraction over Barefoot's \gls{acr:pisa}. \Cref{fig:p4-psa} demonstrates the \gls{acr:psa} in particular.
+	\item \gls{acr:ebpf}~\parencite{ebpf-p4} targets (kernel-level, userland and offloads),\sidenote{P4 and \gls{acr:ebpf} each have semantics the other cannot express, which are given in detail in the referenced documentation, so this translation is less than perfect for mapping some P4 dataplanes to relevant offloads.}
 	\item SmartNICs, via vendor-specific compiler additions,
 	\item NetFPGA cards, via the P4$\rightarrow$NetFPGA pipeline~\parencite{DBLP:conf/fpga/IbanezBMZ19},
 	\item Software switches such as \emph{bmv2}~\parencite{bmv2}, \emph{PISCES}~\parencite{DBLP:conf/sigcomm/ShahbazCPKFMR16} built on \gls{acr:ovs}, and the more performant \emph{T4P4S}~\parencite{DBLP:conf/hpsr/VorosHKLTL18} which compiles to C code with a \gls{acr:dpdk} backend.
@@ -484,7 +485,7 @@ In turn, the scope of deploying in-network compute has become far more insular, 
 %
 %?? Regardless, the old paradigm of active networking has been realised in the form of \glspl{acr:pdp} and in-network compute.
 
-\subsection{Frontiers in Programmable Networks}
+\subsection{Frontiers in Programmable Networks}\label{sec:frontiers-in-programmable-networks}
 Commercial developments along the same lines as the modern \gls{acr:pdp} hardware covered in \cref{sec:modern-pdps} are proceeding apace as network bandwidth demands grow larger.
 Intel's Tofino 2~\parencite{tofino2} represents the latest product in the lineage of \gls{acr:rmt} hardware, offering \qty{12.8}{\tera\bit\per\second} with support for \qty{400}{\giga\bit\per\second} Ethernet.
 Nokia's FP5~\parencite{nokia-fp5} similarly promises full programmability for high-density switching and routing at \qty{800}{\giga\bit\per\second} Ethernet, while Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
@@ -526,18 +527,49 @@ Aquila further innovates in using \gls{acr:smt} counterexamples to localise like
 \paragraph{Hardware design}
 While the pipelined model of the \gls{acr:psa} is undeniably effective, it can be restrictive for many classes of dataplane program; for instance cases where processing is based on more than raw packet events, or where more complex dataflow is required between functions.
 \emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} offers one solution by placing a routing fabric between distinct packet and data processing elements in a SmartNIC.
+These compute elements (mixed \glspl{acr:rmt}, \gls{acr:fpga} blocks and accelerators) are connected in a tiled architecture, each containing a router to direct packets to their intended internal destination.
 Such a design would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded \gls{acr:me} relationships or ordering dependencies between subprograms across pipelines.
 
-?? PANIC also allows multi-tenancy now?~\parencite{DBLP:conf/osdi/LinPSSA20}
+In multitenant environments such as data centres or cloud compute providers, clients may wish to take advantage of \gls{acr:pdp} hardware if it is present.
+Consider their use cases: clients might want to put their own packet processing functions between server instances, or install offloaded logic to an attached SmartNIC or \gls{acr:fpga} to improve application performance.
+Recalling the single pipeline design of the \gls{acr:psa}, it's clear that this is a very difficult resource sharing problem between \gls{acr:mat} resources, pipeline width and stages, and per-packet metadata storage.
+Moreover, ensuring that applications cannot interfere with one another's performance guarantees, state, or the forwarding behaviour of all packets is non-trivial (i.e., a malicious table might force infinite packet recirculation)---particularly when tables or logic might be reused between user pipelines to save such resources.
+%?? difficult resource sharing problem ?? the \gls{acr:psa} 
+Alternative architectures have been presented to make this task simpler.
+The above \emph{PANIC} has been revised and recast as a solution to this multitenancy problem~\parencite{DBLP:conf/osdi/LinPSSA20}, losing much of the flexibility of its initial iteration to accelerate this use case.
+(Multitenant) PANIC now uses a single ingress \gls{acr:rmt} pipeline to tag packets with all hops of their intended offload chain, while compute units (\glspl{acr:asic} and RISC-V \glspl{acr:cpu}) pass packets between one another using an all-to-all direct crossbar.
+Higher-level rate limits are controlled by a programmable \gls{acr:pifo} scheduler~\parencite{DBLP:conf/sigcomm/SivaramanSACCAB16} to enforce \gls{acr:qos} around shared offload blocks.
+Relying on only the ingress \gls{acr:rmt} to determine such routes leads to potentially inflexible packet processing chains, however.
+\emph{MTPSA}~\parencite{DBLP:conf/conext/StoyanovZ20} instead extends the \gls{acr:psa} to place client code into a set of inner `user' pipelines between the egress parser and \glspl{acr:mat}.
+Each runs its own code, and applies Unix's read-write-execute privilege model over resources, fields, tables and \texttt{extern}s to limit per-program access capabilities.
+The standard ingress and egress pipelines are designated as `super-users', who determine the user pipeline to execute and are responsible for higher-level forwarding.
+This approach is rather coarse-grained, and prohibits re-use of tables (increasing per-user resource costs).
+In addition, restricting pipeline placement to egress-only limits program expressibility---i.e., operations such as changing the output port are illegal.
 
-?? Multitenant PSA?~\parencite{DBLP:conf/conext/StoyanovZ20}
+While P4 registers enable useful stateful programming, concurrent access semantics and pipeline order restrictions can make some applications difficult to express.
+Equally, their implementation in any platform relies on platform-specific \texttt{extern}s even as defined by the \gls{acr:psa}, and as such their semantics and correct operation will vary on a target by target basis.
+Architectures such as \emph{Banzai}~\parencite{DBLP:conf/sigcomm/SivaramanCBKABV16} and its accompanying C-like language \emph{Domino} compile to \glspl{acr:mat} internally from restricted \emph{packet transactions}.
+They differ however from \gls{acr:rmt}, having each action unit (or \emph{atom}) additionally contain a memory unit for shared state which only it may access (rather than the global, shared registers of P4).
+Atoms contain a variety of \gls{acr:alu} blocks to enable 1-cycle updates and reads on branches as required for safe concurrent state processing.
+Domino's restrictions are close to those of \gls{acr:ebpf} programs, adding the limitation that only one entry may be accessed per array; the compiler is responsible for building and allocating \glspl{acr:mat} and concurrently sequencing all transactions.
+This explicit focus on \numrange{1}{2} cycle logic blocks allows Banzai to guarantee line-rate execution.
+\emph{FlowBlaze}~\parencite{DBLP:conf/nsdi/PontarelliBBCSB19} targets instead \emph{per-flow} state for L2--L4 traffic, mixing \gls{acr:mat} blocks with custom extended \gls{acr:fsm} units.
+These extended \glspl{acr:fsm} store variables, can read and modify global registers, and use \glspl{acr:mat} to look up simple state transition functions based on fields of all accessible state.
+States are stored on a per-flow basis, allocated from a hardware-backed hash table.
+While \glspl{acr:mat} and \gls{acr:fsm} blocks may be interposed freely to express more varied programs, true flexibility is only possible at present when these blocks may be easily replaced (i.e., when targeting an \gls{acr:fpga} environment).
+However, the variable and state model forces pipeline stalls to clear up hazards around concurrent \gls{acr:fsm} state accesses, leading to packet drops and sub-line-rate packet processing for some dataplane functions.
+
+%?? Sim between these and RMT? atoms -- instrs exec in 1--2 cycles.
 
 %?? Taurus moved out of representations section~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22}
 Although \gls{acr:ml} can be made feasible in \gls{acr:pdp} hardware as we'll discuss shortly, achieving more complex or higher-precision inference at line-rate can only be enabled by dedicated architectural support.
 \emph{Taurus}~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22} is a proposal to add compute and memory units to the \gls{acr:psa} as part of a map-reduce block specifically designed to optimise per-packet \gls{acr:ml} inference.
+The ingress \gls{acr:rmt} pipeline performs feature extraction among its standard duties.
 In particular, it demonstrates that efficient line-rate inference can be achieved using a \gls{acr:cgra} of map-reduce units between the ingress and egress pipelines---implementing \glspl{acr:nn}, \gls{acr:lstm} networks, or \glspl{acr:svm} which process every packet header vector.
+This \gls{acr:cgra} implements a large grid of replicated fixed-point compute and memory units, allowing higher throughput by what the authors describe as `spatial \gls{acr:simd}'.
+This achieves line-rate throughput while reducing latencies from the $\mathcal{O}\left(\unit{\milli\second}\right)$ \gls{acr:cpu} and \gls{acr:gpu} inference to around $\mathcal{O}$(\qty{e2}{\nano\second}), dependent on the target application.
 In turn, the outputs of any classifiers in this block become available to later pipeline stages, which are able to act upon packets accordingly.
-Training \gls{acr:ml} models online using Taurus requires sampling from input packets to be directed towards a cooperating host machine, and cannot be performed unassisted.
+Training \gls{acr:ml} models online using Taurus requires that input packets are sampled alongside local signals such as per-flow \gls{acr:qos} metrics to be directed towards a cooperating host machine in the control plane, and cannot be performed unassisted (i.e., purely on-device).
 
 %?? Are the tools just sharper now?
 
@@ -574,7 +606,7 @@ If we place commodity hosts in-line like this, then they will be unable to meet 
 		\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/steering-3}}
 		\caption{On-path (direct).\label{fig:pdp-lit-steering:on}}
 	\end{subfigure}
-	\caption[The spectrum of on-path traffic processing.]{To introduce packet processing to the network, engineers must make a conscious decision about where such processing may be installed, and if needed how traffic can be steered there---this leads to spectrum of how on-path processing may be. The main sizes and types of redirections are shown here: (a) having to redirect to another network for packet processing, (b) internally rerouting and steering packets to reach one or more processing machines (i.e., in \gls{acr:vnf} scenarios), and (c) placing processing \emph{directly in-path}. Generally speaking, smaller path deviations have a smaller latency impact. Paths and \gls{acr:as} relationships here are purely for demonstration, and may be longer in practice (similarly, case (b) may occur entirely within a single data centre \gls{acr:as}). Appliances performing packet processing are coloured {\color{uofgrust} in rust}.\label{fig:pdp-lit-steering}}
+	\caption[The spectrum of on-path traffic processing.]{To introduce packet processing to the network, engineers must make a conscious decision about where such processing may be installed, and if needed how traffic can be steered there---this leads to spectrum of how on-path processing may be. The main sizes and types of redirections are shown here: (a) having to redirect to another network for packet processing, (b) internally rerouting and steering packets to reach one or more processing machines (i.e., in \gls{acr:vnf} scenarios), and (c) placing processing \emph{directly in-path}. Generally speaking, smaller path deviations have a smaller latency impact. Paths and \gls{acr:as} relationships here are purely for demonstration, and may be longer in practice (similarly, case (b) may occur entirely within a single data centre \gls{acr:as}). Appliances performing packet processing are coloured {\color{uofgrust} in orange-red}.\label{fig:pdp-lit-steering}}
 \end{figure}
 
 These new, specialised devices are a double-edged sword---making efficient use of \emph{all} network resources becomes non-trivial due to device heterogeneity in architecture and capabilities.
@@ -712,9 +744,15 @@ It created a kernel-user ring buffer per-socket, where received packets are copi
 It offered specific innovations in copy elimination, batching of syscalls, and effective preallocation of packet buffers and metadata versus \gls{acr:skb}-based packet buffer management.
 Specifically, netmap's rings contain memory descriptors which point into a shared buffer, as compared with \texttt{PF\_RING}'s explicit byte buffers (which must be copied into).
 
-\paragraph{Kernel bypass and DPDK}
-Intel's \glsxtrfull{acr:dpdk}~\parencite{dpdk,dpdk-ad-paper} bypasses the kernel entirely, by ...
-?? In constrast to the above, runs NIC in userland using poll-mode drivers.
+\paragraph{Kernel bypass}
+In constrast to the above, Intel's \glsxtrfull{acr:dpdk}~\parencite{dpdk,dpdk-ad-paper} bypasses the kernel entirely, by running \gls{acr:nic} drivers in userland.
+\glspl{acr:nic} are run via poll-mode drivers in \gls{acr:dpdk}'s \emph{environment abstraction layer}, which manages core mappings to receive and transmit queues, memory allocation and device operation.
+%?? In constrast to the above, runs NIC in userland using poll-mode drivers.
+User programs interface with the abstraction layer to receive packets using a poll-only model, which results of course in consistently high (or maxed out) \gls{acr:cpu} utilisation.
+In exchange for this trade-off, programs designed to receive and process packets from \gls{acr:dpdk} entirely bypass the kernel, greatly reducing per-packet overhead.
+Since packets must be received from \gls{acr:dpdk}'s abstraction layer, user programs must be rewritten to account for the poll-based semantic model and vastly different buffer lifetime semantics versus the traditional stack---e.g., correct handling and disposing of ring buffer descriptors.
+This can be worked around to some extent by efficient user-space \emph{library kernel} \gls{acr:os} implementations of the traditional Linux networking stack~\parencite{DBLP:conf/eurosys/ThalheimUPBP21}.
+%?? Mention that this can be used to drive library OS impls of the standard net stack if so needed.~\parencite{DBLP:conf/eurosys/ThalheimUPBP21}
 
 \paragraph{eBPF and XDP}
 The \glsxtrfull{acr:ebpf}~\parencite{ebpf-history} is a register-based \gls{acr:risc} \gls{acr:vm} and assembly language, used today for moving packet programs early into the kernel, instrumenting standard kernel functions using tracepoints, and offloading owing to its simple and easily-implemented design.
@@ -840,8 +878,13 @@ Turns out that you can't just write it in P4, you need to co-design for the targ
 \paragraph{KV Stores}
 NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
 
-\paragraph{ML in PDP}
+\subsection{ML in PDP}\label{sec:inc-uses-pdp-ml}
 ?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
+
+?? Although we have discussed Taurus above...
+?? Describe in more detail here
+
+\Cref{sec:fixed-point-and-binary} for representations...
 
 %\section{Hardware Designs}
 %

@@ -21,7 +21,7 @@ It matches the dynamic range of \qty{32}{\bit} floats (1-8-7), better expressing
 This allows better expression of small values in general, and even smaller values during gradient computation, at an extra \qty{5}{\percent} hardware area cost to support both formats.
 While this is an indicative summary , it must be said that there are more formats beyond the scope of this introduction~\parencite{DBLP:journals/corr/abs-2007-01530}.
 
-\subsection{Fixed-point and binary}
+\subsection{Fixed-point and binary}\label{sec:fixed-point-and-binary}
 While the above techniques are promising and effective, deployment on environments such as \gls{acr:pdp} hardware requires further ingenuity.
 \emph{Fixed-point arithmetic} is an approach which makes it possible to represent real numbers as integers, losing dynamic range as a consequence.
 $Qm.n$ expresses a real number using an $m$~\unit{\bit} integer part alongside an $n$~\unit{bit} fractional part, which allows us to evaluate and update policies using only integer arithmetic on $k=1+m+n$~\unit{\bit} numbers, assuming the presence of a sign bit.
@@ -36,7 +36,7 @@ In particular, \textcite{DBLP:journals/corr/CourbariauxBD14} were able to train 
 In distributed training, fixed-point arithmetic is useful as an intermediate representation for in-NIC gradient aggregation~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21,DBLP:conf/nsdi/LaoLMCWAS21}.
 Scaling down \glspl{acr:nn} to INT8 requires careful calibration~\parencite{tensorrt-8bit}, binning the activations per layer in an FP32 network to choose optimal saturation thresholds.
 Training INT8 \glspl{acr:dnn} directly on mobile/\gls{acr:iot} devices has become more possible~\parencite{DBLP:conf/usenix/Zhou0QGXZGLZ21}, though this still requires floating point hardware to compute simple compensation terms after moving all tensor operations to fixed-point.
-To some extent, these can also enable in-\gls{acr:nic} \gls{acr:dnn} inference~\parencite{langlet-ml-netronome}.
+To some extent, these can also enable in-\gls{acr:nic} \gls{acr:dnn} inference~\parencite{langlet-ml-netronome}, and have been used to great effect in the earlier-described \emph{Taurus}~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22} architecture for in-network \gls{acr:ml} (\cref{sec:frontiers-in-programmable-networks,sec:inc-uses-pdp-ml}).
 
 Binary representations are used to great effect in \glsxtrfullpl{acr:bnn}~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16}; by using 0 to represent to \num{-1}, and 1 to represent $+$\num{1}, we may replace Hadamard product operations between tensors with \textsc{Xnor} operations, and when combined with \textsc{Popcnt} instructions we can easily compute the dot product between vectors.
 This offers bit-parallel execution compatible with almost all \glspl{acr:alu}, including \gls{acr:pdp} hardware.
