@@ -791,9 +791,44 @@ While map sizes are fixed at compile time, sockets have a many-to-one relationsh
 
 %?? Umem lmao
 
-\paragraph{Some Numbers}
-?? Quick description of the experimental setup.
-?? Maybe plot and run through the experimentes I'm doing atm?
+\paragraph{Experimentally demonstrating latency benefits}
+%?? Quick description of the experimental setup.
+%?? Maybe plot and run through the experimentes I'm doing atm?
+We can illustrate the relative performance of these frameworks against one another (and the traditional \texttt{AF\_PACKET}) using a simple microbenchmark.
+We can measure approximately how much time each `cut' into the kernel saves by connecting two identical machines together over a single link (using \gls{acr:nic} hardware with support for these technologies).
+One machine generates and timestamps traffic, while the other performs a \gls{acr:mac} swap function using the intended framework to return packets to the first machine to measure sampled \glspl{acr:rtt}.
+
+To do so, the two commodity host machines (\emph{Src} and \emph{Swap}) were set up using an Intel Core i7-4790 (\qtyproduct[product-units=single]{4 x 3.6}{\giga\hertz}), \qty{16}{\gibi\byte} \gls{acr:ram} (DDR3, \qty{1866}{\mega\hertz}), an Intel X710 40GbE \gls{acr:nic}, running Ubuntu 21.10 (5.13.0-30-generic).
+The hardware lacks support for direct cache access functions like Intel DDIO, and clock scaling was disabled for predictable measurement.
+The machines were connected over a \qty{40}{\giga\bit\per\second} direct copper cable using a single Rx/Tx queue on \emph{Swap}.
+Traffic was generated on \emph{Src} using Pktgen-\gls{acr:dpdk}~\parencite{pktgen-dpdk} to generate \qty{64}{\byte} packets at \qty{1}{\giga\bit\per\second}, timing \num{20000} packets per framework using the included uniform latency sampler.
+
+
+?? Transmission relies on the PMD.
+?? in XDP, macswap function is handled by the \gls{acr:ebpf} program installed at the xdp hook. Else, PMD.
+
+%Intel Core i7-4790 (\qtyproduct[product-units=single]{4 x 3.6}{\giga\hertz}), \qty{16}{\gibi\byte} RAM (DDR3, \qty{1866}{\mega\hertz}), 1~\texttimes{} Intel X710 40GbE NIC, Ubuntu 21.10 (5.13.0-30-generic)
+
+%?? two machines as above, no DDIO or other direct-cache access, single rx queue
+
+%?? clock scaling disabled
+
+?? Pktgen-\gls{acr:dpdk}~\parencite{pktgen-dpdk}, \qty{64}{\byte} packets at 
+
+?? macswap function: done in \gls{acr:xdp} hook where possible. use DPDK to do so with the device-specific poll-mode driver (\emph{DPDK}), and emulated drivers (\texttt{AF\_XDP} and \texttt{AF\_PACKET}).
+
+\begin{figure}
+	\centering
+	\includegraphics[keepaspectratio,width=\linewidth]{plots/xdp/macswap-rtts-split}
+	\caption[A microbenchmark of bypass/offload frameworks' effect on packet RTTs.]{A microbenchmark of bypass/offload frameworks' effect on packet RTTs.\label{fig:xdp-microbench}}
+\end{figure}
+
+\Cref{fig:xdp-microbench} shows...
+``While this is \emph{a little bit} of a strawman...''
+
+?? Earlier measurements saw a \qtyrange{39}{50}{\micro\second} gap between Native and AF when using blocking I/O (non-polling).
+
+?? Extra lat and very high variability, comparatively.
 
 \subsection{Frameworks for Automatic Offloading}\label{sec:frameworks-for-automatic-offloading}
 
