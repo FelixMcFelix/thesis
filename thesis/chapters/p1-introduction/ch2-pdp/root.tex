@@ -571,6 +571,16 @@ This achieves line-rate throughput while reducing latencies from the $\mathcal{O
 In turn, the outputs of any classifiers in this block become available to later pipeline stages, which are able to act upon packets accordingly.
 Training \gls{acr:ml} models online using Taurus requires that input packets are sampled alongside local signals such as per-flow \gls{acr:qos} metrics to be directed towards a cooperating host machine in the control plane, and cannot be performed unassisted (i.e., purely on-device).
 
+Access to the host programming stack and its full feature set remains an attractive prospect, even subject to the costs discussed throughout \cref{sec:offloading-and-in-network-compute}.
+\gls{acr:nic}-\gls{acr:cpu} co-designs present a more exotic solution to the latter problem, deeply integrating these two elements together in stark contrast to the typical `peripheral' view of the \gls{acr:nic}.
+Primarily motivated by optimising around the growing prevalence of \unit{\micro\second}-level \glspl{acr:rpc} in data centres, \emph{\textsc{NeBuLa}}~\parencite{DBLP:conf/isca/SutherlandGFMPD20} eliminates the \gls{acr:pcie} interconnect between the \gls{acr:nic} and \gls{acr:cpu}, placing received packets directly into the L1 cache of a target \gls{acr:cpu} core.
+This relies mainly upon exclusively using a connectionless \gls{acr:rpc} transport which enforces fail-fast behaviour for requests which will miss their deadline, allowing shared buffers for \emph{all connections} to be shrunk to fit into L3 cache.
+The integration of \gls{acr:nic}-to-core steering with the L3 cache then allows correct routing to the relevant L1 cache slot for the target \gls{acr:cpu} core.
+Base packet forwarding times are thus reduced below \qty{100}{\nano\second.}
+%?? load-balancing between such cores in L3 cache, which holds whole buffer ?? shrunk buffers due to connectionless \gls{acr:rpc} transport -> shared queues, early fail delay-sensitive \glspl{acr:rpc} if too loaded. ?? integ of nic-to-core steering and cpu allows L1!
+\emph{nanoPU}~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21} takes this concept further to serve packets directly into the register file of a target core using a thread-safe interface, reducing packet handover times to a minimal \qty{69}{\nano\second} \gls{acr:rtt} (\qty{17}{\nano\second} excluding \gls{acr:mac}).
+To enable this, custom transport protocol logic is implemented in hardware, and packets are classified and further modified at line rate with the aid of P4-\gls{acr:psa} ingress and egress pipelines.
+
 %?? Are the tools just sharper now?
 
 \section{Offloading and In-Network Compute}\label{sec:offloading-and-in-network-compute}
@@ -924,9 +934,6 @@ Data dependencies between basic blocks are extracted from the P4 IR in P4C compi
 %Lyra~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running Network Programming Language friendly programs (i.e., same constraints as P4 programs) across heterogeneous switch hardware, plus placement constraints.
 %
 %?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
-
-\paragraph{Future hosts}
-?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
 
 \section{In-Network Compute Use Cases}\label{sec:in-network-compute-use-cases}
 
