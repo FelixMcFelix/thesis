@@ -651,6 +651,7 @@ What makes this an exciting area of study is that in-network applications often 
 Suppose in \cref{fig:pdp-lit-steering:on} the two endpoint machines first check or update state using another service (i.e., key-value store) before communicating with one another.
 By moving this service \emph{completely into the \gls{acr:pdp} infrastructure}, entire \glspl{acr:rtt} worth of communication delay can be eliminated.
 In data centre networks, where \glspl{acr:rtt} are already $\mathcal{O}\left(\unit{\micro\second}\right)$, simply placing a host in-line would undo most of this latency reduction\sidenote{While host offloading frameworks have come a long way, there are data transfer costs which cannot be elided which we'll discuss in \cref{sec:wtf}.} while being unable to meet rack-scale fanout.
+This becomes key when dealing with remote procedure call workloads common to such datacentres, where completions are on an $\mathcal{O}\left(\unit{\micro\second}\right)$ timescale themselves~\parencite{DBLP:journals/cacm/BarrosoMPR17,DBLP:conf/nsdi/KaliaKA19,DBLP:conf/isca/SutherlandGFMPD20}.
 Further example services may also aggregate data from many sources to allow a single host to process it, or apply per-packet \gls{acr:ml} inference at line rate; when end-hosts and the network fabric are all jointly owned, there is great scope for tighter network-app integration and what it might enable.
 Notably, handcrafted in-network services such as \gls{acr:ml} inference might replace entire blocks in an \gls{acr:nf} chain, better supporting \gls{acr:vnf} offloading by making better use of the underlying hardware.
 The costs incurred by such services are also interesting.
@@ -802,10 +803,26 @@ To do so, the two commodity host machines (\emph{Src} and \emph{Swap}) were set 
 The hardware lacks support for direct cache access functions like Intel DDIO, and clock scaling was disabled for predictable measurement.
 The machines were connected over a \qty{40}{\giga\bit\per\second} direct copper cable using a single Rx/Tx queue on \emph{Swap}.
 Traffic was generated on \emph{Src} using Pktgen-\gls{acr:dpdk}~\parencite{pktgen-dpdk} to generate \qty{64}{\byte} packets at \qty{1}{\giga\bit\per\second}, timing \num{20000} packets per framework using the included uniform latency sampler.
+\emph{Swap} was configured in four ways, using \gls{acr:dpdk}'s \emph{testpmd} application for receipt and forwarding:
+\begin{description}
+	\item[\gls{acr:dpdk}] \emph{testpmd} was set to swap \gls{acr:mac} addresses and forward packets, using the X710 \gls{acr:nic}'s \texttt{i40e} poll-mode driver.
+	\item[Native \gls{acr:xdp}] A custom \gls{acr:ebpf} program set to swap packet \gls{acr:mac} addresses and always return \texttt{XDP\_TX} was manually installed.
+	\item[\emph{\texttt{AF\_XDP}}] \emph{testpmd} was set only to forward packets, using the \gls{acr:xdp} poll-mode driver with a custom \gls{acr:ebpf} program to swap \gls{acr:mac} addresses before redirecting to the first supplied \gls{acr:xdp} socket. This driver makes use of polling support for \texttt{AF\_XDP} sockets.
+	\item[\emph{\texttt{AF\_PACKET}}] \emph{testpmd} was set to swap \gls{acr:mac} addresses and forward packets, using the \texttt{AF\_PACKET} poll-mode driver.
+\end{description}
+\gls{acr:ebpf} programs were written in Rust (version 1.59.0) using an in-development version of the redbpf framework.
+Note that in the \texttt{AF\_XDP} case the choice to perform \gls{acr:mac} swapping in the \gls{acr:xdp} hook (rather than userland) is deliberate, to measure the time taken to reach user code after service by the offloaded \gls{acr:ebpf} program.
 
+\begin{figure}
+	\centering
+	\includegraphics[keepaspectratio,width=\linewidth]{plots/xdp/macswap-rtts-split}
+	\caption[A microbenchmark of bypass/offload frameworks' effects on packet RTTs.]{A microbenchmark of bypass and offload frameworks' effects on packet \glspl{acr:rtt}. In line with our expectations from the amount of processing removed by each framework according to \cref{fig:pdp-lit-offloading}, \emph{\gls{acr:dpdk}} adds the lowest base latency, followed by \emph{Native \gls{acr:xdp}} and \texttt{AF\_XDP}. All of these achieve significantly better forwarding latencies than na\"{i}ve use of \texttt{AF\_PACKET}.\label{fig:xdp-microbench}}
+\end{figure}
 
-?? Transmission relies on the PMD.
-?? in XDP, macswap function is handled by the \gls{acr:ebpf} program installed at the xdp hook. Else, PMD.
+%?? Testpmd on send-side
+%
+%?? Transmission relies on the PMD.
+%?? in XDP, macswap function is handled by the \gls{acr:ebpf} program installed at the xdp hook. Else, PMD.
 
 %Intel Core i7-4790 (\qtyproduct[product-units=single]{4 x 3.6}{\giga\hertz}), \qty{16}{\gibi\byte} RAM (DDR3, \qty{1866}{\mega\hertz}), 1~\texttimes{} Intel X710 40GbE NIC, Ubuntu 21.10 (5.13.0-30-generic)
 
@@ -813,63 +830,89 @@ Traffic was generated on \emph{Src} using Pktgen-\gls{acr:dpdk}~\parencite{pktge
 
 %?? clock scaling disabled
 
-?? Pktgen-\gls{acr:dpdk}~\parencite{pktgen-dpdk}, \qty{64}{\byte} packets at 
+%?? Pktgen-\gls{acr:dpdk}~\parencite{pktgen-dpdk}, \qty{64}{\byte} packets at 
 
-?? macswap function: done in \gls{acr:xdp} hook where possible. use DPDK to do so with the device-specific poll-mode driver (\emph{DPDK}), and emulated drivers (\texttt{AF\_XDP} and \texttt{AF\_PACKET}).
+%?? macswap function: done in \gls{acr:xdp} hook where possible. use DPDK to do so with the device-specific poll-mode driver (\emph{DPDK}), and emulated drivers (\texttt{AF\_XDP} and \texttt{AF\_PACKET}).
 
-\begin{figure}
-	\centering
-	\includegraphics[keepaspectratio,width=\linewidth]{plots/xdp/macswap-rtts-split}
-	\caption[A microbenchmark of bypass/offload frameworks' effect on packet RTTs.]{A microbenchmark of bypass/offload frameworks' effect on packet RTTs.\label{fig:xdp-microbench}}
-\end{figure}
+\Cref{fig:xdp-microbench} shows a clear performance hierarchy between the offload and bypass frameworks: \emph{\gls{acr:dpdk}} has a \qty{11401}{\nano\second} lower median \gls{acr:rtt} than offloaded \gls{acr:ebpf} code, which in turn is \qty{2167}{\nano\second} lower than \texttt{AF\_XDP}.
+Distributions of latencies fall within a tight bound of \qtyrange{3}{5}{\micro\second}, with \emph{Native \gls{acr:xdp}}'s \glspl{acr:rtt} appearing less varied than \texttt{AF\_XDP}---it's difficult to make any conclusive observations here due to variability in the send and receive stacks of both machines.
+The inclusion of \texttt{AF\_PACKET} is, to some extent, a strawman.
+It does however demonstrate quite succinctly the absolute worst-case behaviour of not making use of kernel or stack bypass technologies for generic packet processing---order-of-magnitude worse latencies and tail behaviour.
+It's worthwhile to remind ourselves that \gls{acr:xdp} hook code can run alongside the standard Linux networking stack, benefiting applications without needing to reconsider and rewrite their socket handling code.
+Additionally, by swapping testpmd for a Rust-based receive stack and reading from the \texttt{AF\_XDP} socket (using blocking I/O rather than polling), early measurements saw a \qtyrange{39}{50}{\micro\second} gap between \gls{acr:ebpf} and userland code.
 
-\Cref{fig:xdp-microbench} shows...
-``While this is \emph{a little bit} of a strawman...''
-
-?? Earlier measurements saw a \qtyrange{39}{50}{\micro\second} gap between Native and AF when using blocking I/O (non-polling).
-
-?? Extra lat and very high variability, comparatively.
+%?? Extra lat and very high variability, comparatively.
 
 \subsection{Frameworks for Automatic Offloading}\label{sec:frameworks-for-automatic-offloading}
+One of the strengths of the above offload technologies is that their architects are keen to seem them achieve widespread adoption, and as such they tend to be well-integrated with existing technical stacks.
+For instance, \gls{acr:ebpf} has a codegen target for both the LLVM and GCC compiler suites since 2015 and 2019 respectively~\parencite{ebpf-llvm,ebpf-gcc}, enabling code written in popular high-level languages like C or Rust to be compiled to this level.
+I provide here a brief overview of the higher- and lower-level tooling developed by the research community to either lower the barrier for adoption (and easily migrate existing \gls{acr:nf} solutions), or to improve on the potential performance benefits.
 
-?? mention BPFabric~\parencite{DBLP:conf/ancs/JouetP17} somewhere.
+\paragraph{Host-to-SmartNIC}
+\emph{Floem}~\parencite{DBLP:conf/osdi/PhothilimthanaL18} presents a DSL in Python for Click-like dataflow programming to be offloaded, specifying a processing graph of logical blocks which compiles to C code for hosts and target NICs.
+Users specify which parts of the processing graph execute on each offload device, making this a useful tool for investigating offloading strategies (but not necessarily optimal).
+Per-packet metadata is user-specified, but the compiler can infer which state must cross \gls{acr:cpu}-to-\gls{acr:nic} boundaries with the aid of key annotations.
+Individual blocks (and the centralised queue handling) require user implementation in C for each target device class.
 
-?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
+\emph{iPipe}~\parencite{DBLP:conf/sigcomm/LiuCSKPG19} runs C language programs on SmartNICs and hosts according to whether traffic is at risk of suffering from SmartNIC resource contention.
+Although iPipe aims to maximise the amount of traffic served by the SmartNIC, processing is dynamically `unoffloaded' back to the host machine if the SmartNIC's monitored load is too great (i.e., if packet latencies increase).
+In contrast to Floem, iPipe uses an actor programming model to allow for more dynamic control flow between program blocks; this runtime `unoffloading' and migration occurs at actor-level granularity.
+iPipe assumes identical language support between the host and offload target, and while C language support is common this is not guaranteed depending on how tailored the target SmartNIC may require code to be.
+However, the design is effective enough to protect underlying traffic while achieving improved latency and throughput bounds over a similar \gls{acr:dpdk} dataplane.
+
+\emph{Gallium}~\parencite{DBLP:conf/sigcomm/ZhangZK20} converts C++ Click programs to automatically leverage \gls{acr:pdp} resources between several segments---pre- and post-host offloaded P4 segments, sandwiching a single host C++ program.
+This model gives greater flexibility than C-based offloading by enabling program division between, say, a Tofino switch and its attached controller \gls{acr:cpu}, however this imposes greater restrictions on what logic may be offloaded.
+Gallium uses LLVM \gls{acr:ir} to determine read-write dependencies between variables basic-blocks of the packet processing chain's control flow graph, and account for \gls{acr:pdp} hardware's capabilities around packet reads (i.e., \gls{acr:pdp} datapaths typically can't access packet bodies past $\sim$\qty{300}{\byte}).
+By annotating these blocks based on their ordering requirements and offload capability, as well as limiting metadata movement to under \qty{100}{\byte}, they generate the desired program splits by maximising the \gls{acr:ir} instructions moved into P4 code---ideally identifying fast paths if there exist cases where the host part can be elided.
+This approach successfully achieved higher throughput and lower latency than a purely host-based FastClick solution for trojan detection.
+The main drawback is that Gallium requires some annotation to translate Click primitives into \glspl{acr:mat} as well as read or write dependencies on function parameters, otherwise the conversion to P4 means minimal additional work per target device.
+
+\paragraph{eBPF in the network}
+As a solution to the limited expression granted by the OpenFlow's action set, \emph{BPFabric}~\parencite{DBLP:conf/ancs/JouetP17} proposed that \gls{acr:ebpf} programs should be used in place of individual and explicit \gls{acr:mat} definitions.
+%?? well-suited because \gls{acr:ebpf} simple, non-Turing, bounded exec time suited for real-time.
+\gls{acr:ebpf} was seen as well-suited here because of its simple semantics and restrictions which kept it non-Turing complete; thus, having bounded execution times suitable for real-time packet processing.
+Its authors proposed keeping most of the OpenFlow machinery intact---the device-controller relationship over a control plane network specifically---but instead install one \gls{acr:ebpf} program per device, encoding its entire view of the dataplane.
+\gls{acr:mat} layouts and program needs are included in the ELF metadata of supplied \gls{acr:ebpf} programs, and the return value of such a program is the desired output port (including the standard special ports to forward packets to the controller).
+Such programs would be compiled to from a constrained, high-level, C-like language with the typical \gls{acr:ebpf} restrictions on loops, with a device-local loader playing the role of the Linux kernel's verifier.
+%?? device-local loader plays the role of kernel in verification etc.
+%?? Keeps all the relevant OpenFlow machinery
+%?? One program per device, which returns the output port for a given packet (incl special outputs like controller, etc.).
+%?? MAT layout in the ELF header.
+%?? Forward-thinking: maps enables and accounts for switch/nic-local updates to table state without controller.
+The proposal contains one particularly forward-thinking aspect---\gls{acr:ebpf} maps would be mutable from within the target device, enabling and accounting for switch- or \gls{acr:nic}-local updates to table state without the aid of a controller.
+It did not, however, solve the problem of how SmartNICs or other target devices should actually implement the required \gls{acr:ebpf} execution engines.
+
+\emph{hXDP}~\parencite{DBLP:conf/osdi/BrunellaBBPSBCP20} designs a dedicated \gls{acr:cpu} on \gls{acr:fpga} hardware tailored for \gls{acr:ebpf} program execution on network traffic.
+Given that hXDP is tailored towards running unported \gls{acr:xdp} programs, this coprocessor is augmented with dedicated support for helper functions and memory for maps.
+Their model iteratively runs an expanded \gls{acr:ebpf} \gls{acr:isa} rather than converting programs into a complete pipelined circuit to offer faster redesign and reinstall times: complete circuit planning takes a long time, while \gls{acr:jit} compiling an \gls{acr:ebpf} program into their new \gls{acr:isa} is pretty fast.
+Additionally, their compiler tracks functional dependencies to encode the program in \gls{acr:vliw} form to maximise hardware parallelism, while also applying network-specific optimisations.
+%This includes some very cool details on around VLIW instruction-level parallelism built into their ISA and figured out during compile-time.
+This dedicated design outperforms hosts and \gls{acr:nfp} SmartNICs in latency, but typically exhibits worse throughput.
+
+%?? andimpl maps, kernel functions
+
+%?? offers a concrete solution to this problem
+
+\paragraph{eBPF in hosts}
+Preliminary work has been proposed on automatically splitting \gls{acr:ebpf} programs between an \gls{acr:xdp} part and userland part~\parencite{DBLP:conf/conext/ShahinfarMSSBA21}.
+This considers both horizontal splits, i.e., subdividing code into \gls{acr:ebpf} chunks using tail-calls, and vertical user$\leftrightarrow$kernel splits of code.
+%I think their XDP vs.~AF\_XDP split test confirms that the first handler in the XDP hook is basically single-threaded, which probably has some implications for our use of it as an offload.
+This appears to have promise for increasing application throughput, although optimal splitting points vary based on the use case.
 
 ?? Morpheus~\parencite{DBLP:conf/asplos/MianoSRRA22} for run-time optimisation.
 
-?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
+\paragraph{FPGAs and the wider network}
+?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
 
 \emph{ClickNP}~\parencite{DBLP:conf/sigcomm/LiTLPLXXC16} targets NetFPGAs: DAG of predefined Click-like blocks, i.e. VHDL segments.
 Why?
 The C$\rightarrow$VHDL pipeline leads to awful code, so this achieves better FPGA usage.
 
-\emph{Floem}~\parencite{DBLP:conf/osdi/PhothilimthanaL18} presents a DSL in python, which compiles to C for host and specific target NIC.
-This does require specific dev effort per-target-NIC.
-
-\emph{iPipe}~\parencite{DBLP:conf/sigcomm/LiuCSKPG19} runs C language programs on SmartNIC (intended) and host (emergency) according to whether traffic is at-risk of suffering from SmartNIC resource contention.
-Processing is dynamically `unoffloaded' back to the host machine if SmartNIC load is too great.
-This requires identical language support on both accelerator and host---which is very much not guaranteed.
-
-\emph{hXDP}~\parencite{DBLP:conf/osdi/BrunellaBBPSBCP20} allows eBPF execution on FPGA---supports expanded eBPF ISA rather than converting program into a complete pipelined circuit (i.e., this runs as a coprocessor).
-Why?
-Fast redesign/reinstall time: a complete circuit bake takes ages, while JITing and compiling an eBPF program into their new ISA is pretty fast.
-This includes some very cool details on around VLIW instruction-level parallelism built into their ISA and figured out during compile-time.
-
-\emph{Gallium}~\parencite{DBLP:conf/sigcomm/ZhangZK20} converts a C++ (ClickNF program)$\rightarrow$auto-leverage PDP (P4 + C++ + P4).
-Split into pre- and post-host P4 segments, with a host C++ program.
-Gallium uses LLVM IR to determine read-write dependencies between variables/basic-blocks, account for PDP capabilities of packet reads (i.e., PDP can't touch packet body past $\sim$\qty{300}{\byte}), can move about \qty{100}{\byte} metadata between sites.
-Identifies fast/slow paths if offloading can be elided.
-Main drawback is that some annotation needed to translate Click primitives into MATs etc., otherwise the conversion to P4 means minimal additional work per target accelerator.
 
 \emph{Flightplan}~\parencite{DBLP:conf/nsdi/SultanaSGPHSBDL21} splits P4 program into subchunks placed and routed between \{PDP, FPGA, host, server, NPU, ASIC\} for pipelining (i.e., performance) or redundancy.
 Their disaggregation inserts blocks before and after splits to handle metadata (state) passing.
 Their compiler breaks the programs on basic blocks with user annotations, where specific implementations manually given for some \texttt{extern}s to enable device-specific acceleration.
 Data dependencies between basic blocks are extracted from the P4 IR in P4C compiler.
-
-Preliminary work on splitting eBPF programs between an XDP part and userland part has been proposed~\parencite{DBLP:conf/conext/ShahinfarMSSBA21}.
-This considers both horizontal (i.e., chunks in driver with XDP tail-calls) or vertical (user$\leftrightarrow$kernel) splits of code.
-I think their XDP vs.~AF\_XDP split test confirms that the first handler in the XDP hook is basically single-threaded, which probably has some implications for our use of it as an offload.
 
 %\paragraph{Misc P4 translations.}
 %T4P4S~\parencite{DBLP:conf/hpsr/VorosHKLTL18} converts P4 programs into C, which are linked against a target-specific network hardware abstraction layer.
@@ -881,6 +924,9 @@ I think their XDP vs.~AF\_XDP split test confirms that the first handler in the 
 %Lyra~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running Network Programming Language friendly programs (i.e., same constraints as P4 programs) across heterogeneous switch hardware, plus placement constraints.
 %
 %?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
+
+\paragraph{Future hosts}
+?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
 
 \section{In-Network Compute Use Cases}\label{sec:in-network-compute-use-cases}
 
