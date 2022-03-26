@@ -512,7 +512,7 @@ As a result it is currently tedious to write and maintain a unified dataplane th
 $\mu$\emph{P4}~\parencite{DBLP:conf/sigcomm/SoniR0DF20} extends the P4 compiler to decompose parser and action code into independent subprograms which may be composed together in a more simple manner by programmers.
 This simplifies porting behaviours between different switch models---particularly in separating out (and integrating) complex interactions and dependencies between parser, deparser and action code stages.
 \emph{Lyra}~\parencite{DBLP:conf/sigcomm/GaoZLMZTSCZY20} is a language for running switch programs e.g., P4 and Broadcom's \emph{NPL}~\parencite{broadcom-npl}, across heterogeneous switch hardware, while also handling placement constraints.
-Lyra expresses the entire network dataplane using the `one big switch' abstraction, and compiles from its own higher-level language to an intermediate representation and then to P4 or NPL.
+Lyra expresses the entire network dataplane using the `one big switch' abstraction, and compiles from its own higher-level language to an \gls{acr:ir} and then to P4 or NPL.
 Compilation is combined with topology information about the target network, as well as placement constraints, to generate an optimal embedding in the network using a \gls{acr:smt} solver.
 
 As is the case when programming host machines, verifying that a dataplane program behaves correctly---both within a single switch and the wider dataplane with regards to code and \gls{acr:mat} contents---presents its own set of challenges.
@@ -795,6 +795,7 @@ Note that packets may be served \emph{entirely} in the \gls{acr:xdp} hook by mak
 Moreover, \gls{acr:xdp} is flexible enough to fit into a wide variety of packet processing stacks.
 
 This is accompanied by the \texttt{AF\_XDP}~\parencite{lwn-af-xdp} socket family, which may circumvent the remainder of the network stack by sending the packet directly to user code from an \gls{acr:xdp} hook.
+As a notable application, the main packet path of the \gls{acr:ovs} software switch has been migrated to \texttt{AF\_XDP} due to its performance and ease of injecting user code into the kernel stack~\parencite{DBLP:conf/sigcomm/TuWAP21}.
 The file descriptors of these sockets are placed in an \gls{acr:ebpf} map, enabling faster packet processing by reducing the time delta between the fast and slow packet paths.
 User and kernel code share a set of ring buffers, queues, and a large block of preallocated UMEM to pass packet-sized buffers between another in response to completions and demand, and are outwardly similar to netmap in that UMEM descriptors are passed via these queues and rings.
 While map sizes are fixed at compile time, sockets have a many-to-one relationship with the actual hook program, enabling per-core or per-application service of packets to make better use of cache coherence.
@@ -909,20 +910,33 @@ This considers both horizontal splits, i.e., subdividing code into \gls{acr:ebpf
 %I think their XDP vs.~AF\_XDP split test confirms that the first handler in the XDP hook is basically single-threaded, which probably has some implications for our use of it as an offload.
 This appears to have promise for increasing application throughput, although optimal splitting points vary based on the use case.
 
-?? Morpheus~\parencite{DBLP:conf/asplos/MianoSRRA22} for run-time optimisation.
+\emph{Morpheus}~\parencite{DBLP:conf/asplos/MianoSRRA22} offers a more sophisticated form of \gls{acr:jit} compilation for \gls{acr:ebpf} and \gls{acr:dpdk} programs---using lightweight sketch-based measurement to drive profile-guided optimisation and recompilation on a regular time interval.
+This produces compiled bytecode tailored to the observed traffic distribution, twinned with adaptive inlining of tables into fast and slow paths dependent on \gls{acr:mat} contents.
+While most of this optimisation is provided as-standard when working with profiled LLVM \gls{acr:ir}, Morpheus provides specific compiler plugins to account for key features such as \gls{acr:mat} logic and match classes.
+%?? sketch-based profiling (`adaptive measurement')
+%?? adaptive inlining based on \gls{acr:mat} contents, fast and slow paths
+%?? guards around maps to gate de-optimisation
+\gls{acr:ebpf} programs use guard mechanisms to fall back to deoptimised program code as required (\gls{acr:mat} or profile changes), while userland code is broken into smaller optimised chunks that are be atomically updated via a trampoline function.
+%?? programs broken down into smaller chunks: map indirection for tailcalls in ebpf, trampolines in user for atomic update
+Morpheus achieves substantial latency and throughput improvements on larger dataplane programs such as Katran~\parencite{katran}, in spite of the additional overhead of adaptive trace monitoring.
 
 \paragraph{FPGAs and the wider network}
-?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
+%?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
 
-\emph{ClickNP}~\parencite{DBLP:conf/sigcomm/LiTLPLXXC16} targets NetFPGAs: DAG of predefined Click-like blocks, i.e. VHDL segments.
-Why?
-The C$\rightarrow$VHDL pipeline leads to awful code, so this achieves better FPGA usage.
+\emph{ClickNP}~\parencite{DBLP:conf/sigcomm/LiTLPLXXC16} presents an approach for migrating entire Click processing graphs to NetFPGA devices.
+While tools to convert C programs into the required VHDL specifications exist, the authors find that they lead to suboptimal code in area and \gls{acr:lut} usage.
+As is standard in Click-like approaches, functions are written as directed graphs of predefined Click-like blocks, in this case each being specifically written in a hardware description language to achieve lower \gls{acr:fpga} resource utilisation.
 
+\emph{Metron}~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} builds on OpenBox to break \gls{acr:vnf} chains into stateless and stateful logic: stateless processing is offloaded to the network via the ONOS controller (making use of e.g., heterogeneous OpenFlow and P4 hardware), while function chains are dynamically allocated one-per core.
+%?? weak \gls{acr:mat} programmability of modern \glspl{acr:nic} to control core steering.
+Crucially, the performance of these stateful functions is maximised by using the weak \gls{acr:mat} programmability of modern \glspl{acr:nic} to control core steering dynamically (and consistently) according to load and to balance traffic across replicated functions.
+Chains are allocated in the network using a combination of topology and current load information (preferring local processing).
 
-\emph{Flightplan}~\parencite{DBLP:conf/nsdi/SultanaSGPHSBDL21} splits P4 program into subchunks placed and routed between \{PDP, FPGA, host, server, NPU, ASIC\} for pipelining (i.e., performance) or redundancy.
-Their disaggregation inserts blocks before and after splits to handle metadata (state) passing.
-Their compiler breaks the programs on basic blocks with user annotations, where specific implementations manually given for some \texttt{extern}s to enable device-specific acceleration.
-Data dependencies between basic blocks are extracted from the P4 IR in P4C compiler.
+\emph{Flightplan}~\parencite{DBLP:conf/nsdi/SultanaSGPHSBDL21} splits a P4 program into subchunks, placed and routed between heterogeneous \gls{acr:pdp} hardware along a path---\glspl{acr:fpga}, hosts, servers, \glspl{acr:npu}, and \glspl{acr:asic}---for pipelining (i.e., performance) or redundancy.
+Flightplan's compiler breaks its input dataplane's \gls{acr:ir} into blocks according to user annotations in the supplied P4 code.
+Further user-given annotations denote manual implementations of specific \texttt{extern}s, to enable device-specific acceleration of key functions such as compression or error correction.
+Their disaggregation procedure inserts logic before and after splits to handle metadata and state passing.
+These blocks are statically analysed to extract the data dependencies between sub-functions, which are then composed into a chain over the routing infrastructure using a set of program, resource, and network rules.
 
 %\paragraph{Misc P4 translations.}
 %T4P4S~\parencite{DBLP:conf/hpsr/VorosHKLTL18} converts P4 programs into C, which are linked against a target-specific network hardware abstraction layer.
