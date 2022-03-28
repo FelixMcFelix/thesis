@@ -583,6 +583,19 @@ To enable this, custom transport protocol logic is implemented in hardware, and 
 
 %?? Are the tools just sharper now?
 
+While the P4 \gls{acr:psa} is a compilation target supported on many SmartNICs, in many ways it is a suboptimal model as it ignores the constraints and strengths of \gls{acr:nic} hardware compared to \gls{acr:rmt} switches.
+The \emph{Portable \gls{acr:nic} Architecture}~\parencite{p4-pna}, which is in the process of being codified, offers first-class support for such devices, using instead a single pipeline aided by \texttt{extern}s for host$\leftrightarrow$\gls{acr:nic} processing.
+This is expected to feature a message processing block for programmable segmentation and coalescing etc., as expected by host \glspl{acr:os} and their drivers.
+Most notably, this includes device-local updates and additions to table state, packet mirroring, and table row expiry events.
+To date, device-local updates have been implemented as part of T4P4S to explore some of the design-space around concurrent table access and modifications~\parencite{DBLP:conf/ancs/SimonSSGC21}.
+However, this capability is bot guaranteed for all similar devices.
+Netronome \gls{acr:nfp} \gls{acr:nic} tables are reliant on the optimised DCFL~\parencite{DBLP:conf/infocom/TaylorT05} data format, potentially still limiting this capability to control plane devices.
+
+%\gls{acr:pdp} hardware excels in applying actions to network packets using \glspl{acr:mat}, potentially giving us a high-performance method to install selected actions within the network.
+%However, directly modifying these match tables from within the device itself is neither feasible nor safe.
+%On Netronome \gls{acr:nfp} hardware in particular, rule updates \emph{must} be applied by the co-hosted controller machine, as tables are reliant on the optimised DCFL~\parencite{DBLP:conf/infocom/TaylorT05} data format.
+%In addition to the prohibitive complexity of building this data structure on-device, its construction requires knowledge of the entire rule set (and cannot be incrementally updated).
+
 \section{Offloading and In-Network Compute}\label{sec:offloading-and-in-network-compute}
 %?? Explain rationale first...
 As we've explored in \cref{sec:from-fixed-function-to-fully-programmable}, modern networks now have a large variety of tools to enable traffic and packet processing, including hosts, programmable switches, SmartNIC devices, and middleboxes---all in tandem with control plane programmability.
@@ -950,15 +963,82 @@ These blocks are statically analysed to extract the data dependencies between su
 %?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
 
 \section{In-Network Compute Use Cases}\label{sec:in-network-compute-use-cases}
+%?? Lead-in, describe...
+To make the value of \glspl{acr:pdp} and in-network compute clearer, I present here a selection of specific applications that have been improved or enabled outright by these new capabilities.
+These include advances in network monitoring and telemetry, application acceleration by in-network services, and how the network may allow improved or more dynamic transport and routing.
+Finally, as it is of particular importance to this thesis and the overall goal of \gls{acr:ddn}, we shall examine \gls{acr:ml}-related use cases.
+It must be said that the works shown here are indicative, rather then exhaustive.
+Interested readers should also examine dedicated surveys such as that of \Textcite{DBLP:journals/access/KfouryCB21}.
 
-?? \Textcite{DBLP:conf/cloud/SapioACK17} have shown an interest in performing \emph{aggregate} step of \emph{partition-aggregate} workloads (\ie, MapReduce) in programmable switches.
+\subsection{Network Monitoring}
+?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
+?? Maybe explain them?
 
-?? Katran~\parencite{katran} L4 load bal;ancer based on \gls{acr:xdp}
+?? Sonata~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18}
+
+?? Snappy~\parencite{DBLP:conf/sigcomm/ChenFKRR18} for microbursts
+
+?? Dapper~\parencite{DBLP:conf/sosr/GhasemiBR17}
+
+?? INT~\parencite{p4-int}
+
+?? PINT~\parencite{DBLP:conf/sigcomm/BasatRLAYM20}
+
+?? INT-label~\parencite{DBLP:conf/infocom/Song0JC00L21}
+
+?? Sketchlet-INT~\parencite{DBLP:conf/nsdi/ZhaoYLYCLZWWWZ21}
 
 ?? On-switch (Tofino) DDoS detection and defence~\parencite{DBLP:conf/uss/LiuNNLK0BYS21}
 
-\paragraph{In-Network Computation}\label{sec:in-network-computation}
-?? In-network computation.\sidenote{Test text hello.}
+?? Loop detection~\parencite{DBLP:conf/conext/0004BKAYM20}
+
+?? I posit that INDDoS~\parencite{DBLP:journals/tnsm/DingSPCS21}, which uses Count-min Sketches to estimate \gls{acr:ddos} victim cardinality, could be an effective reward function source---i.e., using the number of detected victims as a loss value.
+
+\subsection{Service Acceleration and Offloading}
+?? NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
+
+?? More KV~\parencite{DBLP:conf/nsdi/TakruriKAA20}
+
+?? Katran~\parencite{katran,katran-blog} L4 load bal;ancer based on \gls{acr:xdp} -- sadly no perf numbers, though used aggressively in prod.
+
+?? Tofino Load balance~\parencite{DBLP:conf/nsdi/BarbetteTYKMPC20}
+
+?? \Textcite{DBLP:conf/cloud/SapioACK17} have shown an interest in performing \emph{aggregate} step of \emph{partition-aggregate} workloads (\ie, MapReduce) in programmable switches.
+
+?? DPI?~\parencite{DBLP:conf/conext/HypoliteSHDDS20}
+
+?? String/regex mathing?~\parencite{DBLP:conf/infocom/WangZLLLJX21}
+
+?? compression~\parencite{DBLP:conf/conext/VaucherYFLS20}
+
+?? Apache-style forwarding, accel of pub-sub archs~\parencite{DBLP:conf/conext/JepsenFMFCS20}
+
+%?? In-network storage/caching~\parencite{DBLP:conf/eurosys/SchmidPWEP20}
+
+?? DHTs~\parencite{DBLP:conf/ancs/HugerichSS21}
+
+\subsection{Transports, Protocols, and Routing}
+?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
+
+?? PIFO~\parencite{DBLP:conf/sigcomm/SivaramanSACCAB16}
+
+?? PIEO~\parencite{DBLP:conf/sigcomm/Shrivastav19} aqm
+
+Turns out that you can't just write AQM solns in P4, you need to co-design for the target environment---with meaningful performance cost to boot, based on the tradeoffs you need to make~\parencite{Kunze-P4-AQM}.
+
+?? HPCC~\parencite{DBLP:conf/sigcomm/LiMLZFTCZKAY19}
+
+?? NDP~\parencite{DBLP:conf/sigcomm/HandleyRAV0AW17}
+
+?? tHis?~\parencite{DBLP:conf/nsdi/HsuBCRW20}
+
+\subsection{Machine Learning}\label{sec:inc-uses-pdp-ml}
+?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
+
+?? Although we have discussed Taurus above...
+?? Describe in more detail here
+
+\Cref{sec:fixed-point-and-binary} for representations...
 
 iSwitch~\cite{DBLP:conf/isca/LiLYCSH19} uses programmable switches to combine model updates between RL agents acting as part of a distributed RL training system.
 Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this is properly explained in the PDP seciton: source is `report-yr2.tex'.}
@@ -966,27 +1046,7 @@ Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this
 ?? A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
 ?? \emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
 
-\paragraph{Network Telemetry}
-?? Others (try to avoid DDN cases here).
 
-?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
-
-\paragraph{Transport Layer Optimisation}
-?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
-
-\paragraph{Active Queue Management}
-Turns out that you can't just write it in P4, you need to co-design for the target environment---with meaningful performance cost to boot, based on the tradeoffs you need to make~\parencite{Kunze-P4-AQM}.
-
-\paragraph{KV Stores}
-NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
-
-\subsection{ML in PDP}\label{sec:inc-uses-pdp-ml}
-?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
-
-?? Although we have discussed Taurus above...
-?? Describe in more detail here
-
-\Cref{sec:fixed-point-and-binary} for representations...
 
 %\section{Hardware Designs}
 %
@@ -1352,3 +1412,7 @@ Because of this, traditional flooding-based attacks aren't fully alleviated.
 
 \section{Summary}
 Eh.
+
+?? History
+
+?? The importance of moving high-performance services to the right execution environment---offloading

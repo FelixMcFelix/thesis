@@ -54,7 +54,7 @@ Recalling the large amount of time spent centrally aggregating parameter updates
 \emph{SwitchML}~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21} converts a programmable \gls{acr:tor} switch \emph{into a \gls{acr:ps}}, offering this as a P4 program built on fixed-point quantisation.
 \emph{ATP}~\parencite{DBLP:conf/nsdi/LaoLMCWAS21} extends this to a best-effort service and custom transport protocol in front of the true \gls{acr:ps}, falling back to floating point on detection of overflows and offering better support for several dynamic jobs.
 However, this family of optimisations can only be applied when two gradient packets are able to meet in the network excluding, e.g., ring AllReduce.
-I discuss implementation specifics in more detail through \cref{sec:in-network-computation}, and some rationale in \cref{sec:numerical-representations-for-embedded-ml}.
+I discuss implementation specifics in more detail through \cref{sec:in-network-compute-use-cases}, and some rationale in \cref{sec:numerical-representations-for-embedded-ml}.
 
 %?? communication and compute can be cleverly overlapped and optimised
 Techniques such as \emph{Wait-Free Backpropagation}~\parencite{DBLP:conf/usenix/ZhangZXDHLHWXX17,DBLP:conf/ppopp/AwanHHP17} have enabled tighter optimisation of when individual gradient parts can be set out and used to optimise for a compute-communication tradeoff.

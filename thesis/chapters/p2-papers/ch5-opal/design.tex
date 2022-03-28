@@ -181,6 +181,7 @@ In addition to the prohibitive complexity of building this data structure on-dev
 I instead suggest in general that \texttt{extern}s or datapath stages which apply \gls{acr:rl} actions to packets should maintain a small store of state-action pairs, and periodically send these back to the controller for batch installation.
 This ensures that the majority of installed rules benefit from faster hardware-accelerated lookups, while preventing installation delay on the newest decisions.
 Platforms such as Intel Tofino greatly simplify this, where Tofino Native Architecture intrinsics such as \emph{Action Profiles/Selects} allow a P4 action to be chosen based on a register value (e.g., an \gls{acr:rl} action).
+Future \glspl{acr:nic} and SmartNICs may expose support for runtime table modification via the Portable \gls{acr:nic} Architecture~\parencite{p4-pna} as discussed in \cref{sec:frontiers-in-programmable-networks}, but at present these proposals are and under constant reconsideration and are far too nascent to seriously consider.
 
 \subsection{Algorithm}\label{sec:opal-algorithm}
 To enable online in-\gls{acr:nic} learning in spite of the computational limits of \gls{acr:pdp} hardware, we must return to \emph{classical} \gls{acr:rl} methods and models.
