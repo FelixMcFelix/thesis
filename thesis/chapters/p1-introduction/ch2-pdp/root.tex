@@ -971,22 +971,52 @@ It must be said that the works shown here are indicative, rather then exhaustive
 Interested readers should also examine dedicated surveys such as that of \Textcite{DBLP:journals/access/KfouryCB21}.
 
 \subsection{Network Monitoring}
-?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
-?? Maybe explain them?
+%?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
+%?? Maybe explain them?
+Traffic monitoring solutions built on non-\gls{acr:pdp} fabrics can be imprecise or limited.
+Routers typically provide sampled data such as sFlow, Netflow, or IPFIX, along with imprecise timing at the \si{\micro\second} and \si{\milli\second}-level~\parencite{rfc7011,rfc3954}.
+While this offers useful insight at the aggregate or per-flow level, fine temporal or transient dynamics are lost, such as queue states or per-packet arrival timestamps which might help identify bursty flows or the culprits of microbursts on the network.
+Precision is not the sole culprit here, \unit{\micro\second}-level per-packet data simply has too much volume in both raw bytes and packets to meaningfully expose outside of the device.
+\gls{acr:pdp} fabrics offer here new ways to gather, aggregate, and process per-packet, -device, and -port state in-situ.
 
-?? Sonata~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18}
+%and observe... from
+%Acquiring \unit{\nano\second}
+%?? Per-packet, \unit{\nano\second}- or \unit{\micro\second}-level data
+%?? too much to export. (eve though us level in current tools)
+%?? device- and port-local state
 
-?? Snappy~\parencite{DBLP:conf/sigcomm/ChenFKRR18} for microbursts
 
-?? Dapper~\parencite{DBLP:conf/sosr/GhasemiBR17}
+%However, flow classification solutions today can usually only rely on sampled data provided by routers, such as sFlow, Netflow, or IPFIX, along with imprecise timing (\si{\micro\second} and \si{\milli\second}-level)~\parencite{rfc7011,rfc3954}.
+%While sampled, low-precision telemetry can be used to classify network traffic based on some flow properties (such as port and protocol numbers)~\parencite{DBLP:conf/iwcmc/RossiV10}, it cannot be used to classify based on fine temporal properties (\eg, identifying bursty flows and senders that can cause microbursts and buffer overflow on the network).
 
-?? INT~\parencite{p4-int}
+\emph{Sonata}~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18} splits dataflow queries on packet streams between \gls{acr:pdp} hardware and Apache Spark-based collector host machines.
+These dataflow queries are described in the usual functional style (maps, filters, etc.)---Sonata aims to maximise processing and data reduction performed by the dataplane to ease the burden on stream processing host machines.
+This includes \gls{acr:ilp}-based dynamic query refinement to filter out unneeded packets as early as possible.
+\emph{Snappy}~\parencite{DBLP:conf/sigcomm/ChenFKRR18} detects microbursts---transient spikes in queue occupancy leading to packet loss---by maintaining sketches to estimate the queue occupancy of long flows.
+The input data, packet arrival and departure events, are naturally too numerous to track externally, numbering in the millions or billions of packets per second at switch scale.
+Long flows dominating output port queues are determined as the root cause of these events, and such heavy-hitter flows may be marked, dropped, re-routed, or rate-limited as required.
+\emph{Dapper}~\parencite{DBLP:conf/sosr/GhasemiBR17} implements in-depth, per-flow analysis of \gls{acr:tcp} traffic in pure P4.
+When required, Dapper follows lightweight measurement of per-flow byte counts and timestamping with more in-depth estimation of congestion and receive window sizes, host reaction times, and latencies to determine whether the sender, network, or receiver is the true bottleneck (without inspecting state on either end-host machine).
 
-?? PINT~\parencite{DBLP:conf/sigcomm/BasatRLAYM20}
-
-?? INT-label~\parencite{DBLP:conf/infocom/Song0JC00L21}
-
-?? Sketchlet-INT~\parencite{DBLP:conf/nsdi/ZhaoYLYCLZWWWZ21}
+A particularly noteworthy family of measurement techniques associated with \glspl{acr:pdp} is \gls{acr:int}~\parencite{p4-int}.
+\gls{acr:int} allows for network state---including formerly inaccessible state such as egress queue/buffer occupancies and traversed paths---to be collected and reported without control plane intervention.
+To do so, packets contain header fields marking `telemetry instructions' to be executed by participating devices along their path.
+Typically, requested measurement data is appended to (or written into a dedicated space in) an \gls{acr:int} header attached to the packet, piggybacking onto existing traffic (thus, keeping packet arrival rates fairly constant).
+\gls{acr:int} sinks then strip this auxiliary data from packets, collect it, and report it to the control plane; enabling finer-grained measurement of network state in loads and routes, as well as network-assisted \glspl{acr:cca} and load balancing schemes.
+%?? typically, by piggybacking.
+To some extent, this is a specialisation of \emph{tiny packet programs}~\parencite{DBLP:conf/sigcomm/JeyakumarAGKM14}, which aimed to enable the same end goals and applications by taking a somewhat `active networking'-like tack---including simple load and push instructions for switch values inside every packet.
+Instead, \gls{acr:int} focusses on collecting pre-defined metadata such as node and port IDs, buffer states, and link utilisations.
+These fine-grained measurements can be added per-hop, also enabling packet paths to be traced without contacting the control plane as in past \gls{acr:pdp} approaches like \emph{NetSight}'s postcarding~\parencite{DBLP:conf/nsdi/HandigolHJMM14}.
+At the same time, these collected measurements allow operators to build a full-network picture of per-hop latencies, utilisations, and buffer states.
+%?? INT use-cases~\parencite{DBLP:conf/sigcomm/JeyakumarAGKM14}, postcards~\parencite{DBLP:conf/nsdi/HandigolHJMM14}
+While powerful, \gls{acr:int} is expensive to deploy.
+Although extra per-packet overhead can be bounded for some operations, \gls{acr:int}'s typical hop-by-hop recording causes a linear growth in packet sizes according to path length.
+Network \glspl{acr:mtu} limit the amount of per-packet state which can be added, but these 
+To combat these difficulties, \emph{PINT}~\parencite{DBLP:conf/sigcomm/BasatRLAYM20} introduces aggregation and approximation  mechanisms to bound per-query values into a certain budget of bits.
+Most notably, per-hop data collection is uniformly randomly divided over a packet's path, but this includes numerical approximations and the use of sketches for per-flow state on switches themselves.
+\emph{INT-label}~\parencite{DBLP:conf/infocom/Song0JC00L21} aims to reduce redundant measurements and curtail adverse effects on flows by attaching a labelling interval to every port, which can be adaptively altered to account for losses.
+This includes a probabilistic component such that packets with \gls{acr:int} labels are more likely to receive and carry additional metadata (limiting the effects of \gls{acr:int} on most packets).
+\emph{LightGuardian}~\parencite{DBLP:conf/nsdi/ZhaoYLYCLZWWWZ21} reduces the impact of exporting per-flow sketches by dividing them into \emph{sketchlets} over several packets, to be reconstructed by \gls{acr:int} sink nodes.
 
 ?? On-switch (Tofino) DDoS detection and defence~\parencite{DBLP:conf/uss/LiuNNLK0BYS21}
 
@@ -1018,6 +1048,8 @@ Interested readers should also examine dedicated surveys such as that of \Textci
 ?? DHTs~\parencite{DBLP:conf/ancs/HugerichSS21}
 
 \subsection{Transports, Protocols, and Routing}
+?? HULA routing~\parencite{DBLP:conf/sosr/KattaHKSR16}
+
 ?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
 
 ?? PIFO~\parencite{DBLP:conf/sigcomm/SivaramanSACCAB16}
