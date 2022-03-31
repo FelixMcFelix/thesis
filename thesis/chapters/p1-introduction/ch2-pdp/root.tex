@@ -966,7 +966,7 @@ These blocks are statically analysed to extract the data dependencies between su
 %?? Lead-in, describe...
 To make the value of \glspl{acr:pdp} and in-network compute clearer, I present here a selection of specific applications that have been improved or enabled outright by these new capabilities.
 These include advances in network monitoring and telemetry, application acceleration by in-network services, and how the network may allow improved or more dynamic transport and routing.
-Finally, as it is of particular importance to this thesis and the overall goal of \gls{acr:ddn}, we shall examine \gls{acr:ml}-related use cases.
+Finally, as it is of particular importance to this thesis and the overall goal of \gls{acr:ddn}, we shall examine in close detail \gls{acr:ml}-related use cases.
 It must be said that the works shown here are indicative, rather then exhaustive.
 Interested readers should also examine dedicated surveys such as that of \Textcite{DBLP:journals/access/KfouryCB21}.
 
@@ -1027,27 +1027,25 @@ To gather state, it maintains sketches of source/destination \glspl{acr:ip} and 
 State is polled by the control plane which is responsible for interpreting sketches to perform higher-level logic (e.g., thresholds, significant changes), and installs detection and mitigation functions using a heuristic algorithm to ensure sufficient coverage.
 
 \subsection{Service Acceleration and Offloading}
-?? NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
+Distributed data structures, such as key-value stores, are a foundational part of many data centre applications for process coordination and concurrency control.
+\emph{NetChain}~\parencite{DBLP:conf/nsdi/JinLZFLSKS18} and \emph{FLAIR}~\parencite{DBLP:conf/nsdi/TakruriKAA20} offer P4-based implementations of distributed key-value stores, routing and serving requests and updates subject to a chain replication protocol for reliability, achieving an order-of-manitude latency improvement for reads and writes.
+NetChain in particular uses a mixture of \glspl{acr:mat} and registers to accelerate index lookups and store data respectively, though both eliminate steering costs and host stack costs.
+As another example, distributed hash tables like \emph{No-hop}~\parencite{DBLP:conf/ancs/HugerichSS21} see improved lookup times from the \gls{acr:pdp} ecosystem.
 
-?? More KV~\parencite{DBLP:conf/nsdi/TakruriKAA20}
+%?? Enabling services
+Other advances built on \gls{acr:pdp} infrastructure have made it easier for network administrators to scale their infrastructure up to account for additional hosts, handling the associated routing, load balancing, and subscription at lower cost than prior methods.
+Facebook's open-source \emph{Katran} L4 load balancer~\parencite{katran,katran-blog} makes use of \gls{acr:xdp} to co-exist on existing service nodes, offer low-disruption updates, and presents lower than userland solutions.
+No performance numbers are shared, though it is reportedly used aggressively in production.
+\emph{Cheetah}~\parencite{DBLP:conf/nsdi/BarbetteTYKMPC20} implements consistent load balancing for arbitrary functions at switch scale on Tofino hardware, where it achieves strong tail performance guarantees for flows even during active scaling.
+An intriguing use of \gls{acr:pdp} hardware that has been presented is how it may allow \emph{packet subscriptions}~\parencite{DBLP:conf/conext/JepsenFMFCS20}---networks may offer an accelerated, Apache Kafka-style publish-subscribe architecture.
 
-?? Katran~\parencite{katran,katran-blog} L4 load bal;ancer based on \gls{acr:xdp} -- sadly no perf numbers, though used aggressively in prod.
-
-?? Tofino Load balance~\parencite{DBLP:conf/nsdi/BarbetteTYKMPC20}
-
+?? Stream processing and fusion (for both mgmt and apps.)
 ?? \Textcite{DBLP:conf/cloud/SapioACK17} have shown an interest in performing \emph{aggregate} step of \emph{partition-aggregate} workloads (\ie, MapReduce) in programmable switches.
-
 ?? DPI?~\parencite{DBLP:conf/conext/HypoliteSHDDS20}
-
 ?? String/regex mathing?~\parencite{DBLP:conf/infocom/WangZLLLJX21}
-
 ?? compression~\parencite{DBLP:conf/conext/VaucherYFLS20}
 
-?? Apache-style forwarding, accel of pub-sub archs~\parencite{DBLP:conf/conext/JepsenFMFCS20}
-
 %?? In-network storage/caching~\parencite{DBLP:conf/eurosys/SchmidPWEP20}
-
-?? DHTs~\parencite{DBLP:conf/ancs/HugerichSS21}
 
 \subsection{Transports, Protocols, and Routing}
 ?? HULA routing~\parencite{DBLP:conf/sosr/KattaHKSR16}
