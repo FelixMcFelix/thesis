@@ -970,7 +970,7 @@ Finally, as it is of particular importance to this thesis and the overall goal o
 It must be said that the works shown here are indicative, rather then exhaustive.
 Interested readers should also examine dedicated surveys such as that of \Textcite{DBLP:journals/access/KfouryCB21}.
 
-\subsection{Network Monitoring}
+\subsection{Network Monitoring}\label{sec:network-monitoring}
 %?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
 %?? Maybe explain them?
 Traffic monitoring solutions built on non-\gls{acr:pdp} fabrics can be imprecise or limited.
@@ -1018,11 +1018,13 @@ Most notably, per-hop data collection is uniformly randomly divided over a packe
 This includes a probabilistic component such that packets with \gls{acr:int} labels are more likely to receive and carry additional metadata (limiting the effects of \gls{acr:int} on most packets).
 \emph{LightGuardian}~\parencite{DBLP:conf/nsdi/ZhaoYLYCLZWWWZ21} reduces the impact of exporting per-flow sketches by dividing them into \emph{sketchlets} over several packets, to be reconstructed by \gls{acr:int} sink nodes.
 
-?? On-switch (Tofino) DDoS detection and defence~\parencite{DBLP:conf/uss/LiuNNLK0BYS21}
-
-?? Loop detection~\parencite{DBLP:conf/conext/0004BKAYM20}
-
-?? I posit that INDDoS~\parencite{DBLP:journals/tnsm/DingSPCS21}, which uses Count-min Sketches to estimate \gls{acr:ddos} victim cardinality, could be an effective reward function source---i.e., using the number of detected victims as a loss value.
+\gls{acr:pdp} hardware also offers a toolkit for the diagnosis and mitigation of more specific network problems.
+By using \gls{acr:int}-like switch tracking, \emph{Unroller}~\parencite{DBLP:conf/conext/0004BKAYM20} detects persistent routing loops.
+Unlike \gls{acr:int}, Unroller tracks only the minimum ID seen by a packet, periodically overriding this at geometrically increasing intervals.
+To detect \gls{acr:ddos} attack victims in pure P4, \emph{INDDoS}~\parencite{DBLP:journals/tnsm/DingSPCS21} uses count-min sketches to estimate the number of flows inbound for a given server.
+\emph{Jaqen}~\parencite{DBLP:conf/uss/LiuNNLK0BYS21} offers a framework for \gls{acr:pdp}-augmented \gls{acr:isp} networks to detect and mitigate many volumetric, amplification, and semantic \gls{acr:ddos} attacks (though not \glspl{acr:lfa}).
+To gather state, it maintains sketches of source/destination \glspl{acr:ip} and ports alongside counters, as well as useful primitives like native stateless P4 implementations of SYN cookie functions and approximate Bloom-filter-based allow/blocklists.
+State is polled by the control plane which is responsible for interpreting sketches to perform higher-level logic (e.g., thresholds, significant changes), and installs detection and mitigation functions using a heuristic algorithm to ensure sufficient coverage.
 
 \subsection{Service Acceleration and Offloading}
 ?? NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
@@ -1065,20 +1067,62 @@ Turns out that you can't just write AQM solns in P4, you need to co-design for t
 ?? tHis?~\parencite{DBLP:conf/nsdi/HsuBCRW20}
 
 \subsection{Machine Learning}\label{sec:inc-uses-pdp-ml}
-?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
+As we'll examine throughout \cref{chap:ddn}, \gls{acr:ml} techniques make it possible to learn and act upon complex patterns or relationships in network data to perform all manner of management and optimisation tasks more effectively.
+While I cover specific implications of data formats and training algorithms later (\cref{sec:numerical-representations-for-embedded-ml,sec:learning-an-approximation}), the gist is that machine learning inference and training are generally dependent on floating point data (as training gradients are real-valued), specialised accelerators accessed as peripherals like \glspl{acr:gpu} or \glspl{acr:tpu}, and are computationally complex.
+%?? Using ML needs putting at accel (slow)
+Host machines are, then, in many ways the best-suited location for \gls{acr:ml} training and inference at scale, but these come at the cost of network and \gls{acr:pcie} costs to reach the host's \gls{acr:cpu}, and then further data transfer costs over \gls{acr:pcie} to the \gls{acr:gpu}.
+Inference at this location thus presents real tradeoffs: either choose throughput by batching queries and new data for the \gls{acr:gpu}, or choose consistent (tail) latencies by using the \gls{acr:cpu}.
+This becomes all the more interesting and challenging when we consider the additional classes and finer granularity of measurement data exposed by \gls{acr:pdp} hardware, such as those discussed earlier in \cref{sec:network-monitoring}.
+%?? Exporting the kinds of telemetry of interest in \cref{sec:network-monitoring} is infeasible, but if we can act on it...
+Of course, use case depending, this raw data is produced at volumes and rates far too high to meaningfully move across the network.
+Host machines can't handle raw packet-per-second demands at this scale, let alone when every packet must undergo some \gls{acr:ml} algorithm.
+Equally, per-packet inference (i.e., for security, \gls{acr:qos}, or \gls{acr:te} classification) is untenable in this framework.
+Ideally we would process this in \gls{acr:pdp} devices, but this is at odds with their resource-limited nature---limited \gls{acr:alu} capabilities, a definite lack of floating-point hardware, and small amounts ($\mathcal{O}\left(\text{\unit{\kibi\byte}--\unit{\mebi\byte}}\right)$) of high-speed memory.
+This leaves us with a difficult dilemma.
+%?? training  and inference costs
+%?? batching, etc.
+In-network \gls{acr:ml} research aims to solve this (preferably at line-rate), focussing on the modifications needed to install inference techniques onto \gls{acr:pdp} hardware.
+%?? Also how the network can help hosts learn.
+This involves tailoring algorithms and data formats to the target device: more details on suitable data representations are presented through \Cref{sec:fixed-point-and-binary}.
 
-?? Although we have discussed Taurus above...
-?? Describe in more detail here
+\paragraph{Inference}
+%?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
+\emph{IIsy}~\parencite{DBLP:conf/hotnets/XiongZ19} investigate per-packet inference using pre-trained classical \gls{acr:ml} models on programmable switch hardware, as well as methods for cheaply updating models at runtime through the control plane.
+In particular, they use custom parsers (acting as a feature extraction mechanism) and convert parameters and matching logic into \glspl{acr:mat} to implement these models using pure P4.
+These include multiple implementations of \glspl{acr:svm}, decision trees, Na\"{i}ve Bayes, and K-means classifiers, executing but not training on these devices.
+In particular, they investigate the best use of tables in these scenarios---per-feature, per-class and per-cluster---noting that all cases exhibit different impact from quantisation, processing length (in recirculations).
+%Evaluating using the P4$\rightarrow$NetFPGA workflow~\cite{DBLP:conf/fpga/IbanezBMZ19} against an IoT traffic classification (and QoS assignment) problem, even in the best cases (decision trees, SVMs, K-means) a feature/class limit of \num{20} is suggested.
+%This suggests that training (or adaptive policy modification in RL's case) are relatively unexplored---but potentially costly, given that these cannot be implemented using only table matches.
 
-\Cref{sec:fixed-point-and-binary} for representations...
+\glspl{acr:nn} require more specific considerations due to their variable structure, but their implementation in \gls{acr:pdp} hardware is an important topic due to their ubiquity in \gls{acr:ml} and \gls{acr:ddn} research.
+\textcite{langlet-ml-netronome} has shown the viability of \gls{acr:nn} inference using \qty{64}{\bit} quantisation on \gls{acr:nfp} SmartNICs, but this can observe high ($\sim$\qty{500}{\micro\second}) inference latency on line rate traffic for larger inputs.
+This compute model has the main downside, however, of being unsuited to \gls{acr:rmt} or \gls{acr:rmt} switches.
+\glspl{acr:bnn} have been shown to be a promising data format for \gls{acr:pdp} hardware; not least because they are computationally efficient, but because they admit ready conversion to \glspl{acr:mat}, and are thus suitable for deployment on \emph{all} P4 devices.
+\emph{BaNaNa SPLIT} shows how these \glspl{acr:bnn}, installed in \glspl{acr:nic}, can as a partial offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18}; \gls{acr:dnn} inference is often carried out on the \gls{acr:cpu} to reduce the above latencies imposed by \gls{acr:gpu} batching and transfer, but they show that the fully-connected layers of such networks can be accelerated further by \glspl{acr:nn} subject to some accuracy loss.
+\emph{N2Net}~\parencite{DBLP:journals/corr/abs-1801-05731} and \emph{N3IC}~\parencite{DBLP:journals/corr/abs-2009-02353} examine, collectively, different ways of running \glspl{acr:bnn} among SmartNICs, P4 implementations, and \glspl{acr:fpga} to achieve line-rate, in-path, per-packet inference of classes for use by later tables or packet tagging.
 
-iSwitch~\cite{DBLP:conf/isca/LiLYCSH19} uses programmable switches to combine model updates between RL agents acting as part of a distributed RL training system.
-Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this is properly explained in the PDP seciton: source is `report-yr2.tex'.}
+\emph{Taurus}, examined earlier in \cref{sec:frontiers-in-programmable-networks}, allows for implementation of the inference mechanisms above closer to line-rate without needing to substantially alter input and policy data formats.
+At fabrication time, Taurus may be configured to use the required floating-point depth.
+Other specialised hardware includes \emph{BrainWave}~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18}---an \gls{acr:npu} designed solely around heavily \gls{acr:simd} and parallelised \gls{acr:nn} inference---reduces batching by \qty{32}{\texttimes} compared to \gls{acr:gpu} acceleration.
+However, inference still requires $\mathcal{O}{\left(\text{\si{\milli\second}}\right)}$ in representative use cases~\parencite{Duarte2019}.
+%Even novel \gls{acr:dma} techniques such as \emph{GPUDirect}~\parencite{gpudirect} halve but do not eliminate \gls{acr:pcie} transfers.
+%?? A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
+%?? \emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
+Neither, however, allows for on-device training; Taurus instead sends sampled data to the controller, while similar provisions could apply to a BrainWave installation.
 
-?? A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
-?? \emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
-
-
+\paragraph{Training}
+On \gls{acr:ml} training, most research on how \gls{acr:pdp} hardware may be applied falls into the optimisation of \emph{distributed \gls{acr:ml} training} via in-network aggregation.
+The main use case here involves many nodes in a network exchanging gradient vectors to be combined with a shared model---however, latency-optimal schemes based on central \glspl{acr:ps} have strongly synchronised inbound traffic which causes high, bursty losses and significant bandwidth consumption near the traffic destination.
+Aggregating these gradients is simply vector addition, which any interim node may perform to reduce this traffic burden.
+\gls{acr:pdp} hardware provides a sound basis for the kinds creative co-design needed to ensure optimal training behaviour here, making better use of the network \emph{and} improving final training times and performance.
+\Cref{sec:distributed-training} covers the surrounding context and solutions in more detail.
+At a high-level, \emph{iSwitch}~\parencite{DBLP:conf/isca/LiLYCSH19} uses the plasticity of \gls{acr:fpga} devices to implement a dedicated floating-point adder and gradient storage; gradient packets are signalled to the dataplane using a reserved pool 2 \gls{acr:dscp}~\parencite{rfc2474} value, triggering their aggregation (and eventual retransmission to the \gls{acr:ps}).
+Solutions targeting general \gls{acr:pdp} switches---e.g., \emph{ATP}~\parencite{DBLP:conf/nsdi/LaoLMCWAS21} and \emph{SwitchML}~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21}---instead must rely on fixed-point data formats to enable this in these environments.
+%\emph{iSwitch}~\parencite{DBLP:conf/isca/LiLYCSH19} uses NetFPGA-SUME hardware to implement special handling for RL model update packets, building floating-point adders and limited storage space into bump-in-the-wire \glspl{acr:nic} to achieve \qtyrange{3.66}{3.71}{\times} faster training.
+%\emph{SwitchML}~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21} converts a programmable \gls{acr:tor} switch \emph{into a \gls{acr:ps}}, offering this as a P4 program built on fixed-point quantisation.
+%\emph{ATP}~\parencite{DBLP:conf/nsdi/LaoLMCWAS21} extends this to a best-effort service and custom transport protocol in front of the true \gls{acr:ps}, falling back to floating point on detection of overflows and offering better support for several dynamic jobs.
+Unfortunately, to the best of my knowledge true on-device \gls{acr:pdp} \gls{acr:ml} or \gls{acr:rl} model training hasn't yet been examined beyond the work I present in \cref{chap:in-net-rl}.
+%The closest I have seen in the literature is Taursu, but even then...
 
 %\section{Hardware Designs}
 %

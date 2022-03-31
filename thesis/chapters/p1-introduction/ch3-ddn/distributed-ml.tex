@@ -7,7 +7,7 @@ Moving on, I discuss the frontier of this training task across far wider areas, 
 
 %\subsection{Multiagent methods}
 
-\subsection{Distributed training}
+\subsection{Distributed training}\label{sec:distributed-training}
 For various reasons, such as the high sample complexity of \glspl{acr:dnn} and \gls{acr:drl} in particular, \gls{acr:ml} model training must often scale beyond several machines.
 The most practical reason for this is that we can use the parallelism we have across a computing cluster to improve training performance---for instance, spreading minibatches across many machines allows us to compute more gradient update vectors in the same amount of time.
 The scale of some modern \glspl{acr:nn} requires this; either due to the sheer size of the input dataset, or due to the size of the \gls{acr:nn} model itself.
@@ -54,7 +54,8 @@ Recalling the large amount of time spent centrally aggregating parameter updates
 \emph{SwitchML}~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21} converts a programmable \gls{acr:tor} switch \emph{into a \gls{acr:ps}}, offering this as a P4 program built on fixed-point quantisation.
 \emph{ATP}~\parencite{DBLP:conf/nsdi/LaoLMCWAS21} extends this to a best-effort service and custom transport protocol in front of the true \gls{acr:ps}, falling back to floating point on detection of overflows and offering better support for several dynamic jobs.
 However, this family of optimisations can only be applied when two gradient packets are able to meet in the network excluding, e.g., ring AllReduce.
-I discuss implementation specifics in more detail through \cref{sec:in-network-compute-use-cases}, and some rationale in \cref{sec:numerical-representations-for-embedded-ml}.
+% I discuss implementation specifics in more detail through \cref{sec:in-network-compute-use-cases}, and some rationale in \cref{sec:numerical-representations-for-embedded-ml}.
+I discuss further rationale in \cref{sec:numerical-representations-for-embedded-ml}.
 
 %?? communication and compute can be cleverly overlapped and optimised
 Techniques such as \emph{Wait-Free Backpropagation}~\parencite{DBLP:conf/usenix/ZhangZXDHLHWXX17,DBLP:conf/ppopp/AwanHHP17} have enabled tighter optimisation of when individual gradient parts can be set out and used to optimise for a compute-communication tradeoff.
