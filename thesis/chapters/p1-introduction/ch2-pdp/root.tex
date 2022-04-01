@@ -886,7 +886,7 @@ However, the design is effective enough to protect underlying traffic while achi
 
 \emph{Gallium}~\parencite{DBLP:conf/sigcomm/ZhangZK20} converts C++ Click programs to automatically leverage \gls{acr:pdp} resources between several segments---pre- and post-host offloaded P4 segments, sandwiching a single host C++ program.
 This model gives greater flexibility than C-based offloading by enabling program division between, say, a Tofino switch and its attached controller \gls{acr:cpu}, however this imposes greater restrictions on what logic may be offloaded.
-Gallium uses LLVM \gls{acr:ir} to determine read-write dependencies between variables basic-blocks of the packet processing chain's control flow graph, and account for \gls{acr:pdp} hardware's capabilities around packet reads (i.e., \gls{acr:pdp} datapaths typically can't access packet bodies past $\sim$\qty{300}{\byte}).
+Gallium uses LLVM \gls{acr:ir} to determine read-write dependencies between variables basic-blocks of the packet processing chain's control flow graph, and account for \gls{acr:pdp} hardware's capabilities around packet reads (i.e., \gls{acr:pdp} datapaths typically can't access packet bodies past $\sim$\qty{300}{\byte}).\sidenote{SmartNICs do not have such limitations, so this is mainly a consideration for \gls{acr:psa} switches or more general depolyment. Although, such access is limited to \texttt{extern}s and may need to retrieve packet data from larger, slower blocks of \gls{acr:ram}.}
 By annotating these blocks based on their ordering requirements and offload capability, as well as limiting metadata movement to under \qty{100}{\byte}, they generate the desired program splits by maximising the \gls{acr:ir} instructions moved into P4 code---ideally identifying fast paths if there exist cases where the host part can be elided.
 This approach successfully achieved higher throughput and lower latency than a purely host-based FastClick solution for trojan detection.
 The main drawback is that Gallium requires some annotation to translate Click primitives into \glspl{acr:mat} as well as read or write dependencies on function parameters, otherwise the conversion to P4 means minimal additional work per target device.
@@ -1038,31 +1038,51 @@ Facebook's open-source \emph{Katran} L4 load balancer~\parencite{katran,katran-b
 No performance numbers are shared, though it is reportedly used aggressively in production.
 \emph{Cheetah}~\parencite{DBLP:conf/nsdi/BarbetteTYKMPC20} implements consistent load balancing for arbitrary functions at switch scale on Tofino hardware, where it achieves strong tail performance guarantees for flows even during active scaling.
 An intriguing use of \gls{acr:pdp} hardware that has been presented is how it may allow \emph{packet subscriptions}~\parencite{DBLP:conf/conext/JepsenFMFCS20}---networks may offer an accelerated, Apache Kafka-style publish-subscribe architecture.
+This includes higher-level tooling to synthesise a complex, content-driven dataplane at runtime (including broadcast, replication and routing).
 
-?? Stream processing and fusion (for both mgmt and apps.)
-?? \Textcite{DBLP:conf/cloud/SapioACK17} have shown an interest in performing \emph{aggregate} step of \emph{partition-aggregate} workloads (\ie, MapReduce) in programmable switches.
-?? DPI?~\parencite{DBLP:conf/conext/HypoliteSHDDS20}
-?? String/regex mathing?~\parencite{DBLP:conf/infocom/WangZLLLJX21}
-?? compression~\parencite{DBLP:conf/conext/VaucherYFLS20}
+There have also been key advances in using \gls{acr:pdp} hardware for stream processing and fusion to accelerate management and monitoring as well as application-level use-cases---including some realisation of the earlier discussion on protocol boosters.
+\emph{DAIET}~\parencite{DBLP:conf/cloud/SapioACK17} proposes performing the \emph{aggregate} step of \emph{partition-aggregate} workloads (i.e., MapReduce) by organising workers and programmable switches into processing trees.
+\Textcite{DBLP:conf/conext/HypoliteSHDDS20} investigate how to make good use of (\gls{acr:npu}-type) SmartNIC parallelism to perform \gls{acr:dpi} and payload matching tasks through \emph{DeepMatch}.
+By making good use of the \gls{acr:nfp}'s parallelism and memory models, they offer fast, flow reorder-aware processing by the Aho-Corasick algorithm.
+\emph{\textsc{Bolt}}~\parencite{DBLP:conf/infocom/WangZLLLJX21} then implements Aho-Corasick on Tofino switches using \glspl{acr:mat}---however, this requires full recirculations to extract a fixed size byte slice per pass.
+To reduce traffic impact on infrastructure while freeing host resources, \emph{ZipLine}~\parencite{DBLP:conf/conext/VaucherYFLS20} uses packet checksum functionality on Tofino switches to implement transparent traffic compression.
 
 %?? In-network storage/caching~\parencite{DBLP:conf/eurosys/SchmidPWEP20}
 
 \subsection{Transports, Protocols, and Routing}
-?? HULA routing~\parencite{DBLP:conf/sosr/KattaHKSR16}
+%?? ROuting and load balancing (over paths) more dynamic, fairer and more uniform than e.g. \gls{acr:ecmp}
+Multipath networks are commonly used to achieve high bisection bandwidth between hosts, but require specialised schemes like \gls{acr:ecmp} to balance load across their fabric.
+\gls{acr:pdp} hardware is configurable enough to allow the development and deployment of new routing protocols which are more dynamic, fairer, and uniform; ideally, with less control plane interaction.
+\emph{HULA routing}~\parencite{DBLP:conf/sosr/KattaHKSR16} provides a P4-based solution targeting data centre networks, using periodic broadcast probes sent in-band to update every switch's estimate of its best path to every other destination.
+\emph{Contra}~\parencite{DBLP:conf/nsdi/HsuBCRW20} extends this with a custom policy language to encode constraints and more involved routing criteria (i.e., to support arbitrary topologies): probes also obey these rules in the reverse path.
+Both approaches achieve substantial improvements to fairness above \gls{acr:ecmp}, and scale well by tracking only a single cost per destination.
 
-?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
+\gls{acr:aqm} allows for flow and packet priorities to be expressed for their egress from a switch, enabling shaping or \gls{acr:te} to ensure optimal \gls{acr:qos} or \gls{acr:qoe}---for instance, prioritising the packets of short flows (minimising the risk they are dropped by a full buffer) to minimise relative \glspl{acr:fct}.
+\emph{\gls{acr:pifo}}~\parencite{DBLP:conf/sigcomm/SivaramanSACCAB16} queues allow for individual packet priorities and dispatch times to be determined by the ingress pipeline of a \gls{acr:pdp} switch's \glspl{acr:mat}---offering almost arbitrary programmability---but require this dedicated hardware primitive.
+\emph{PIEO}~\parencite{DBLP:conf/sigcomm/Shrivastav19} queues extend their expressiveness further by allowing arbitrary elements to be dequeued, also.
+However, the reality is that commodity P4-based switches aren't yet suitable for enabling many of the \gls{acr:aqm} disciplines developed by the research community.
+\Textcite{DBLP:conf/im/KunzeGSWR21} find that \gls{acr:aqm} solutions must be co-designed for the target environment, for instance pipeline and register access constraints make it impossible to express some disciplines.
+Implementation of \gls{acr:aqm} schemes like \emph{PIE}~\parencite{rfc8033} requires numerous tradeoffs,
+with meaningful performance costs.
 
-?? PIFO~\parencite{DBLP:conf/sigcomm/SivaramanSACCAB16}
-
-?? PIEO~\parencite{DBLP:conf/sigcomm/Shrivastav19} aqm
-
-Turns out that you can't just write AQM solns in P4, you need to co-design for the target environment---with meaningful performance cost to boot, based on the tradeoffs you need to make~\parencite{Kunze-P4-AQM}.
-
-?? HPCC~\parencite{DBLP:conf/sigcomm/LiMLZFTCZKAY19}
-
-?? NDP~\parencite{DBLP:conf/sigcomm/HandleyRAV0AW17}
-
-?? tHis?~\parencite{DBLP:conf/nsdi/HsuBCRW20}
+\glspl{acr:cca} play a key role in ensuring that congestion-aware transport protocols are able to make use of their maximal fair share of bandwidth in the network.
+Original \emph{and} state-of-the-art \glspl{acr:cca} in use on the wider Internet, such as \gls{acr:tcp} BBR~\parencite{DBLP:journals/queue/CardwellCGYJ16}, operate on minimal information transfer between hosts or endpoints, and are often reliant on congestion \emph{signals} from the network like packet losses and changes to \glspl{acr:rtt}.
+This is a necessity to minimise the network costs of transferring state, to co-exist with heterogeneous \glspl{acr:cca}, and to isolate their logic from the network itself to prevent wider ossification.
+This has significant drawbacks.
+Advanced, control-theoretic \glspl{acr:cca} like the \emph{PCC} family of \glspl{acr:cca}~\parencite{DBLP:conf/nsdi/DongLZGS15,DBLP:conf/nsdi/DongMZAGGS18} or \emph{Copa}~\parencite{DBLP:conf/nsdi/ArunB18} are computationally expensive compared to their forebears.
+Having more, high-quality information also prevents fairness issues which may arise from needing to rely on carefully tuned responses to otherwise opaque signals from the network, such as BBRv1's noted unfairness with other \gls{acr:tcp} traffic~\parencite{DBLP:conf/imc/WareMSS19}.
+%?? BBR~\parencite{DBLP:journals/queue/CardwellCGYJ16} is unfair~\parencite{DBLP:conf/imc/WareMSS19}
+%?? cost of logic and importance of good information to make decisions on.
+\gls{acr:pdp} infrastructure offers new ways to offload \gls{acr:cca} logic or to augment it with assistance from the network.
+Data centre networks are best placed for this---\emph{NDP}~\parencite{DBLP:conf/sigcomm/HandleyRAV0AW17} is a receiver-driven \gls{acr:cca} where P4 switches truncate packet payloads when buffers are at risk of exhaustion, while senders choose network routes for fairer load balancing.
+Header-only packets are prioritised, providing a dedicated fast path for control packets and effective congestion signals.
+\emph{HPCC}~\parencite{DBLP:conf/sigcomm/LiMLZFTCZKAY19} instead uses the \gls{acr:int} techniques discussed above to expose path characteristics and loads to a connection's sender.
+ACK messages carry their packet's \gls{acr:int} data; the sender adjusts its target rate per-ACK (minor) and per-window (major).
+As this specifically accelerates remote \gls{acr:dma}, endpoints require \gls{acr:fpga}-enabled \glspl{acr:nic}.
+To enable offload of arbitrary \gls{acr:cca} logic, \Textcite{DBLP:conf/nsdi/ArashlooLGRWW20} present \emph{Tonic} as a framework for expressing the \emph{transport logic} (what data segments are sent at what times) while handling connection and buffer management.
+These may be modified via small user-programmable blocks containing \glspl{acr:alu} with access to per-flow state.
+The remainder of their framework handles (de)packetisation, packet transmission for many waiting flows, and \gls{acr:dma} handling.
+%?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
 
 \subsection{Machine Learning}\label{sec:inc-uses-pdp-ml}
 As we'll examine throughout \cref{chap:ddn}, \gls{acr:ml} techniques make it possible to learn and act upon complex patterns or relationships in network data to perform all manner of management and optimisation tasks more effectively.

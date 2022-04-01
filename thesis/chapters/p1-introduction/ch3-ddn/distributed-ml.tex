@@ -45,7 +45,7 @@ Work remains common on minimising \glspl{acr:jct}, wasted resource use (i.e., do
 These include \gls{acr:rl}-based policies such as \emph{MLFS}~\parencite{DBLP:conf/conext/0002LS20}, which optimise job and cluster performance with awareness of overfitting.
 non-\gls{acr:ddn} works provide dynamic downscaling of per-task resources~\parencite{DBLP:conf/eurosys/MisraLDBKGST21}, and fair sharing and allocation between different \gls{acr:gpu} classes~\parencite{DBLP:conf/eurosys/ChaudharyRSKV20}.
 More recent works include explicit prioritisation of jobs which are short or likely to maximise model accuracy increases, combined with the above class of elastic scaling~\parencite{DBLP:conf/nsdi/HwangKKSP21}.
-Indeed, there have been suggestions from the research community that even the underlying transports protocols or \glspl{acr:cca}---including RoCE~\parencite{rocev2} and \gls{acr:tcp}---are at fault in bottlenecks rather than bandwidth~\parencite{DBLP:conf/sigcomm/ZhangCLWAJ20}.
+Indeed, there have been suggestions from the research community that even the underlying transport protocols or \glspl{acr:cca}---including RoCE~\parencite{rocev2} and \gls{acr:tcp}---are at fault in bottlenecks rather than bandwidth~\parencite{DBLP:conf/sigcomm/ZhangCLWAJ20}.
 Of course, this does not preclude the development of specialised optical interconnects~\parencite{DBLP:conf/sigcomm/ShirkoohiGAZGBV21} to provide extremely high-bandwidth, reliable circuit-switched communications between nodes.
 
 Recalling the large amount of time spent centrally aggregating parameter updates in \gls{acr:ps} methods (in addition to heavy incast behaviour), it is clear they have several disadvantages over AllReduce in exchange for lower latency.
