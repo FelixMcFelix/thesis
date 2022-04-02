@@ -24,15 +24,13 @@ Moreover, benign UDP traffic shares many characteristics with attack traffic, su
 %?? Need to mention that Marl performs lower than their paper's numbers for TCP...
 
 %Finally, it is crucial to note that the models and techniques presented here are an improvement , this work still trails behind existing (exact) DDoS flow detection mechanisms.
-\cbstart
-{\color{revisiontext}Most importantly, what we wish to impart is the knowledge that while the models and techniques we present here are a significant improvement over past RL-based work, this strand still trails behind existing (exact) DDoS flow detection mechanisms where TCP traffic is concerned.
+Most importantly, what we wish to impart is the knowledge that while the models and techniques we present here are a significant improvement over past RL-based work, this strand still trails behind existing (exact) DDoS flow detection mechanisms where TCP traffic is concerned.
 The ability to better protect VoIP traffic when compared against one of these approaches is a curious observation, which suggests that other (exact) protocol-agnostic approaches may carry hidden assumptions and is a promising direction for future investigation.
 Similar traffic makes up a significant fraction of network load today (\SIrange{18}{27}{\percent}).
 Although we have conducted work to map the territory, there are still more advancements to be made before RL-based DDoS defence is truly competitive.
 The benefits we have at present are, however, substantial.
 What we offer above many of the approaches we discuss in \cref{sec:related-work} are potentially more flexible deployments, low-overhead and fixed-cost decision-making, without requiring active measurement or the network resources and capabilities that the most effective techniques rely upon.
-Moreover, our decision making processes are entirely agnostic of the protocol or content of traffic, offering future-proofing against the introduction of new transports.}
-\cbend
+Moreover, our decision making processes are entirely agnostic of the protocol or content of traffic, offering future-proofing against the introduction of new transports.
 
 \fakepara{Security concerns and vulnerability}
 Can an agent be flooded with new flows to reduce their ability to make decisions?
@@ -40,8 +38,7 @@ One of the risks introduced by our policy update strategy is that so much work c
 The natural solution is to impose an upper bound on the amount of action computations/policy updates that can be performed before a work list is discarded completely.
 This removes the guarantee that all flows will be visited fairly often, but if updates occur regularly then this random sampling may be sufficient to achieve good performance.
 
-\cbstart
-{\color{revisiontext}Can an attack on the controller can impact our approach?
+Can an attack on the controller can impact our approach?
 This question hinges upon whether the deployment environment is a traditional network or is fully SDN-enabled---each agent is, in a sense, \emph{a} controller alongside the network's controller.
 In a traditional network, only the agents act as controllers, but since they periodically request per-flow data (rather than continuously receiving it) no amount of flows generates more requests or messages to the agent.
 More work is generated, but we discuss how to handle this safely above.
@@ -49,8 +46,7 @@ Accordingly, agents can never be stalled by request volume: their only remote co
 The same logic holds for a fully software-defined network.
 Recalling that we do not employ the network's controller to install filtering rules on edge switches, an agent's ability to act is unimpeded.
 Thus, the controller is made no more vulnerable than in any other SDN.
-The only necessary change for such a scenario is that a load measurement which has not been updated (due to a timeout or missed deadline) should be set at $R_t=-1$.}
-\cbend
+The only necessary change for such a scenario is that a load measurement which has not been updated (due to a timeout or missed deadline) should be set at $R_t=-1$.
 %\begin{figure}
 %	\centering
 %	\includegraphics[width=0.9\linewidth]{../plots/policy-16-tcp-f5-mean-log}

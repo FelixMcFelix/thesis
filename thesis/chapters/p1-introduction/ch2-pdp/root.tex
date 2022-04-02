@@ -1139,7 +1139,7 @@ Solutions targeting general \gls{acr:pdp} switches---e.g., \emph{ATP}~\parencite
 %\emph{iSwitch}~\parencite{DBLP:conf/isca/LiLYCSH19} uses NetFPGA-SUME hardware to implement special handling for RL model update packets, building floating-point adders and limited storage space into bump-in-the-wire \glspl{acr:nic} to achieve \qtyrange{3.66}{3.71}{\times} faster training.
 %\emph{SwitchML}~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21} converts a programmable \gls{acr:tor} switch \emph{into a \gls{acr:ps}}, offering this as a P4 program built on fixed-point quantisation.
 %\emph{ATP}~\parencite{DBLP:conf/nsdi/LaoLMCWAS21} extends this to a best-effort service and custom transport protocol in front of the true \gls{acr:ps}, falling back to floating point on detection of overflows and offering better support for several dynamic jobs.
-Unfortunately, to the best of my knowledge true on-device \gls{acr:pdp} \gls{acr:ml} or \gls{acr:rl} model training hasn't yet been examined beyond the work I present in \cref{chap:in-net-rl}.
+Unfortunately, to the best of my knowledge true on-device model training for \gls{acr:pdp} \gls{acr:ml} or \gls{acr:rl} hasn't yet been examined beyond the work I present in \cref{chap:in-net-rl}.
 %The closest I have seen in the literature is Taursu, but even then...
 
 %\section{Hardware Designs}
@@ -1196,57 +1196,61 @@ Unfortunately, to the best of my knowledge true on-device \gls{acr:pdp} \gls{acr
 %
 %\subsection{Limitations}
 
-\section{Problems in Modern Networks}\label{sec:problems-in-modern-networks}
+\section{A Large-scale Problem in Modern Networks: Distributed Denial of Service}\label{sec:problems-in-modern-networks}
+While computer networks are prone to all manner of operational problems on account of their gradual, continued construction via many complex interlocking systems, we train our focus here on \glsxtrfull{acr:dos} and \glsxtrfull{acr:ddos} attacks.\sidenote{A vast array of other, keenly relevant problems are briefly explained alongside the \gls{acr:ddn} use cases presented throughout \cref{sec:use-cases}.}
+\gls{acr:ddos} attacks are concentrated efforts by many hosts to reduce the availability of a service, typically to inflict financial harm or as an act of vandalism.
+Attackers achieve this by either exploiting peculiarities of \gls{acr:os} or application behaviour in \emph{semantic attacks} (e.g., \emph{\texttt{SYN} flooding attacks}), or overwhelming their target through sheer volume of requests or inbound packets (\emph{volume-based attacks})~\parencite{DBLP:conf/imc/JonkerKKRSD17}.
+Hosts often participate unwillingly, typically having been recruited into a \emph{botnet} by malware infection to be orchestrated from elsewhere~\parencite{DBLP:conf/uss/AntonakakisABBB17}.
 
-?? Motive: this stuff is from old ``traffic characteristics'' section
+Why focus on this problem in particular?
+The primary reason is that their scale and impact presents a constant threat to any Internet service.
+Exhausting all of a server's resources (or those of the infrastructure providing a path to it) ensures that it cannot be accessed---causing financial losses, silencing information sources, or creating downstream service breakages.
+Some services, such as those associated with game hosting, are likely to be targetted simply for competitive advantage or reputation~\parencite{aws-shield-review-2020}.
+Accordingly, they are often nicknamed an `800-pound gorilla'~\parencite{DBLP:conf/imc/CzyzKGPBK14} on the wider Internet.
+Their reach is, however, made all that much greater by the centralisation of many websites and servers to cloud and hypergiant infrastructure.
+Consider volumetric attacks on Dyn (\qty{1.2}{\tera\bit\per\second}), who at that time hosted key resources for Twitter, Spotify, and Netflix~\parencite{dyn-ddos-2016}, the web host OVH (\qty{1}{\tera\bit\per\second})~\parencite{ovh-ddos-2016}, and the Github platform (\qty{1.35}{\tera\bit\per\second})~\parencite{github-ddos-2018}.
+Amazon's own services have been an attractive target on several occasions: S3's \gls{acr:dns} servers were hit by an attack of unknown size in October 2019 which was unmitigated~\parencite{amazon-s3-2019-ddos}, while AWS successfully resisted \qty{2.3}{\tera\bit\per\second} of traffic mere months later~\parencite{aws-shield-2020-q1}.
+Even individuals' blogs such as KrebsOnSecurity (\qty{665}{\giga\bit\per\second})~\parencite{krebs-ddos-2016} have been high-profile targets.
+The more solutions and insight the research community can provide, the better.
 
-?? Can (and should probably) discuss different traffic classes here: congestion-aware, -unaware...
+The second reason is that \gls{acr:ddos} defence scenarios may be a representative example of the kinds of closed loop control that \gls{acr:ddn} is exceptionally well-suited to.
+Target servers and infrastructure expose useful state such as link utilisations, queue depths, and service metrics; an influx of attack traffic has noticeable effects on this state, and taking the `right' control plane actions (e.g., blackholing specific traffic sources or protocols, filtering out attack packets) should move the network's state closer to some degree of normality.
+At the same time, \gls{acr:ddos} strategies evolve over the course of a single attack~\parencite{DBLP:conf/spw/KangGS16}, potentially leading to a nuanced (and difficult) measure$\rightarrow$infer$\rightarrow$act loop.
+%?? natural choice for the problems and services of future networks
+An ideal, human-designed solution to this control loop is made tricky by the complex interplay of attack dynamics with many existing elements of the network: protocol distribution and behaviour, application behaviour, and the gradual evolution of benign traffic.
+For this reason, I focus on \gls{acr:ddos} attacks as a particular use case in this thesis---in turn, \cref{chap:ddos-rl} is dedicated to improving automated, data-driven means for their solution.
 
-?? Note, explain that this is NOT just TCP vs UDP due to existence of SCTP over UDP (See: DTLS in WebRTC), QUIC over UDP, ...
+%?? Attacks nowadays present on the order of \si{\tera\bit\per\second}~\parencite{github-ddos-2018,dyn-ddos-2016,krebs-ddos-2016,ovh-ddos-2016,aws-shield-2020-q1}, and attack strategies vary from direct volume-based attacks~\cite{DBLP:conf/ndss/Rossow14, DBLP:conf/uss/KuhrerHRH14} to those which a victim cannot directly observe~\cite{DBLP:conf/sp/KangLG13, DBLP:conf/esorics/StuderP09}.
 
-?? Chain this into \glspl{acr:cca}
 
-?? Explain why you need what.
 
-?? Historical context for their inclusion?
+%?? ----------------
+%?? IDEA: 2022. How to present:
+%?? Problem at big scale: DoS attacks
+%?? Problem at small scale: Measurement, microburst, fairness etc.
+%?? ----------------
 
-?? Discussion of evolution of traffic: what's come before, what's coming next.
-?? Look for older in my old notes, but recent cite here~\parencite{DBLP:conf/anrw/BauerJHBC21}.
-
-?? Describe all my CAIDA analysis here
-?? analysis of CAIDA datasets~\parencite{caida-2018-passive}
-?? congestion-aware traffic makes up at least \qtyrange{73}{82}{\percent} of packets\sidenote{\url{https://github.com/FelixMcFelix/caida-stats}}
-?? Also talk about QUIC's prevalence here
-
-?? QUIC~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}
-
-?? QUIC carries \gls{acr:http} traffic, mostly...
-
-?? ----------------
-?? IDEA: 2022. How to present:
-?? Problem at big scale: DoS attacks
-?? Problem at small scale: Measurement, microburst, fairness etc.
-?? ----------------
-
-\subsection{Denial of Service Attacks}
----
-?? Normal ones? TCP exhaustion? Application-Level? Sheer bandwidth?
-
-Mirai used as DDoS vector \cite{DBLP:conf/uss/AntonakakisABBB17}.
-
+%\subsection{Attack classes}
 %?? Big survey \cite{DBLP:conf/imc/JonkerKKRSD17}?
-\Textcite{DBLP:conf/imc/JonkerKKRSD17} offer an in-depth analysis and taxonomy of the current landscape of DoS attacks.
+\Textcite{DBLP:conf/imc/JonkerKKRSD17} offer an in-depth analysis and taxonomy of the landscape of \gls{acr:dos} attacks.
 They observe that Denial-of-Service is most commonly achieved through \emph{resource exhaustion}---either at the target server or the infrastructure serving it.
-Attacks may be classified according to two orthogonal axes: \emph{Direct vs.\ Reflection} and \emph{Volumetric vs.\ Semantic}.
+Attacks may be classified on two orthogonal axes: \emph{Direct vs.~Reflection} and \emph{Volumetric vs.~Semantic}.
 \begin{description}
-	\item[Direct] Attackers send packets directly towards their target. Random IP spoofing is often used to make blacklisting more difficult, but leaves evidence of an attack and its characteristics due to \emph{backscatter}, visible to internet telescopes.
-	\item[Reflection] Attackers send traffic to a \emph{reflector}, spoofing the source IP of packets to match that of the target. The reflector sends replies to the target, often \emph{amplifying} them in the process.
-	\item[Volumetric] DoS is achieved by \emph{resource exhaustion}---CPU or RAM usage at the target host, overfilling transmission buffers along key traffic routes. These are ``service agnostic''.
-	\item[Semantic] DoS is achieved by \emph{exploiting program logic}, for instance to crash a target application server. Often tailor-made for a particular service or its deployment environment, such as \emph{Teardrop attacks}.
+	\item[Direct] Attackers send packets directly towards their target. Random \gls{acr:ip} spoofing is often used to make blacklisting more difficult, but leaves evidence of an attack and its characteristics due to \emph{backscatter}, visible to network telescopes~\parencite{DBLP:conf/lisa/Moore03,DBLP:conf/imc/RichterB19}.
+	\item[Reflection] Attackers send traffic to a \emph{reflector}, spoofing the source \gls{acr:ip} of packets to match that of the target. The reflector sends replies to the target, often \emph{amplifying} them in the process.
+	\item[Volumetric] \gls{acr:dos} is achieved by \emph{resource exhaustion}---\gls{acr:cpu} or \gls{acr:ram} usage at a target host, or occupying and overflowing transmission buffers along key traffic routes. These can be service agnostic, but in some cases rely on buggy behaviour of other software as their main mechanism.
+	\item[Semantic] \gls{acr:dos} is achieved by \emph{exploiting program logic}, for instance to crash a target application server. These are often tailor-made for a particular service or its deployment environment, such as \emph{teardrop attacks} against a host's \gls{acr:tcp} stack.
 \end{description}
+We'll focus mainly on volumetric attacks (direct and reflection), as these are the attack vectors applied in the above case studies.
+
+?? New \gls{acr:dns}: TsuNAME~\parencite{Moura21a}---new volumetric/semantic attacks arise even today? Since reliant on widespread software bugs...
+
+?? How to fit in w/ rest?
 They find that TCP tends to be the leading transport for direct random-spoofing attacks, while reflection and amplification attacks are dominated by UDP-like protocols (NTP$>$DNS$>$CharGen).
 Randomly spoofed direct attacks are found to last longer, and are most intense around ``web ports'' (HTTP, SSH, etc.), evidence is seen to support the existence of ``joint attacks''.
 The scale of all attacks is immense, by their measurements: at least a third of the internet is under attack at any one point in time, with at least \num{30000} attacks \emph{visible} each day.
+
+\subsection{Volumetric attacks}
 
 \paragraph{Amplification attacks}
 abuse network services with small request bodies and large responses, causing a typically benign service to forward traffic on an attacker's behalf by \emph{reflection}---spoofing the source IP of requests to that of the intended victim.
@@ -1338,43 +1342,65 @@ Their randomised scanning techniques imply that the culprits behind similar scan
 
 As an aside, the NTP \texttt{monlist} command fragments its $\sim$\SI{50}{\kibi\byte} payload into \SI{482}{\byte} chunks.
 
-\paragraph{Countermeasures}
+
+\subsection{Contributing factors}
+?? Discussion of evolution of traffic: what's come before, what's coming next.
+?? Look for older in my old notes, but recent cite here~\parencite{DBLP:conf/anrw/BauerJHBC21}.
+
+?? Describe all my CAIDA analysis here
+?? analysis of CAIDA datasets~\parencite{caida-2018-passive}
+?? congestion-aware traffic makes up at least \qtyrange{73}{82}{\percent} of packets\sidenote{\url{https://github.com/FelixMcFelix/caida-stats}}
+?? Also talk about QUIC's prevalence here
+
+?? QUIC~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}
+
+?? QUIC carries \gls{acr:http} traffic, mostly...
+
+?? Can (and should probably) discuss different traffic classes here: congestion-aware, -unaware...
+
+?? Implications? Past works pushback collateral bad.
+
+?? Note, explain that this is NOT just TCP vs UDP due to existence of SCTP over UDP (See: DTLS in WebRTC), QUIC over UDP, ...
+
+?? Mirai used as DDoS vector \cite{DBLP:conf/uss/AntonakakisABBB17}.
+
+\subsection{Defences}
+?? Mention one or two of the old-school ways brought up in the DDoS section like AIMD, Pushback...
+
+According to \textcite{DBLP:conf/imc/JonkerKKRSD17}, the most-used techniques in deployment are \emph{DDoS Protection Services}.
+While typically proprietary in nature, we see a split between \emph{cloud services}, \emph{in-line systems} (i.e., middleboxes) and hybrids thereof.
+Cloud services (traffic scrubbers) are known to be most appropriate for handling volumetric attacks and are externally hosted, analysing and filtering out malicious traffic by having services redirect all inbound communication for processing.
+The act of redirection is often made cheaper and/or feasible by the use of selective \gls{acr:bgp} advertisement or \gls{acr:dns} modification, aided by reverse proxy or \emph{generic routing encapsulation}.
+Amongst these, \gls{acr:bgp}-based diversion is most effective where many hosts must be protected, and \gls{acr:dns} works most reliably for single-host installations.
+In-line systems, hosted within a service's domain of control, are most useful for handling semantic attacks as these often admit \emph{attack signatures} (since they must exploit a particular bug in the server).
+Similarly, such attacks tend not to exhibit long-term characteristics that cloud scrubbers might use to aid detection, as many of these attacks present themselves as a single packet.
+%These authors further find that being attacked does not necessarily increase the likelihood of moving to a DPS---what is an effective indicator is the \emph{strength} of attack targeting a particular service.
+%To explain, around a fifth of targets already had a DPS prior to an attack, and only \SI{4}{\percent} of victims without a DPS migrate to one.
+
+\gls{acr:ddn} solutions to \gls{acr:ddos} attacks of various kinds have been examined through the literature, such as \Textcite{DBLP:conf/lcn/BragaMP10}, \emph{Marl}~\parencite{DBLP:conf/iaai/MalialisK13,DBLP:journals/eaai/MalialisK15}, and \emph{Athena}~\parencite{DBLP:conf/dsn/LeeKSPY17}.
+\Cref{sec:ddn-uses-security} explains these, alongside their drawbacks and experimental shortcomings, in detail.
+Marl in particular has design flaws which are examined in great detail, motivating the improved \gls{acr:rl} work I develop in \cref{chap:ddos-rl}.
+%\Textcite{DBLP:conf/lcn/BragaMP10} have examined the detection of ongoing (flooding-based) DDoS attacks through \emph{self-organising maps}, making use of SDN to gather statistics effectively.
+%Many of their features aren't overly relevant, as their focus is not active defence or discovering \emph{which} hosts are contributing to an attack.
+
 \textcite{DBLP:conf/ndss/Rossow14}.
 ?? AS-level---prevent IP spoofing by internal clients.
 ?? Protocol-level---harden w/ session handling (QUIC, Steam mostly, DTLS) at expense of latency, symmetry of req/resp size, rate limiting resps (limited use).
 ?? ISP-level---packet filtering on port, len, substring.
 
-?? BGP magic against transit-link attacks and regular \cite{DBLP:conf/sp/SmithS18}.
+?? AmpPot~\parencite{DBLP:conf/raid/KramerKMNKYR15} 
 
-According to \textcite{DBLP:conf/imc/JonkerKKRSD17}, the most-used techniques in deployment are \emph{DDoS Protection Services}.
-While typically proprietary in nature, we see a split between \emph{cloud services}, \emph{in-line systems} (middleboxes) and hybrids thereof.
-
-Cloud services (traffic scrubbers) are known to be most appropriate for handling volumetric attacks and are externally hosted, analysing and filtering out malicious traffic by having services redirect all inbound communication for processing.
-The act of redirection is often made cheaper and/or feasible by the use of selective BGP advertisement or DNS modification, aided by reverse proxy or \emph{Generic Routing Encapsulation} (GRE).
-Amongst these, BGP-based diversion is most effective where many hosts must be protected, and DNS works most reliably for single-host installations.
-
-In-line systems, hosted within a service's domain of control, are most useful for handling semantic attacks as these often admit \emph{attack signatures} (since they must exploit a particular bug in the server).
-Similarly, such attacks tend not to exhibit long-term characteristics that cloud scrubbers might use to aid detection, as many of these attacks present themselves as a single packet.
-
-These authors further find that being attacked does not necessarily increase the likelihood of moving to a DPS---what is an effective indicator is the \emph{strength} of attack targeting a particular service.
-To explain, around a fifth of targets already had a DPS prior to an attack, and only \SI{4}{\percent} of victims without a DPS migrate to one.
-
-\Textcite{DBLP:conf/lcn/BragaMP10} have examined the detection of ongoing (flooding-based) DDoS attacks through \emph{self-organising maps}, making use of SDN to gather statistics effectively.
-Many of their features aren't overly relevant, as their focus is not active defence or discovering \emph{which} hosts are contributing to an attack.
-
-?? AmpPot \cite{DBLP:conf/raid/KramerKMNKYR15}
-
-\emph{SPIFFY} \cite{DBLP:conf/ndss/KangGS16} aims to remedy transit-link attacks by observing how flows from each source respond to a sudden increase in available bandwidth.
+\emph{SPIFFY}~\parencite{DBLP:conf/ndss/KangGS16} aims to remedy \glspl{acr:lfa} by observing how flows from each source respond to a sudden increase in available bandwidth.
 \Citeauthor{DBLP:conf/ndss/KangGS16} realise that bots participating in an attack are often unable to match this bandwidth expansion due to having already saturated the capacity of their outbound links, while legitimate flows typically speed up to match the new fair-share rate.
 %Attackers must either be detected or reduce the throughput of each bot, increasing the cost of launching an attack.
 Unlike our approach (and due to the class of attacks it is designed to defend against), SPIFFY is intended to be deployed within ISP networks, although some of our feature choices are backed by similar observations.
 ?? Flaws? what can't it do that we can do better? Long times to compute TBE routes on real networks, low expansion factor in real network can require more ``rounds'' of filtering. (``takes only'' \SI{14}{\second} for Cogent network? gross.)
 ?? I believe their assumptions may not extend to CBR traffic (e.g., UDP VoIP traffic), which we know makes up a sizeable proportion of network traffic.
 
-\emph{Athena} \cite{DBLP:conf/dsn/LeeKSPY17} is a more generalised SDN framework for intrusion detection, but has shown the use of a \emph{k-nearest neighbours} classifier to detect individual attack flows.
-Although heavyweight (and proven to be effective compared with \textcite{DBLP:conf/lcn/BragaMP10}), their comparison against SPIFFY lacks the quantitative evidence required to understand how the system compares.
+%\emph{Athena}~\parencite{DBLP:conf/dsn/LeeKSPY17} is a more generalised SDN framework for intrusion detection, but has shown the use of a \emph{k-nearest neighbours} classifier to detect individual attack flows.
+%Although heavyweight (and proven to be effective compared with \textcite{DBLP:conf/lcn/BragaMP10}), their comparison against SPIFFY lacks the quantitative evidence required to understand how the system compares.
 
-SENSS \cite{DBLP:conf/acsac/RamanathanMYZ18} aims to help hosts and/or \emph{endpoint-servers} communicate upstream with ISPs.
+\emph{SENSS}~\parencite{DBLP:conf/acsac/RamanathanMYZ18} aims to help hosts and/or \emph{endpoint-servers} communicate upstream with ISPs.
 The rationale is that, although DDoS traffic can be filtered at any point along its path it will impact less of the network if it is filtered \emph{close to its source}---this observation holds true in all attack classes (direct, reflection, LFA/crossfire), which exhibit a tree-like pattern of traffic.
 This information currently propagates through human channels, eventually leading to traffic black-holing being performed by key ASes.
 The core idea is that the \emph{victim} should be given responsibility for intelligence and decision-making, who pass on their requests to ISPs (alongside ample payment)---they are able to show that this approach functions for multiple algorithms.
@@ -1392,117 +1418,6 @@ The approach is creative, relying upon BGP \emph{fraudulent route reverse poison
 Because of this, traditional flooding-based attacks aren't fully alleviated.
 
 ?? DDoS Open Threat Signalling \cite{ietf-dots-use-cases-17} as an architecture to maybe enable the deployment of many of these?
-
-\subsection{Scaling}
-
-\subsection{Fairness}
-
-%\section{Programmable Data-Planes}
-%
-%?? 2021 --- crucial to sell the why! What can be gained moving to this level, new state measures enable new applications, in-nic/switch exec reduces latencies, increases throughputs, etc...
-%?? Probably want a worked example showing how in-network compute helps. I.e., network graph, show processing at nodes
-%
-%?? Explain \gls{acr:npu} here...
-%
-%?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
-%
-%?? Evidence of deployment in real, huge transit networks~\sidenote{\url{https://wiki.geant.org/display/RARE/Home}, \url{https://wiki.geant.org/display/NETDEV}}
-%
-%?? arbitrarily reconfigurable hardware located directly on the data path
-%
-%?? OvS?~\parencite{DBLP:conf/sigcomm/TuWAP21}
-
-%?? Understanding Host Network Stack Overheads~\parencite{DBLP:conf/sigcomm/CaiCVH021}
-%?? mention how it came to this: this was an alternate solution to latency or throughput concerns which plague VNF approaches as they scale (see Metron~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} paper for good discussion of RSS, etc., which solve these problems in their own way)
-%
-%?? new ways to implement stateful + stateless packet processing.
-%
-%?? History? RMT~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13}, ClickNP, GPU offload papers. See Metron paper for cites.
-%
-%?? NetFPGA~\parencite{DBLP:conf/fpga/IbanezBMZ19}
-%
-%?? Getting even faster?~\parencite{nokia-fp5}
-
-%\section{Control and Management}
-%
-%?? Refer back to History through OpenFlow -- what prompted the evolution?
-%
-%?? Control of these devices has a lot in common with OpenFlow -- controller, except using commodity hardware to install firmwares, and so on,
-
-%\section{Software Frameworks}
-%
-%\subsection{eBPF}
-%?? eBPF
-%
-%?? BPFabric
-%
-%\subsection{P4}
-%?? P4
-%
-%?? Others who lost?
-%
-%?? How do these differ? What do they share?
-%
-%?? Popular frameworks now support this -- ONOS, eBPF translators, behavioural model software switch...
-%
-%?? Things like Lucid built on top of P4?~\parencite{DBLP:conf/sigcomm/SonchackLRW21}
-%
-%?? P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14} and \emph{programmable dataplane} (PDP) hardware~\parencite{DBLP:journals/micro/ZilbermanACM14, netronome-smartnic, xilinx-alveo, barefoot-intel}
-%
-%?? Cool NIC-CPU co-design~\parencite{DBLP:conf/osdi/IbanezMAJ0KM21}
-%
-%\fakepara{PDP design for asynchronous compute}
-%\emph{PANIC}~\parencite{DBLP:conf/hotnets/StephensAS18} places a routing fabric between distinct packet/data processing elements \emph{in a SmartNIC}.
-%Such designs would enable general, asynchronous, and novel compute in SmartNICs and switches, for instance offering consistent and easy to use communication between workers versus hard-coded ME relationships.
-%Event-driven versions of P4 have been suggested~\parencite{DBLP:conf/hotnets/IbanezABM19}.
-%Timer events and device state changes would empower in-network RL use-cases, signalling timesteps for RL agents or new, effective, fine-grained sources of input state.
-
-
-%\section{Use Cases}
-%
-%?? On-switch (Tofino) DDoS detection and defence~\parencite{DBLP:conf/uss/LiuNNLK0BYS21}
-%
-%\subsection{In-Network Computation}\label{sec:in-network-computation}
-%?? In-network computation.\sidenote{Test text hello.}
-%
-%iSwitch~\cite{DBLP:conf/isca/LiLYCSH19} uses programmable switches to combine model updates between RL agents acting as part of a distributed RL training system.
-%Note that we discuss this in section \ref{sec:wtf}.\sidenote{Make sure that this is properly explained in the PDP seciton: source is `report-yr2.tex'.}
-%
-%?? A recent line of research in the community has been to investigate \emph{Binarised/Bitwise Neural Networks} (BNNs)~\parencite{DBLP:conf/nips/HubaraCSEB16,DBLP:journals/corr/KimS16,DBLP:journals/corr/MiyashitaLM16} for line-rate packet classification.
-%?? \emph{BaNaNa SPLIT} shows this as an offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731}; DNN inference is often carried out on the \emph{CPU} to reduce latency imposed by GPU batching and transfer, but fully-connected layers can be accelerated further by NICs.
-%
-%\subsection{Network Telemetry}
-%?? Others (try to avoid DDN cases here).
-%
-%?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
-%
-%\subsection{Transport Layer Optimisation}
-%?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
-%
-%\subsection{Active Queue Management}
-%Turns out that you can't just write it in P4, you need to co-design for the target environment---with meaningful performance cost to boot, based on the tradeoffs you need to make~\parencite{Kunze-P4-AQM}.
-%
-%\subsection{KV Stores}
-%NetChain~\parencite{DBLP:conf/nsdi/JinLZFLSKS18}.
-%
-%\subsection{ML in PDP}
-%?? ML in the dataplane~\parencite{DBLP:conf/hotnets/XiongZ19,DBLP:conf/sigcomm/SanvitoSB18,DBLP:journals/corr/abs-1801-05731,DBLP:journals/corr/abs-2009-02353,langlet-ml-netronome,DBLP:journals/corr/abs-2002-08987}
-%
-%%\section{Hardware Designs}
-%%
-%%?? Mention FPGA vs many-core
-%%
-%%?? P4 etc. can actually all run on commodity hardware, which offers a third (suboptimal) hardware class.
-%%
-%%?? Ref the paper that Haruna presented \parencite{DBLP:conf/icc/MafiolettikDMRV20}: pareto front of work-division optimality for SmartNICs (i.e., addition of high-latency cores).
-%%
-%%?? How do these limit and influence what code can be run on different device classes? The time taken to adapt the network?
-%%
-%%\subsection{Models of Parallelism}
-%%
-%%\subsection{Flexibility}
-%%
-%%\subsection{Mapping Software Frameworks}
 
 \section{Summary}
 Eh.

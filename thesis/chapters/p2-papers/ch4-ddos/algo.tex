@@ -5,8 +5,8 @@ We describe and justify our approach, our algorithmic improvements, and present 
 \subsection{System Design and Assumptions}
 A deployment environment is a network with a set of \emph{ingress/egress points} from its domain of control, through which traffic can flow, and a set of protected \emph{destination nodes}.
 These nodes may be services, servers, or in the case of Autonomous Systems (ASes) and transit networks, egress points leading to other networks.
-{\color{revisiontext}\cbstart Agents are co-located with each egress switch (i.e., $k$ ingress points from other ASes require $k$ agents), all employ the same action model/design}, and control the proportion of upstream packets from each external host to discard.
-Each destination node $s$ has a maximum capacity, \cbend $U_s$.
+Agents are co-located with each egress switch (i.e., $k$ ingress points from other ASes require $k$ agents), all employ the same action model/design, and control the proportion of upstream packets from each external host to discard.
+Each destination node $s$ has a maximum capacity, $U_s$.
 
 We assume that the deployment environment is a moderately complex software-defined network, because the paradigm offers features which can directly benefit RL agents acting within.
 The OpenFlow protocol allows a controller (or other authorised hosts) to install complex actions, forwarding rules and logic into a switch at runtime.

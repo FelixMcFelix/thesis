@@ -3,18 +3,17 @@
 We compare our work most naturally against MARL, introduced by \textcite{DBLP:journals/eaai/MalialisK15}, the state-of-the-art in RL-based DDoS prevention.
 We are most interested in seeing how their approach contrasts with ours across different topologies and workloads.
 Different network environments will also impose different levels of host density, where popular web servers may have orders of magnitude more clients than egress points from their network---we aim to see how these characteristics affect performance and learning rate.
-\cbstart
-{\color{revisiontext}Marl is known to outperform the AIMD \cite{DBLP:journals/ton/YauLLY05} strategy, yet the state of the art has long since moved on.
+Marl is known to outperform the AIMD \cite{DBLP:journals/ton/YauLLY05} strategy, yet the state of the art has long since moved on.
 To paint a more current picture, we compare our work against an effective modern approach, SPIFFY \cite{DBLP:conf/ndss/KangGS16}.
 SPIFFY tests a proportion of flows by routing them through an alternate path with higher bandwidth, observing how their speed changes some time later.
 This comparison lets us position our new agent designs against the state of the art, observing that SPIFFY has a similar mode of interaction to RL-based systems (taking action, observing an effect, and acting once again) and does not rely on protocol characteristics or signatures.
 We make the simplifying assumption that a suitable unused path exists (with identical bandwidth to the server's link).
-We test \SI{10}{\percent} of active flows at a time (according to the authors' observation that there is a factor of \num{10} difference between the ideal and achieved bandwidth expansion), excluding flows below \SI{50}{\kilo\bit\per\second} and requiring a \SI{3}{$\! \times$} expansion from legitimate flows, making a judgement after \cbend \SI{5}{\second}.}
+We test \SI{10}{\percent} of active flows at a time (according to the authors' observation that there is a factor of \num{10} difference between the ideal and achieved bandwidth expansion), excluding flows below \SI{50}{\kilo\bit\per\second} and requiring a \SI{3}{$\! \times$} expansion from legitimate flows, making a judgement after \SI{5}{\second}.
 
 To test this, we made use of both traffic models introduced in \cref{sec:a-new-normal} (OPUS and TCP), both topologies discussed below (1-dest vs Fat-Tree), and vary the amount of hosts typically communicating over each agent's ingress/egress node.
 Additionally, we evaluated our new models in multi-agent mode (\emph{separate}, no model sharing), and in single-agent mode (\emph{single}, 0-cost perfect information sharing).
 In each case, the algorithm's performance was averaged over \num{10} episodes of length \num{10000} timesteps (setting each agent's $\wvec{}=\mathbf{0}$ between episodes).
-Host allocations at the beginning of each episode were generated pseudorandomly to ensure fairness between \cbstart episodes---{\color{revisiontext}a host is malicious with probability $\operatorname{P}(\mathit{malicious})$, and is benign \cbend otherwise.}
+Host allocations at the beginning of each episode were generated pseudorandomly to ensure fairness between episodes---a host is malicious with probability $\operatorname{P}(\mathit{malicious})$, and is benign otherwise.
 Benign hosts generate traffic from either \cref{sec:tcp-http-traffic-model,sec:udp-opus-traffic-model} depending on the experiment, while malicious hosts generate traffic according to \cref{sec:attack-traffic-model} (both at experiment-dependent rates).
 
 All experiments were executed on Ubuntu 18.04.2 LTS (GNU/Linux 4.4.3-040403-generic x86\_64), using a 4-core Intel Core i7-6700K (clocked at \SI{4.2}{\giga\hertz}) and \SI{32}{\gibi\byte} of RAM.

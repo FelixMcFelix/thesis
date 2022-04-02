@@ -69,6 +69,22 @@
 \captionsetup[subfigure]{labelfont={bf,it},textfont={it}}
 \DeclareCaptionStyle{marginfigure}{font=footnotesize, labelfont=bf}
 
+% God I hate hyperref. Always ruining my fun.
+% \RenewDocumentCommand \sidenotetext { o o +m }
+% {
+%  \IfNoValueOrEmptyTF{#1}
+%    {
+%      \@sidenotes@placemarginal{#2}{{\color{black}\textsuperscript{\thesidenote}{}~#3}}
+%      \refstepcounter{sidenote}
+%    }
+%    {\@sidenotes@placemarginal{#2}{{\color{black}\textsuperscript{#1}~#3}}}
+% }
+
+% \makeatletter
+% \patchcmd\@addmarginpar{\hb@xt@}{\pdfrunninglinkoff\hb@xt@}{}{\fail}
+% \apptocmd\@addmarginpar{\pdfrunninglinkon}{}{\fail}
+% \makeatother
+
 % \sidenotetext
 % Used in \sidenote
 % Changed to meet the question of user J. Bratt (https://tex.stackexchange.com/questions/361622).
