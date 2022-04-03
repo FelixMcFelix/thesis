@@ -241,7 +241,7 @@ While active network research may have dried up in the last 20 years,\sidenote{B
 Network operators have, in fact, always had a need for complex packet processing, to measure, protect, and enhance \emph{their own} networks---rather than to provide the sort of communal good envisioned by active networks.
 To run through some examples:
 \begin{itemize}
-	\item \emph{Firewalls} are a necessity for filtering unauthorised traffic at stub \glspl{acr:as}, but require line-rate lookups versus large allow- and block-lists across varied protocols.
+	\item \emph{Firewalls} are a necessity for filtering unauthorised traffic at stub \glspl{acr:as}, but require line-rate lookups versus large allow- and block-lists across varied protocols. Similarly, \gls{acr:nat} solutions play a similarly important role for \gls{acr:isp} networks.
 	\item Protocol enhancements and \gls{acr:te} solutions, such as \emph{\gls{acr:wan} optimisers} and \emph{application-layer load balancers}, which need to be able to inspect and/or modify traffic based on (possibly complex) transport-layer and application-layer semantics.
 	\item Security functions, such as \glspl{acr:ids} and \gls{acr:ddos} traffic scrubbing solutions. These can require complex, stateful logic (such as regular expression matching and transparent datagram reassembly) that makes them challenging to implement at high performance---particularly when we consider that the \gls{acr:ddos} use case \emph{demands} that we keep up with a high ingress traffic volume.
 \end{itemize}
@@ -1343,7 +1343,7 @@ Their randomised scanning techniques imply that the culprits behind similar scan
 As an aside, the NTP \texttt{monlist} command fragments its $\sim$\SI{50}{\kibi\byte} payload into \SI{482}{\byte} chunks.
 
 
-\subsection{Contributing factors}
+\subsection{Contributing factors}\label{sec:ddos-contributing-factors}
 ?? Discussion of evolution of traffic: what's come before, what's coming next.
 ?? Look for older in my old notes, but recent cite here~\parencite{DBLP:conf/anrw/BauerJHBC21}.
 
@@ -1364,6 +1364,8 @@ As an aside, the NTP \texttt{monlist} command fragments its $\sim$\SI{50}{\kibi\
 
 ?? Mirai used as DDoS vector \cite{DBLP:conf/uss/AntonakakisABBB17}.
 
+?? Explain `UDP makes up a sizeable proportion of network traffic'
+
 \subsection{Defences}
 ?? Mention one or two of the old-school ways brought up in the DDoS section like AIMD, Pushback...
 
@@ -1383,41 +1385,48 @@ Marl in particular has design flaws which are examined in great detail, motivati
 %\Textcite{DBLP:conf/lcn/BragaMP10} have examined the detection of ongoing (flooding-based) DDoS attacks through \emph{self-organising maps}, making use of SDN to gather statistics effectively.
 %Many of their features aren't overly relevant, as their focus is not active defence or discovering \emph{which} hosts are contributing to an attack.
 
-\textcite{DBLP:conf/ndss/Rossow14}.
-?? AS-level---prevent IP spoofing by internal clients.
-?? Protocol-level---harden w/ session handling (QUIC, Steam mostly, DTLS) at expense of latency, symmetry of req/resp size, rate limiting resps (limited use).
-?? ISP-level---packet filtering on port, len, substring.
+\textcite{DBLP:conf/ndss/Rossow14}'s suggestions are mostly prophylactic.
+At the \gls{acr:as}-level, \gls{acr:ip} spoofing by internal clients must be prevented.
+Protocol designs should be hardened with session handling \emph{\`{a} la} QUIC or Datagram \gls{acr:tls} at the expense of latency, enforcing greater symmetry of request and response sizes, and rate limiting the frequency of per-client responses.
+%?? ISP-level---packet filtering on port, len, substring.
 
-?? AmpPot~\parencite{DBLP:conf/raid/KramerKMNKYR15} 
+Honeypots such as \emph{AmpPot}~\parencite{DBLP:conf/raid/KramerKMNKYR15} can play a key role in the detection and mitigation of volumetric attacks.
+Fake amplifier services hosted by legitimate authorities, which appear to be useful amplifier nodes to malicious actors, may be included in the set of reflector nodes when attacks are launched.
+As a result, infrastructure providers can receive early notification of attack targets and the protocols which must be blackholed.
 
 \emph{SPIFFY}~\parencite{DBLP:conf/ndss/KangGS16} aims to remedy \glspl{acr:lfa} by observing how flows from each source respond to a sudden increase in available bandwidth.
 \Citeauthor{DBLP:conf/ndss/KangGS16} realise that bots participating in an attack are often unable to match this bandwidth expansion due to having already saturated the capacity of their outbound links, while legitimate flows typically speed up to match the new fair-share rate.
 %Attackers must either be detected or reduce the throughput of each bot, increasing the cost of launching an attack.
-Unlike our approach (and due to the class of attacks it is designed to defend against), SPIFFY is intended to be deployed within ISP networks, although some of our feature choices are backed by similar observations.
-?? Flaws? what can't it do that we can do better? Long times to compute TBE routes on real networks, low expansion factor in real network can require more ``rounds'' of filtering. (``takes only'' \SI{14}{\second} for Cogent network? gross.)
-?? I believe their assumptions may not extend to CBR traffic (e.g., UDP VoIP traffic), which we know makes up a sizeable proportion of network traffic.
+Due to the class of attacks it is designed to defend against, SPIFFY is intended to be deployed within \gls{acr:isp} networks.
+However, they find that computing per-flow routes to offer this expansion is expensive on real networks (\qty{14}{\second} in the Cogent topology), and achieve only low expansion factors which require more rounds of filtering.
+Finally, by definition their assumptions cannot extend to \gls{acr:cbr} traffic (e.g., \gls{acr:udp} \gls{acr:voip} traffic), which as we know from \cref{sec:ddos-contributing-factors} makes up a sizeable proportion of network traffic.
+Only congestion-aware traffic will correctly alter its behaviour under this action and response model.
 
 %\emph{Athena}~\parencite{DBLP:conf/dsn/LeeKSPY17} is a more generalised SDN framework for intrusion detection, but has shown the use of a \emph{k-nearest neighbours} classifier to detect individual attack flows.
 %Although heavyweight (and proven to be effective compared with \textcite{DBLP:conf/lcn/BragaMP10}), their comparison against SPIFFY lacks the quantitative evidence required to understand how the system compares.
 
-\emph{SENSS}~\parencite{DBLP:conf/acsac/RamanathanMYZ18} aims to help hosts and/or \emph{endpoint-servers} communicate upstream with ISPs.
-The rationale is that, although DDoS traffic can be filtered at any point along its path it will impact less of the network if it is filtered \emph{close to its source}---this observation holds true in all attack classes (direct, reflection, LFA/crossfire), which exhibit a tree-like pattern of traffic.
-This information currently propagates through human channels, eventually leading to traffic black-holing being performed by key ASes.
-The core idea is that the \emph{victim} should be given responsibility for intelligence and decision-making, who pass on their requests to ISPs (alongside ample payment)---they are able to show that this approach functions for multiple algorithms.
-The need for payment does seem odd at the outset, but it becomes clear that this is a necessary mechanism to enable ``remote networks to collaborate on demand, without prior trust''.
-While all the software engineering work seems well-considered, it appears to hinge on the condition that HTTP/TCP sessions can be reliably held over the saturation zone between high-priority endpoints---they do admit that alternative channels may be possible through elected proxies or UDP-based mechanisms like DOTS \cite{ietf-dots-use-cases-17}.
-The mitigation strategies they propose do hold water, and strike me as interesting---using NAT for true outbound requests as a mechanism for reflector filtering close-to-source, similar techniques to others to ``route around'' the congestion added by LFAs, and location-based filtering for signature-free attacks.
-What I'm concerned about is the degree of collaboration required; it seems likely to me that there may exist e.g., amplifiers who are difficult to block in such a manner due to non-cooperative ASes on their path, with geography and network uncleanliness as contributing factors...
-Their evaluation is convincing---a mixture of a testbed experiment over a small-scale environment (Iperf + ``custom UDP flood'') and an AS-level simulation recreating the DDoS attack on Dyn (gravity model \cite{DBLP:journals/ccr/Roughan05}, cogent topology from Topology Zoo \cite{topology-zoo}).
-
-?? Collaborative soln (?) \cite{DBLP:journals/tnsm/SimpsonSMJPH18}
-
-\Textcite{DBLP:conf/sp/SmithS18} present techniques based on AS-level routing to tackle both transit-link and flooding-based attacks.
+\Textcite{DBLP:conf/sp/SmithS18} present techniques based on \gls{acr:as}-level routing to tackle both transit-link and flooding-based attacks.
 This view is taken due to the perceived cost of per-stream classification and inherent sensitivity to adversarial examples or crafted input.
-The approach is creative, relying upon BGP \emph{fraudulent route reverse poisoning} to preserve traffic to a target AS, but unlike SPIFFY the approach doesn't actually \emph{remove} the congestion.
+The approach is creative, relying upon \gls{acr:bgp} \emph{fraudulent route reverse poisoning} to preserve traffic to a target \gls{acr:as}, but unlike SPIFFY the approach doesn't actually \emph{remove} the congestion.
 Because of this, traditional flooding-based attacks aren't fully alleviated.
 
-?? DDoS Open Threat Signalling \cite{ietf-dots-use-cases-17} as an architecture to maybe enable the deployment of many of these?
+\emph{SENSS}~\parencite{DBLP:conf/acsac/RamanathanMYZ18} aims to help hosts and/or \emph{endpoint-servers} communicate upstream with \glspl{acr:isp}.
+The rationale is that although \gls{acr:ddos} traffic can be filtered at any point along its path, it will impact less of the network if it is filtered \emph{close to its source}---this observation holds true in all attack classes (direct, reflection, \gls{acr:lfa}/crossfire), which exhibit a tree-like pattern of traffic.
+This information currently propagates through human channels, eventually leading to traffic black-holing being performed by key \glspl{acr:as}.
+The core idea is that the \emph{victim} should be given responsibility for intelligence and decision-making, who pass on their requests to \glspl{acr:isp} (alongside ample payment).
+They are able to show that this approach functions for multiple algorithms---including using \gls{acr:nat} for true outbound requests as a mechanism for reflector filtering close to the source, similar techniques to others to ``route around'' the congestion added by \glspl{acr:lfa}, and location-based filtering for signature-free attacks.
+%The need for payment does seem odd at the outset, but it becomes clear that this is a necessary mechanism to enable ``remote networks to collaborate on demand, without prior trust''.
+%The mitigation strategies they propose do hold water, and strike me as interesting---using NAT for true outbound requests as a mechanism for reflector filtering close-to-source, similar techniques to others to ``route around'' the congestion added by LFAs, and location-based filtering for signature-free attacks.
+%What I'm concerned about is the degree of collaboration required; it seems likely to me that there may exist e.g., amplifiers who are difficult to block in such a manner due to non-cooperative ASes on their path, with geography and network uncleanliness as contributing factors...
+%Their evaluation is convincing---a mixture of a testbed experiment over a small-scale environment (Iperf + ``custom UDP flood'') and an AS-level simulation recreating the DDoS attack on Dyn (gravity model \cite{DBLP:journals/ccr/Roughan05}, cogent topology from Topology Zoo \cite{topology-zoo}).
+
+\Textcite{DBLP:journals/tnsm/SimpsonSMJPH18} propose the \emph{Antidose} collaborative solution.
+\glspl{acr:as} ask one another to install allow- and block-list filters to represent the interests of their own transit traffic while disallowing known-bad sources and \glspl{acr:as}.
+Hosts and agents must perform proof-of-work challenges attached to flow cookies to become eligible for whitelisting (which is verifiable by any other node)---however, this requires some degree of re-architecting the network stacks of all hosts.
+
+Some collaborative solutions appear to hinge on the condition that \gls{acr:http} and \gls{acr:tcp} sessions can be reliably held over the saturation zone between high-priority endpoints.
+Alternative channels may be possible through elected proxies or \gls{acr:udp}-based mechanisms like \gls{acr:dots}~\parencite{ietf-dots-use-cases-17}.
+\gls{acr:dots} provides an architecture for network operators to enumerate, discover, and communicate with \gls{acr:ddos} mitigation services, with who they can exchange telemetry information and explcit mitigation requests.
 
 \section{Summary}
 Eh.
