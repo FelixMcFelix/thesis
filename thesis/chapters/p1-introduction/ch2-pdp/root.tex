@@ -1243,106 +1243,121 @@ Attacks may be classified on two orthogonal axes: \emph{Direct vs.~Reflection} a
 \end{description}
 We'll focus mainly on volumetric attacks (direct and reflection), as these are the attack vectors applied in the above case studies.
 
-?? New \gls{acr:dns}: TsuNAME~\parencite{Moura21a}---new volumetric/semantic attacks arise even today? Since reliant on widespread software bugs...
-
-?? Mirai used as DDoS vector \cite{DBLP:conf/uss/AntonakakisABBB17}.
-
-?? How to fit in w/ rest?
-They find that TCP tends to be the leading transport for direct random-spoofing attacks, while reflection and amplification attacks are dominated by UDP-like protocols (NTP$>$DNS$>$CharGen).
-Randomly spoofed direct attacks are found to last longer, and are most intense around ``web ports'' (HTTP, SSH, etc.), evidence is seen to support the existence of ``joint attacks''.
-The scale of all attacks is immense, by their measurements: at least a third of the internet is under attack at any one point in time, with at least \num{30000} attacks \emph{visible} each day.
+%?? How to fit in w/ rest?
+%They find that TCP tends to be the leading transport for direct random-spoofing attacks, while reflection and amplification attacks are dominated by UDP-like protocols (NTP$>$DNS$>$CharGen).
+%Randomly spoofed direct attacks are found to last longer, and are most intense around ``web ports'' (HTTP, SSH, etc.), evidence is seen to support the existence of ``joint attacks''.
+%The scale of all attacks is immense, by their measurements: at least a third of the internet is under attack at any one point in time, with at least \num{30000} attacks \emph{visible} each day.
 
 \subsection{Volumetric attacks}
 
 \paragraph{Amplification attacks}
-abuse network services with small request bodies and large responses, causing a typically benign service to forward traffic on an attacker's behalf by \emph{reflection}---spoofing the source IP of requests to that of the intended victim.
-An attacker requires that the Autonomous System (AS) they belong to doesn't prevent IP spoofing at egress.
-In exchange, they are able to split their upstream bandwidth across many reflectors to gain higher volumes of attack traffic from multiple sources without revealing their own IP to the victim.
+Amplification attacks abuse network services with small request bodies and large responses, causing a typically benign service to forward traffic on an attacker's behalf by \emph{reflection}---spoofing the source \gls{acr:ip} of requests to that of the intended victim.
+An attacker requires that their \gls{acr:as} doesn't prevent \gls{acr:ip} spoofing at egress.
+In exchange, they are able to split their upstream bandwidth across many reflectors to gain higher volumes of attack traffic from multiple sources without revealing their own \gls{acr:ip} to the victim.
+\gls{acr:udp}-based protocols are the typical basis for such attacks, as the transport is connectionless.
 
-UDP-based protocols are the typical basis for such attacks, as the transport is connectionless.
-While DNS is the most well-known vector for amplification, \textcite{DBLP:conf/ndss/Rossow14} presents an in-depth survey of a wide variety of other vulnerable protocols alongside a rough census of abusable servers.
-He examines network services (SNMPv2, NTP, DNS, NetBIOS, SSDP), legacy services (CharGen, QoTD), peer-to-peer networks (BitTorrent, Kad), online games (Steam, Quake 3) and externally abusable botnets (ZAv2, Sality, Gameover).
-Scanning for \num{e5} amplifiers of a popular service can be done in minutes, making NTP particularly dangerous due to its high amplification rate.
+While \gls{acr:dns} is the most well-known vector for amplification, \textcite{DBLP:conf/ndss/Rossow14} presents an in-depth survey of a wide variety of other vulnerable protocols alongside a rough census of abusable servers.
+He examines network services (SNMPv2, \gls{acr:ntp}, \gls{acr:dns}, NetBIOS, SSDP), legacy services (CharGen, QoTD), peer-to-peer networks (BitTorrent, Kad), online games (Steam, Quake 3) and externally abusable botnets (ZAv2, Sality, Gameover).
+Scanning for \num{e5} amplifiers of a popular service can be done in minutes, making \gls{acr:ntp} particularly dangerous due to its high amplification rate.
 Furthermore, he notes that the security-focused DNSSEC can exacerbate the problem by the addition of large signatures to message payloads.
 
-\textcite{DBLP:conf/uss/KuhrerHRH14} build further upon this census; they find significant overlap between servers who expose different vulnerable services, connect these services to OS fingerprints, and are able to use DNS proxies to enumerate the ASs who allow IP spoofing.
-They find that many eligible reflectors (for i.e., DNS) tend to lie behind dynamic IP addresses and so undergo significant churn (meaning an attacker must often re-scan every few days/weeks).
-This is not the case for certain protocols like NTP, where the server list remains far more stable.
-The authors also explore the amplification potential of all TCP-based services---given that well-known protocols like HTTP cannot be blocked in most infrastructures, an attacker can abuse retransmissions of the handshake (\texttt{SYN-ACK}) to achieve an amplification factor up to \num{20} if the receiver doesn't send \texttt{RST}.
-Differing TCP stacks have varying quirks, so the behaviour of the victim and all reflectors can be hard to predict without prior fingerprinting.
-It can be observed that choosing amplifiers of larger geographic distance might increase the amount of \texttt{SYN-ACK} packets in flight before the well-meaning reflector can receive a \texttt{RST}.
+\textcite{DBLP:conf/uss/KuhrerHRH14} build further upon this census; they find significant overlap between servers who expose different vulnerable services, connect these services to \gls{acr:os} fingerprints, and use \gls{acr:dns} proxies to enumerate the \glspl{acr:as} who allow \gls{acr:ip} spoofing.
+They find that many eligible reflectors tend to lie behind dynamic \gls{acr:ip} addresses and so undergo significant churn (meaning an attacker must often re-scan every few days/weeks).
+This is not the case for certain protocols like \gls{acr:ntp}, where the server list remains far more stable.
+The authors also explore the amplification potential of all \gls{acr:tcp}-based services---given that well-known protocols like \gls{acr:http} cannot be blocked in most infrastructures, an attacker can abuse retransmissions of the handshake (\texttt{SYN-ACK}) to achieve an amplification factor up to \qty{20}{\times} if the receiver doesn't send \texttt{RST}.
+%Differing TCP stacks have varying quirks, so the behaviour of the victim and all reflectors can be hard to predict without prior fingerprinting.
+%It can be observed that choosing amplifiers of larger geographic distance might increase the amount of \texttt{SYN-ACK} packets in flight before the well-meaning reflector can receive a \texttt{RST}.
 
-NTP quickly became the attack vector of choice \cite{DBLP:conf/imc/CzyzKGPBK14}.
+\gls{acr:ntp} quickly became the attack vector of choice \cite{DBLP:conf/imc/CzyzKGPBK14}.
 They find that most vulnerable amplifiers are \emph{end-hosts}, typically offering \qty{4}{\times} amplification.
-At the time of publication, they observed that NTP amplification attacks had risen in volume by $\sim$\qty{1000}{\times}, though were slowly declining; of particular interest is that \qty{85}{\percent} of attacks over \qty{100}{\giga\bit\per\second} relied upon NTP reflection.
+At the time of publication, they observed that \gls{acr:ntp} amplification attacks had risen in volume by $\sim$\qty{1000}{\times}, though were slowly declining; of particular interest is that \qty{85}{\percent} of attacks over \qty{100}{\giga\bit\per\second} relied upon \gls{acr:ntp} reflection.
 The decrease, they posit, stems mostly from vulnerable servers being patched in response to recent bulletins making the risk very clear to server operators.
-How are these patched servers distributed?
-They observe that, after the patch period, many of the remaining vulnerable servers are sparsely distributed (rather, the patched servers are clustered under IP blocks).
+%How are these patched servers distributed?
+They observe that, after the patch period, many of the remaining vulnerable servers are sparsely distributed (rather, the patched servers are clustered under \gls{acr:ip} blocks).
 This is in line with the (un)cleanliness hypothesis put forth by \textcite{DBLP:conf/imc/CollinsSFJWSK07}.
-While there were many almost comical findings (a surfeit of NTP servers holding the incorrect time, old versions), of greatest concern was the presence of ``mega-amplifiers'' offering \SIrange{e3}{e9}{\times} amplification due to the presence of network loops.
-Over the duration of their study, they observed a \SI{92}{\percent} reduction in abusable IPs, though the uncleanliness observation recurs as the reduction is smaller when considering /24 prefixes (\SI{72}{\percent}).
-Regardless, this drop is \emph{far} more significant than any seen in the availability of Open DNS resolvers.
-A large part of the remaining vulnerable machines are identified as end hosts, implying that quick fixes are unlikely.
-They make it clear that it is hard to reason about who the attackers are (bots, organisers or botmasters), and for what reasons they launch attacks (although ancillary evidence suggests that a remarkably common motivation me be rivalry through, e.g., games).
+While there were many almost comical findings (a surfeit of \gls{acr:ntp} servers holding the incorrect time, old versions), of greatest concern was the presence of ``mega-amplifiers'' offering \SIrange{e3}{e9}{\times} amplification due to the presence of network loops.
+%Over the duration of their study, they observed a \SI{92}{\percent} reduction in abusable IPs, though the uncleanliness observation recurs as the reduction is smaller when considering /24 prefixes (\SI{72}{\percent}).
+%Regardless, this drop is \emph{far} more significant than any seen in the availability of Open DNS resolvers.
+%A large part of the remaining vulnerable machines are identified as end hosts, implying that quick fixes are unlikely.
+%They make it clear that it is hard to reason about who the attackers are (bots, organisers or botmasters), and for what reasons they launch attacks (although ancillary evidence suggests that a remarkably common motivation me be rivalry through, e.g., games).
 
-\Textcite{DBLP:conf/imc/KuhrerHBRH15} investigate the landscape of \emph{open recursive DNS resolvers}, one of the major enabling factors for DNS amplification attacks.
-Specifically, a DNS server is said to be \emph{open} if it does not filter requests by source IP address.
-The existence of such servers is, they claim, paradoxical: rare is the need to publicly expose recursive DNS resolution when the servers should operate in a well-structured (hierarchical) manner.
-By scanning across all IPv4 addresses (according to the methodology of \textcite{DBLP:conf/uss/DurumericWH13}), they discover a downward trend in abusable servers (from \num{26.8e6} to \num{17.8e6} over the year) due to blocked requests/DNS filtering/shutdown/IP churn.
-As it turns out, many of these DNS servers run old and vulnerable software, and are very highly represented (\SI{67}{\percent}) by consumer routers linked to dynamic IPs.
-Curiously, cache snooping reveals that \SI{61}{\percent} of all open DNS resolvers see active use---many of these resolvers are legit (\SIrange{85}{92}{\percent}), with some even filtering out malicious domains.
-The illegitimate set corresponded to censorship in Iran and China, and to malicious redirection to snooping proxies or outright malware.
+%\Textcite{DBLP:conf/imc/KuhrerHBRH15} investigate the landscape of \emph{open recursive DNS resolvers}, one of the major enabling factors for DNS amplification attacks.
+%Specifically, a DNS server is said to be \emph{open} if it does not filter requests by source IP address.
+%The existence of such servers is, they claim, paradoxical: rare is the need to publicly expose recursive DNS resolution when the servers should operate in a well-structured (hierarchical) manner.
+%By scanning across all IPv4 addresses (according to the methodology of \textcite{DBLP:conf/uss/DurumericWH13}), they discover a downward trend in abusable servers (from \num{26.8e6} to \num{17.8e6} over the year) due to blocked requests/DNS filtering/shutdown/IP churn.
+%As it turns out, many of these DNS servers run old and vulnerable software, and are very highly represented (\SI{67}{\percent}) by consumer routers linked to dynamic IPs.
+%Curiously, cache snooping reveals that \SI{61}{\percent} of all open DNS resolvers see active use---many of these resolvers are legit (\SIrange{85}{92}{\percent}), with some even filtering out malicious domains.
+%The illegitimate set corresponded to censorship in Iran and China, and to malicious redirection to snooping proxies or outright malware.
 
-As of \citeyear{DBLP:conf/imc/JonkerKKRSD17}, the distribution of amplification attacks over UDP protocols was observed to roughly have the pattern (NTP$>$DNS$>$CharGen).
-This is in spite of the evidence put forth by \textcite{DBLP:conf/imc/CzyzKGPBK14}, which suggested a decline of NTP-based amplification attacks.
-Perhaps the effort to patch up many servers simply hit a (metaphorical) wall of operators who actually cared, thus leaving many viable NTP amplifiers in the wild?
+\Textcite{DBLP:conf/imc/KuhrerHBRH15} investigate the landscape of \emph{open recursive DNS resolvers}, one of the major enabling factors for \gls{acr:dns} amplification attacks.
+Many of these \gls{acr:dns} servers run old and vulnerable software, and are very highly represented (\qty{67}{\percent}) by consumer routers linked to dynamic \glspl{acr:ip}.
+%Curiously, cache snooping reveals that \SI{61}{\percent} of all open DNS resolvers see active use---many of these resolvers are legit (\SIrange{85}{92}{\percent}), with some even filtering out malicious domains.
+%The illegitimate set corresponded to censorship in Iran and China, and to malicious redirection to snooping proxies or outright malware.
 
-?? Any observations from \textcite{DBLP:conf/raid/KramerKMNKYR15}?
+As of \citeyear{DBLP:conf/imc/JonkerKKRSD17}, the distribution of amplification attacks over \gls{acr:udp} protocols was observed to roughly have the pattern \gls{acr:ntp}$>$\gls{acr:dns}$>$CharGen.
+This is in spite of the evidence put forth by \textcite{DBLP:conf/imc/CzyzKGPBK14}, which suggested a decline of \gls{acr:ntp}-based amplification attacks.
+%Perhaps the effort to patch up many servers simply hit a (metaphorical) wall of operators who actually cared, thus leaving many viable NTP amplifiers in the wild?
 
-\paragraph{Transit-link attacks}
-do some stuff according to these guys \cite{DBLP:conf/sp/SmithS18} (who defend against it), and these guys (who predicted it)---Crossfire \cite{DBLP:conf/sp/KangLG13}, Coremelt \cite{DBLP:conf/esorics/StuderP09}.
+%?? Any observations from \textcite{DBLP:conf/raid/KramerKMNKYR15}?
 
-\paragraph{Characteristics}
+It must be reiterated that new amplification \gls{acr:ddos} vectors arise due to software bugs and misconfigurations even today.
+\emph{TsuNAME}~\parencite{Moura21a} is a recent example, where the presence of recursive \gls{acr:dns} dependencies causes traffic amplification toward authoritative name servers.
+While this cannot be directed to an arbitrary target, per se, this presents another vulnerability in the availability critical infrastructure that administrators must be aware of.
 
-?? Botnet C\&C communication \cite{DBLP:conf/sac/ZandVYK14}? NOT READ
+%?? Mirai used as DDoS vector \cite{DBLP:conf/uss/AntonakakisABBB17}.
 
-?? \SI{69}{\percent} of targets are web servers \cite{DBLP:conf/imc/JonkerKKRSD17}.
+\paragraph{Link-flooding attacks}
+\glsxtrfullpl{acr:lfa} or \emph{transit-link} attacks are another volumetric \gls{acr:ddos} vector which has come to light~\parencite{DBLP:conf/esorics/StuderP09,DBLP:conf/sp/KangLG13}.
+In contrast with typical direct and reflection-based attacks, malicious actors here do not forward traffic directly to their intended victim.
+Instead, they use their bandwidth to communicate with as many legitimate or dummy servers as they can such that the outbound traffic of all participating clients.
+This exhausts the resources of a target \gls{acr:as} or set of bottleneck links needed to reach their intended victim, and traffic appears for all intents and purposes as a completely uncorrelated set of source and destination pairs.
+Since the traffic only ever aggregates in, e.g., \gls{acr:isp} networks, target servers never see any attack traffic themselves.
+The need for many source nodes means that attackers practically require botnets for \glspl{acr:lfa} to be feasible~\parencite{DBLP:conf/sp/SmithS18}; however, Internet-of-Things devices and other insecure machines are often recruited for this purpose via malware like \emph{Mirai}~\parencite{DBLP:conf/uss/AntonakakisABBB17}.
 
-DDoS attacks evolve over timescales of seconds to months.
-\Textcite{DBLP:conf/spw/KangGS16} investigate this, and consider the implications and considerations necessary to deal with such occurrences.
-Why might attackers desire this?
-The authors posit that a diverse attack portfolio makes for more effective attacks, so long as there is \emph{variation}---a single suite or pattern of evolution makes defence (and discovery of the attacker) far simpler.
-We see such evolution in:
-\begin{description}
-	\item[Volume and Capabilities] Peak \SI{300}{\gibi\bit\per\second}$\rightarrow$\SI{600}{\gibi\bit\per\second} over the last 4 years from date of publication.
-	\item[Attack targets] E.g., Spamhaus---attackers moved from targeting endpoint servers to targeting the routers in \emph{internet exchange points} (IXPs) once the former was detected.
-	\item[Strategy] E.g., semantic attacks $\rightarrow$ volumetric (TCP \texttt{SYN} flood) $\rightarrow$ volumetric (NTP amplification) $\rightarrow$ LFA.
-\end{description}
-They find that evolution in capabilities occurs over longer timescales, as these typically require resource acquisition (knowledge, bots, etc.).
-\emph{Strategies}, however, are easily poised to evolve over short time horizons, typically ``[adapting] to the target's (observed) defensive posture''.
-This behaviour was observed in both the cases of SpamHaus and ProtonMail.
-In light of this, they suggest a two-tier approach to defence.
-To thwart rational adversaries, they suggest the use of \emph{deterrents}---mechanisms located at e.g., a single network point, which can detect attacks and thus increase the cost of maintenance.
-Most defences fit this description.
-To handle cost-insensitive attackers, they suggest collaborative approaches (such as SENSS \cite{DBLP:conf/acsac/RamanathanMYZ18}).
-Unfortunately, the work makes little attempt to describe or study the patterns of short-term evolution which might be expected in a real-world attack.
+%do some stuff according to these guys \cite{DBLP:conf/sp/SmithS18} (who defend against it), and these guys (who predicted it)---Crossfire \cite{DBLP:conf/sp/KangLG13}, Coremelt \cite{DBLP:conf/esorics/StuderP09}.
+%?? botnet traffic. ?? Mirai used as DDoS vector \cite{DBLP:conf/uss/AntonakakisABBB17}.
 
-?? I think we need some other sources to reason about things from a game theoretic perspective---it seems to me that evolution is the name of the game \cite{DBLP:conf/atal/SinhaKT16} (not read this, but seemed relevant at the time).
-
-\paragraph{Amplification}
-\textcite{DBLP:conf/ndss/Rossow14}.
-?? Inbound/outbound traffic ratios at victim (above a certain bw thres).
-?? At the amp, scan activity in surrounding darknets can be an indicator.
-?? At the amp, similar ratio analysis (scaled to account for benign activity and real clients who require high bandwidth: lower amp, higher bw).
-
-\textcite{DBLP:conf/imc/CzyzKGPBK14} observe some further hallmarks specific to NTP attacks.
-The \texttt{monlist} command principally used as the basis for such attacks can often reveal the list of recent targets after the fact, offering external investigators a means to determine which open NTP servers see active use as amplifiers (and their unwilling victims).
-An interesting observation stemming from these records is that the sets of amplifiers and victims are both highly clustered across ASes---individually, that is.
-Furthermore, it is observed that attackers choose a selection of target ports on the victim machine (in order of popularity): HTTP, NTP, SSH, gaming services and DNS.
-Noting that many of thes services run on \emph{TCP}, it seems likely that attackers are hoping for firewalls to blindly allow through both TCP and UDP on these ports.
-Their randomised scanning techniques imply that the culprits behind similar scans could be detected via network telescopes (although it is unclear whether this would reveal the bots, the organiser or the botmaster).
-
-As an aside, the NTP \texttt{monlist} command fragments its $\sim$\SI{50}{\kibi\byte} payload into \SI{482}{\byte} chunks.
+%\paragraph{Characteristics}
+%
+%?? Botnet C\&C communication \cite{DBLP:conf/sac/ZandVYK14}? NOT READ
+%
+%?? \SI{69}{\percent} of targets are web servers \cite{DBLP:conf/imc/JonkerKKRSD17}.
+%
+%DDoS attacks evolve over timescales of seconds to months.
+%\Textcite{DBLP:conf/spw/KangGS16} investigate this, and consider the implications and considerations necessary to deal with such occurrences.
+%Why might attackers desire this?
+%The authors posit that a diverse attack portfolio makes for more effective attacks, so long as there is \emph{variation}---a single suite or pattern of evolution makes defence (and discovery of the attacker) far simpler.
+%We see such evolution in:
+%\begin{description}
+%	\item[Volume and Capabilities] Peak \SI{300}{\gibi\bit\per\second}$\rightarrow$\SI{600}{\gibi\bit\per\second} over the last 4 years from date of publication.
+%	\item[Attack targets] E.g., Spamhaus---attackers moved from targeting endpoint servers to targeting the routers in \emph{internet exchange points} (IXPs) once the former was detected.
+%	\item[Strategy] E.g., semantic attacks $\rightarrow$ volumetric (TCP \texttt{SYN} flood) $\rightarrow$ volumetric (NTP amplification) $\rightarrow$ LFA.
+%\end{description}
+%They find that evolution in capabilities occurs over longer timescales, as these typically require resource acquisition (knowledge, bots, etc.).
+%\emph{Strategies}, however, are easily poised to evolve over short time horizons, typically ``[adapting] to the target's (observed) defensive posture''.
+%This behaviour was observed in both the cases of SpamHaus and ProtonMail.
+%In light of this, they suggest a two-tier approach to defence.
+%To thwart rational adversaries, they suggest the use of \emph{deterrents}---mechanisms located at e.g., a single network point, which can detect attacks and thus increase the cost of maintenance.
+%Most defences fit this description.
+%To handle cost-insensitive attackers, they suggest collaborative approaches (such as SENSS \cite{DBLP:conf/acsac/RamanathanMYZ18}).
+%Unfortunately, the work makes little attempt to describe or study the patterns of short-term evolution which might be expected in a real-world attack.
+%
+%?? I think we need some other sources to reason about things from a game theoretic perspective---it seems to me that evolution is the name of the game \cite{DBLP:conf/atal/SinhaKT16} (not read this, but seemed relevant at the time).
+%
+%\paragraph{Amplification}
+%\textcite{DBLP:conf/ndss/Rossow14}.
+%?? Inbound/outbound traffic ratios at victim (above a certain bw thres).
+%?? At the amp, scan activity in surrounding darknets can be an indicator.
+%?? At the amp, similar ratio analysis (scaled to account for benign activity and real clients who require high bandwidth: lower amp, higher bw).
+%
+%\textcite{DBLP:conf/imc/CzyzKGPBK14} observe some further hallmarks specific to NTP attacks.
+%The \texttt{monlist} command principally used as the basis for such attacks can often reveal the list of recent targets after the fact, offering external investigators a means to determine which open NTP servers see active use as amplifiers (and their unwilling victims).
+%An interesting observation stemming from these records is that the sets of amplifiers and victims are both highly clustered across ASes---individually, that is.
+%Furthermore, it is observed that attackers choose a selection of target ports on the victim machine (in order of popularity): HTTP, NTP, SSH, gaming services and DNS.
+%Noting that many of thes services run on \emph{TCP}, it seems likely that attackers are hoping for firewalls to blindly allow through both TCP and UDP on these ports.
+%Their randomised scanning techniques imply that the culprits behind similar scans could be detected via network telescopes (although it is unclear whether this would reveal the bots, the organiser or the botmaster).
+%
+%As an aside, the NTP \texttt{monlist} command fragments its $\sim$\SI{50}{\kibi\byte} payload into \SI{482}{\byte} chunks.
 
 
 \subsection{Contributing factors in the detection problem}\label{sec:ddos-contributing-factors}
