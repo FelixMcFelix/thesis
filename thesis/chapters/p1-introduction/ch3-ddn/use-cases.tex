@@ -21,9 +21,9 @@ Readers anxious to see the design elements and takeaways common to this broad sp
 
 %?? Ideally, should mirror the ``networking problems'' section in Ch1, so that there I can explain the problems and give a bunch of cites and run down how people solve packet classification etc. without ML/RL
 
-\subsection{Network Management}
+\subsection{Network management}
 
-\paragraph{Routing and Traffic Optimisation}
+\paragraph{Routing and traffic optimisation}
 As discussed earlier, routing is the task of moving packets of network data from their source to their destination, ideally without losing any in transit and as quickly as possible.
 We can consider this from two perspectives: moving a packet towards the \gls{acr:as} where the destination is located using logical boundary information (\emph{inter-\gls{acr:as} routing}), and moving packets over the physical infrastructure within an \gls{acr:as} (\emph{intra-\gls{acr:as} routing}).
 As inter-\gls{acr:as} routing requires consistent protocols and negotiation between organisations, intra-\gls{acr:as} routing offers more scope for optimisation and innovation.
@@ -64,7 +64,7 @@ There are, of course, caveats to solving what is fundamentally a \gls{acr:csp} i
 \gls{acr:smt} solvers produce outputs faster than DeepBGP takes to train, and it is unclear whether any transferable properties of an input instance are learned even though raw inference time is faster.\sidenote{Given that the input and output formats depend on both the high-level intent and the \gls{acr:as} relationship graph, the model architecture is intrinsically tied to the given problem.}
 As with other \glspl{acr:csp}, non-exhaustive solvers are unable to assert whether the input problem is unsatisfiable (and if so, whether the number of constraints that have been met is maximal).
 
-\paragraph{Flow/Packet Classification}
+\paragraph{Flow/packet classification}
 Identifying the type of traffic carried in a flow is a key part of ensuring \gls{acr:qos}/\gls{acr:qoe} guarantees, traffic optimisation, and network security.
 However, the realities of Internet traffic require that classification is \emph{fast}, contrary to the inference costs typical to \glspl{acr:dnn}.
 One stream of packet classification approaches assumes we begin with a full set of enumerated rules ($\sim$\numrange{e5}{e6}) and matching priorities, making scalable lookup (i.e., significantly faster than $\mathcal{O}\left(n\right)$) a key challenge.
@@ -99,7 +99,7 @@ Bayesian optimisation using Gaussian processes has seen some degree of success i
 This mirrors its successes in \gls{acr:ml} hyperparameter optimisation~\parencite{DBLP:conf/lion/HutterHL11,DBLP:conf/aaai/FeurerSH15}, as this family of techniques is effective at minimising a cost function using limited data (i.e., when there's a high monetary or compute cost to acquire each sample).
 For optimisation tasks their use is straightforward, but it must be noted that hotspot identification still requires high-level operator knowledge.\sidenote{In particular, human knowledge is currently needed to show that a so-called adversarial scenario is more than just an expected scaling characteristic; not to mention the subsequent root-cause analysis.}
 
-\subsection{Protocol Optimisation and Design}
+\subsection{Protocol optimisation and design}
 \paragraph{Congestion control}
 As discussed and introduced earlier in \cref{sec:wtf}, the design of effective \glspl{acr:cca} very much remains an open topic.
 The degree of diversity in networks, from long-fat Internet-style networks to dense low-\gls{acr:rtt} data centres, in buffering and forwarding behaviours of different path segments, \emph{and} the unforeseen interactions between disparate \gls{acr:cca} mechanisms, presents a huge problem space to work in.
@@ -156,8 +156,8 @@ Interestingly, this shows that small, pre-trained, quantised \glspl{acr:nn} can 
 
 %* https://dl.acm.org/doi/10.1145/3405671.3405817 -- An Adaptive Tree Algorithm to Approach Collision-Free Transmission in Slotted ALOHA
 
-\subsection{Security, Defence, and Verification}\label{sec:ddn-uses-security}
-\paragraph{Network and Computer Defence}
+\subsection{Security, defence, and verification}\label{sec:ddn-uses-security}
+\paragraph{Network and computer defence}
 \emph{Marl}~\parencite{DBLP:conf/iaai/MalialisK13,DBLP:journals/eaai/MalialisK15} examines the automated detection and mitigation of \gls{acr:ddos} attacks using the Sarsa \gls{acr:rl} algorithm.
 As a multiagent system, Marl agents are distributed at the edges of a network and adaptively learn a policy to control traffic \emph{without} explicit communication or sharing of policy updates.
 Agents reside at the \gls{acr:as}'s ingress points, and choose a packet drop probability for \emph{all inbound flows} from the discrete choices $a\in\left\{0.0,0.1,...,0.9\right\}$ \prllitact{} according to load measurements along their route to a protected server \prllitstate.
@@ -214,7 +214,7 @@ The main caveat is that outputs are only \qtyrange{80}{90}{\percent} likely to b
 
 \subsection{Multimedia}
 
-\paragraph{ABR Video Selection}
+\paragraph{ABR video selection}
 Streaming video is a common use case in the modern Internet.
 Here, users typically want to receive the highest quality video they can, while minimising any noticeable quality changes and the amount of time spent \emph{rebuffering}, which are their core \gls{acr:qoe} metrics.
 Servers allow clients to control this via \gls{acr:abr} selection, splitting videos into many fixed-length chunks (of \qtyrange{4}{10}{\second}) served via \gls{acr:hls}~\parencite{rfc8216} or \gls{acr:dash}~\parencite{mpeg-dash}.
@@ -258,9 +258,9 @@ Alohamora optimises the relative \gls{acr:qoe} change according to cheap and acc
 While considerably more effective than past works on policy generation, the ablation studies shown by the authors indicate a strong dependency on device-specific state (especially the \gls{acr:cpu} speed of each client).
 Inference is cheap compared to page load times, around \qtyrange{11}{40}{\milli\second}, offering strong \gls{acr:qoe} improvements when all input data are known.
 
-\subsection{Resource Placement and Management}
+\subsection{Resource placement and management}
 
-\paragraph{Job Scheduling}
+\paragraph{Job scheduling}
 \emph{DeepRM}~\parencite{DBLP:conf/hotnets/MaoAMK16} is one of the first works on simple \gls{acr:drl}-based job scheduling among resource-constrained \glspl{acr:cpu}, aiming to minimise the average job slowdown.
 What is particularly notable about this work is that it employs intelligent sampling and monitoring while taking multiple actions per timestep.
 In particular, it maps pixel images of current resource use and the costs of the next $k$ jobs \prllitstate{} into a discrete set of job choices to schedule and a null action \prllitact.
@@ -287,7 +287,7 @@ In partition-aggregate workloads, coordination overheads dominate if a task is d
 In the case of independent jobs (e.g., replicated services), \emph{Autopilot}~\parencite{DBLP:conf/eurosys/RzadcaFSZBKNSWH20} optimises vertical scaling (the \gls{acr:cpu} and \gls{acr:ram} limits allocated for a task) and the number of workers to minimise user spend versus heuristics.
 In the former case, an ensemble of simple optimisers (differing by cost model) is used to provide an interpretable suggestion, in the latter case a user-specified strategy is applied to minimise resource use.
 
-\paragraph{Cache Management}
+\paragraph{Cache management}
 Caching of Internet resources (e.g., webpages or video) is commonly employed by \glspl{acr:cdn} to serve content to users in a way which minimises latency as well as offering load-balancing for content providers.
 \emph{RL-Cache}~\parencite{DBLP:journals/jsac/KirilinSGS20} offers a cache admission policy learned through \gls{acr:drl} such that the hit rate is maximised.
 When a resource is requested, RL-Cache chooses to admit or remove that item from the cache \prllitact{} based on that object's size, recency and frequency statistics \prllitstate.\sidenote{Somewhat curiously, the authors choose to quantise these measures into fixed bins; effectively using a one-hot encoding of bin hits for each statistic as the input.}
@@ -301,7 +301,7 @@ Agents don't share information directly, but do receive a portion of their neigh
 Although \glspl{acr:lstm} are used to allow variable-size processing of local and neighbour state vectors, one element which remains suspect is that each node's state (and the model's output) contains a value \emph{for each cacheable item}.
 Given that the total number of cached video files is never specified, this does not suggest great scalability; this is only worsened when we consider that such resource is explicitly said to be a \gls{acr:dash} chunk (thus, hundreds of individual resources per video).
 
-\paragraph{System and Network Planning}
+\paragraph{System and network planning}
 In network planning, \glspl{acr:ilp} are often used for short- and long-term bring-up of fibre placements and \gls{acr:ip} route provisioning.
 \emph{NeuroPlan}~\parencite{DBLP:conf/sigcomm/ZhuGATZJ21} uses \gls{acr:drl} to suggest a better starting point and prune the \gls{acr:ilp} search space for this problem, greatly reducing runtimes (typically \qtyrange{3}{4}{\day}) in hypergiant networks.
 The variable size and structure of networks make graph convolution a natural fit, learning to optimise the normalised cost of any new bandwidth provisioned \prllitreward{} through actor-critic methods.

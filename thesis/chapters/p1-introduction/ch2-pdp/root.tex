@@ -1,5 +1,5 @@
 \chapter{Programmable Computer Networks}\label{sec:ch-networks}\label{chap:nets}
-Computer networks serve the important function of allowing any two machines to communicate with one another, typically via individual messages know as packets (i.e., a packet-switched network).
+Computer networks serve the important function of allowing any two machines to communicate with one another, typically via individual messages known as packets (i.e., a packet-switched network).
 Naturally, reality is much more complex than this broad statement would otherwise let on; the local routing fabric in a modern network comprises specialised (though commonplace) hardware for correctly routing these packets through arbitrary topologies of links and switches at ever-increasing data rates.
 This grows more complicated still when we consider the task of \emph{inter}networking between such networks, where we must route packets on higher-level logically structured addresses between different domains of control according to fairly complex policies and relationships.
 At the inception of these technologies, computer scientists of the day wisely decided that the sole duty of the network itself should be the correct routing of individual packets.
@@ -20,7 +20,7 @@ A wide variety of \glspl{acr:asic}-based switches, SmartNICs, and other accelera
 Despite all this, our general-purpose Internet remains much the same from an endpoint perspective, performance and reliability increases aside.
 Yet this increase in capabilities has revealed new strands of research in more specialised networks such as those in datacentres, where in-controller processing would have allowed the network fabric to \emph{cooperate} with its hosted applications but presented an obvious computational bottleneck.
 \emph{In-network compute} is enabled by such bespoke routing environments such as theirs when combined with the above advances in programmability.
-In-network compute is founded on the growing idea that in-path network elements such as switches, \glspl{acr:nic}s, and middleboxes can and should act as the site of complex logic to accelerate applications, participate in flow control, or to aid in network management.
+In-network compute is founded on the growing idea that in-path network elements such as switches, \glspl{acr:nic}, and middleboxes can and should act as the site of complex logic to accelerate applications, participate in flow control, or to aid in network management.
 %In this field
 %
 %?? Talk about application benefits.
@@ -31,29 +31,37 @@ In-network compute is founded on the growing idea that in-path network elements 
 %
 %What we have now are a wide variety of ways to run programs of varying levels of complexity at ?? many levels of the stack ?? to aid application and networkr performance
 
-In this chapter, I'll...
-\section{From Fixed-Function to Control-Plane-Programmable}\label{sec:from-fixed-function-to-fully-programmable}
+This chapter begins by motivating and describing initial attempts at dataplane programmability in the '90s (primarily \emph{active networking}), how control-plane programmability and \gls{acr:sdn} arose in their wake, and the reasons behind these movements' respective failures and successes (\cref{sec:from-fixed-function-to-fully-programmable}).
+\Cref{sec:modern-pdps} introduces modern, programmable dataplanes by tracing efforts parallel to \gls{acr:sdn} for improving the performance of host-based packet processing such as \glspl{acr:vnf}, before leading into the emergence of specialised \gls{acr:pdp} hardware and its legacy owed to \gls{acr:sdn} and \glspl{acr:npu}.
+This is followed by commentary on how the original active networking movement differs from modern \glspl{acr:pdp} (and context behind the latter's successful adoption), as well as a selection of open challenges and proposals in \gls{acr:pdp} programming languages and hardware designs.
+\Cref{sec:offloading-and-in-network-compute} then provides the rationale for \emph{offloading} service logic to \gls{acr:pdp} hardware and within host network stacks, and describes existing research on using these capabilities to automatically accelerate existing dataplane programs.
+To further motivate in-network compute, point solutions which take advantage of the execution environment and more granular view of network data to improve measurement and operation are described (\cref{sec:in-network-compute-use-cases}).
+Finally, \cref{sec:problems-in-modern-networks} provides some literature on volumetric \gls{acr:ddos} attacks (and defences against them) as necessary background for \cref{chap:ddos-rl}.
 
-?? What are networks?
+\section{From fixed-function to software-defined}\label{sec:from-fixed-function-to-fully-programmable}
+%?? What are networks?
+%
+%?? Possibly discuss the internet
+%
+%?? Lead in from ARPAnet et al. (2 paras). Scientific comms -> general use,
+%
+%The intro of choice~\parencite{DBLP:journals/ccr/FeamsterRZ14}
+%
+%?? interconnection physical and reconfig are main challenges that made SDN look attractive, reasonable?
 
-?? Possibly discuss the internet
+%Control plane programmability: routing etc? Dataplane programmability: per-packet computations.
+%?? focus on programmable \emph{dataplane} rather than control plane
 
-?? Lead in from ARPAnet et al. (2 paras). Scientific comms -> general use,
-
-The intro of choice~\parencite{DBLP:journals/ccr/FeamsterRZ14}
-
-?? interconnection physical and reconfig are main challenges that made SDN look attractive, reasonable?
-
-Control plane programmability: routing etc? Dataplane programmability: per-packet computations.
-?? focus on programmable \emph{dataplane} rather than control plane
-
+Initially, network fabrics were \emph{fixed-function}, supporting only the routing algorithms provided by permanent \glspl{acr:asic} integrated with their silicon, and offering transit only for protocols considered at their construction.
+However, from the Internet's inception as ARPAnet through today, programmability of networks has increased over time to simplify the management, use, and adaptability of network infrastructure~\parencite{DBLP:journals/ccr/FeamsterRZ14}.
 Programmability in computer networks tends to be categorised into two distinct forms.
 \emph{Control plane} programmability focuses on the routing of packets, making it easier to alter, update, and tailor the forwarding behaviour of a network at run time, and at many levels of granularity.
-?? Programming the \gls{acr:fib}/\gls{acr:rib}
+%?? Programming the \gls{acr:fib}/\gls{acr:rib}
 \emph{Dataplane} programmability focusses instead on introducing additional logic into the network to be executed by the forwarding elements such as routers---stateless or stateful transformations of packet streams, traffic measurement, and so on.
-There is, of course, vast scope for their interaction. ?? describe
+We examine first \emph{active networks}, one of the earliest movements to enable network packet processing at the infrastructure level.
+%There is, of course, vast scope for their interaction. ?? describe
 
-\subsection{Active Networking}\label{sec:active-networking}
+\subsection{Active networking}\label{sec:active-networking}
 In response to the expanding scale and widespread reach of the Internet (and computer networks in general), researchers in the early-to-mid '90s increasingly desired the tools to extend, innovate, and research routing and transport protocols.
 To maintain and safeguard interoperability over the Internet, the \gls{acr:ietf} formed to maintain and oversee the development of Internet protocols for all levels of the networking stack.
 The weight of full \gls{acr:ietf} standardisation was seen by many researchers of the period as a lengthy process, which they believed to be the cause of \emph{network ossification}---the Internet becoming inflexible to the design and deployment of new protocols.\sidenote{Authors of this period might be horrified to discover that the \gls{acr:ietf}'s median time to standard publication has more than doubled since 2000~\parencite{DBLP:conf/imc/McQuistinKKPTPH21}. This is not, however, what we understand as ossification in today's Internet, which I'll discuss shortly.}
@@ -154,7 +162,7 @@ Naturally, the overwhelming majority of these platform were prototyped on host m
 The repeated emphasis on high-level prototypes reduced the focus on the sorts of low-level, capable languages a performant system would require---proposals were instead marred by in-vogue high-level \gls{acr:vm}-based languages such as Java and Caml, which didn't do credibility any good.
 This likely added to industry scepticism---one gets the sense of a paradigm driven by research trends instead of limiting its own boundaries to produce something truly capable and scalable.
 
-\subsection{Software-defined Networking}
+\subsection{Software-defined networking}
 In parallel, a good many researchers saw a need to innovate (and fight stagnation in) the space of what we now understand as control plane programmability: the ability to deploy and develop new routing protocols, provide bespoke routing for individual packets, flows and applications, and to adapt to changes in the network itself.
 While likely starting out from the same perspective as active networking---enabling new capabilities and development, and network evolution---as years have gone by greater network capacities, usage demands and a need for far greater reliability have introduced challenges manyfold.
 Greater capacities, particularly in bisection bandwidth, typically mean more equipment for network admins to manage through routers and switches, but also in terms of additional cabling for link redundancy and aggregation---neither of which play well with older spanning tree protocols.
@@ -236,7 +244,7 @@ The architecture evolved fairly cleanly over the following 5 years, coping with 
 \emph{Espresso}~\parencite{DBLP:conf/sigcomm/YapMRPHBHKNJLRR17} extends this to inter-domain peering arrangements with the Internet and \gls{acr:bgp} session management, finally realising the vision of RCP 13 years on.
 Nowadays, datacentre and \gls{acr:wan} networks are managed by a single higher-level microservice \gls{acr:sdn} architecture, \emph{Orion}~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21}.
 
-\section{Modern Programmable Dataplanes}\label{sec:modern-pdps}
+\section{Modern programmable dataplanes}\label{sec:modern-pdps}
 While active network research may have dried up in the last 20 years,\sidenote{Barring some very obvious throwback works such as \emph{Tiny Packet Programs}~\parencite{DBLP:conf/sigcomm/JeyakumarAGKM14}.} interest in dataplane processing has remained strong.
 Network operators have, in fact, always had a need for complex packet processing, to measure, protect, and enhance \emph{their own} networks---rather than to provide the sort of communal good envisioned by active networks.
 To run through some examples:
@@ -273,7 +281,7 @@ The pursuit of this goal can be divided quite neatly into two streams.
 The first carries on from the use of virtualisation common in active networking research before the introduction of a true programmable dataplane fabric, towards more flexible deployment through \gls{acr:nfv} and \glspl{acr:vnf}.
 The second stream instead follows from asking how we might make switching and forwarding hardware itself more programmable, keeping in the tight form-factor and performance bounds required of high-speed commercial network hardware.
 
-\subsection{Virtualisation and Commodity Machines}
+\subsection{Virtualisation and commodity machines}
 Commodity \glspl{acr:cpu} are already arbitrarily programmable yet their dataplane performance has always been at odds with ever-improving Ethernet standards, leading researchers to ask: how can we alleviate the existing performance bottlenecks in host dataplanes?
 How can we take further advantage of the advantages of host machines to allow for multitenancy and make runtime reconfiguration even easier by leaning into the ubiquity of host compute?
 Backed by \gls{acr:sdn} and by innovations in \gls{acr:vm} and container research from the systems community, \glspl{acr:vnf} and similar frameworks have filled a comfortable niche for moderately performant host dataplane programming.
@@ -326,7 +334,7 @@ Additionally, this allows path auditing in a way which is invisible to \glspl{ac
 %Cost? Halves goodput vs. NetBricks.
 However, this latter solution achieves only half the packet forwarding goodput of NetBricks in exchange for these additional guarantees.
 
-\subsection{Specialised Hardware}
+\subsection{Specialised hardware}
 Although host-run functions have indeed improved, their performance still trails unacceptably behind \glspl{acr:asic}---traffic volume can be accounted for up to a limit by horizontal scaling, but this becomes more difficult to operate than a single bump-in the wire solution, or may be impossible at larger port densities.
 Programmable network hardware, beginning with early \glspl{acr:npu} and culminating in today's SmartNICs and programmable \gls{acr:asic}-backed switches, innovates on introducing runtime reconfigurable compute to these devices.
 
@@ -425,7 +433,7 @@ Moreover, this enables application acceleration and other new developments with 
 
 %?? Talk more about in-network compute?
 
-\subsection{The Return of Active Networking?}
+\subsection{The return of active networking?}
 The reader may well be thinking that research community has cycled back around to active networking in a new guise, and in many senses it has.
 While less popular at the time, the programmable switch model we have latched onto did in fact arise as part of this prior movement.
 The remarkable observation is that if we follow the retelling of \Textcite{DBLP:journals/ccr/FeamsterRZ14}, active networking's decline was written in large part by its lack of a ``killer app''.
@@ -439,7 +447,7 @@ So, what changed?
 My personal interpretation and opinion is that this arises from several angles: 
 \begin{itemize}
 	\item Virtualisation introduced the capability to install novel and reconfigurable packet processing to networks, but modern deployments and the constant need to `scale up' have emphasised that performance truly is a necessity. This doesn't only hark back to the logical cost involved in moving packets around the software or \gls{acr:os} stack in a machine (added latency), but also via the falloff of Moore's law~\parencite{moore-law} and Dennard scaling~\parencite{dennard-paper}. Although host capabilities have always fallen behind line-rate, they are falling even further back due to the constant, inexorable increase in Ethernet data rates.\sidenote{Of course, dedicated silicon always offers a performance edge over an arbitrary computer, at the cost of flexibility. The design, fabrication, and engineering costs are high enough that this has only ever really been justified in common use-cases (e.g., firewalls and \glspl{acr:ids}) or where there really is a business case as with modern hypergiant providers.} `Line-rate' has increased from its initial \qty{10}{\mega\bit\per\second} to \qty{1}{\giga\bit\per\second}~\parencite{gbe-standard}, to \qty{100}{\giga\bit\per\second}~\parencite{100-gbe}, with ongoing work to standardise \qty{400}{\giga\bit\per\second} links. When we consider that Ethernet frame sizes have in the same period expanded on \emph{some} deployments from \qty{1560}{\byte} to \qty{9000}{\byte} `jumbo' frames, it is plainly visible that per-packet processing deadlines simply cannot be met by commodity hosts on smaller packets.
-	\item The unforeseen capabilities, reach and business needs of hypergiant network operators such as Google and Meta, pushing the boundaries of scalability~\parencite{DBLP:conf/sigcomm/GigisCMNKDKS21}, have also played a key role. Crucially, their business needs include not only the administration of such large networks but also rely on accelerating cloud compute workloads, large-scale \gls{acr:ml} model training and inference, and distributed computation within their datacentre networks. As we'll cover in \cref{sec:offloading-and-in-network-compute}, in-network compute allows specific optimisations for these tasks: for instance gradient aggregation in-network, or \glspl{acr:cca} managed co-operatively by the routing infrastructure. In environments such as these where all aspects of distributed computation can be controlled and optimised, such hyper-converged infrastructure is not only possible but necessary from an economic standpoint---particularly when in-network compute becomes the only way to increase performance further. While such companies have the capability and precedent to develop their own hardware---e.g., network-connected accelerators like Microsoft BrainWave~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18}---these organisations already had an abundance of engineers familiar with \gls{acr:sdn} who were poised to make great use of the joint flexibility and performance offered by \glspl{acr:pdp}.
+	\item The unforeseen capabilities, reach and business needs of hypergiant network operators such as Google and Meta, pushing the boundaries of scalability~\parencite{DBLP:conf/sigcomm/GigisCMNKDKS21}, have also played a key role. Crucially, their business needs include not only the administration of such large networks but also rely on accelerating cloud compute workloads, large-scale \gls{acr:ml} model training and inference, and distributed computation within their datacentre networks. As we'll cover in \cref{sec:offloading-and-in-network-compute}, in-network compute allows specific optimisations for these tasks: for instance gradient aggregation in-network, or \glspl{acr:cca} managed co-operatively by the routing infrastructure. In environments such as these where all aspects of distributed computation can be controlled and optimised, such hyper-converged infrastructure is not only possible but necessary from an economic standpoint---particularly when in-network compute becomes the only way to increase performance further. While such companies have the capability and precedent to develop their own hardware---e.g., network-connected accelerators like Microsoft \emph{BrainWave}~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18}---these organisations already had an abundance of engineers familiar with \gls{acr:sdn} who were poised to make great use of the joint flexibility and performance offered by \glspl{acr:pdp}.
 \end{itemize}
 Alternatively, we might argue that it is the control plane innovations of \gls{acr:sdn} that made this possible in the first place; beforehand, the design schism of capsules versus programmable switches was indeed an open question (one might say between `pragmatic' and `interesting' approaches to the task).
 The field's re-evolution of programmable switches (and now \glspl{acr:nic}) offers a healthy does of pragmatism, ensuring that today's model is performant---but almost entirely focussed on allowing runtime reconfigurable specificity over which packets are fed to a pre-set array of dataplane programs, as opposed to totally arbitrary packet-level programs.
@@ -485,7 +493,7 @@ In turn, the scope of deploying in-network compute has become far more insular, 
 %
 %?? Regardless, the old paradigm of active networking has been realised in the form of \glspl{acr:pdp} and in-network compute.
 
-\subsection{Frontiers in Programmable Networks}\label{sec:frontiers-in-programmable-networks}
+\subsection{Frontiers in programmable networks}\label{sec:frontiers-in-programmable-networks}
 Commercial developments along the same lines as the modern \gls{acr:pdp} hardware covered in \cref{sec:modern-pdps} are proceeding apace as network bandwidth demands grow larger.
 Intel's Tofino 2~\parencite{tofino2} represents the latest product in the lineage of \gls{acr:rmt} hardware, offering \qty{12.8}{\tera\bit\per\second} with support for \qty{400}{\giga\bit\per\second} Ethernet.
 Nokia's FP5~\parencite{nokia-fp5} similarly promises full programmability for high-density switching and routing at \qty{800}{\giga\bit\per\second} Ethernet, while Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
@@ -596,7 +604,7 @@ Netronome \gls{acr:nfp} \gls{acr:nic} tables are reliant on the optimised DCFL~\
 %On Netronome \gls{acr:nfp} hardware in particular, rule updates \emph{must} be applied by the co-hosted controller machine, as tables are reliant on the optimised DCFL~\parencite{DBLP:conf/infocom/TaylorT05} data format.
 %In addition to the prohibitive complexity of building this data structure on-device, its construction requires knowledge of the entire rule set (and cannot be incrementally updated).
 
-\section{Offloading and In-Network Compute}\label{sec:offloading-and-in-network-compute}
+\section{Offloading and in-network compute}\label{sec:offloading-and-in-network-compute}
 %?? Explain rationale first...
 As we've explored in \cref{sec:from-fixed-function-to-fully-programmable}, modern networks now have a large variety of tools to enable traffic and packet processing, including hosts, programmable switches, SmartNIC devices, and middleboxes---all in tandem with control plane programmability.
 %?? Diverse set of devices having different perf characteristics in latency/tput, reachability, prioce points, degrees of programmabiklity
@@ -698,7 +706,7 @@ We'll cover here technologies in use for host offloading, such as \gls{acr:xdp},
 Through \cref{sec:frameworks-for-automatic-offloading}, I'll cover recent works making use of host offloading techniques and \gls{acr:pdp} hardware to provide automatic acceleration and for dataplane programs.
 Although in-network compute has been justified and explained here, its use cases will be left until later (\cref{sec:in-network-compute-use-cases}).
 
-\subsection{Host Offloading Technologies}\label{sec:host-offloading-technologies}
+\subsection{Host offloading technologies}\label{sec:host-offloading-technologies}
 Commodity host machines are designed in such a way that packet processing often incurs higher latency than using an \gls{acr:asic} positioned at the same point in the network.
 Consider \cref{fig:pdp-lit-pci}, which shows the physical interconnect between a \gls{acr:nic} and \gls{acr:cpu}.
 Network connectivity is a \emph{peripheral} function, and so \gls{acr:nic} are connected over the \gls{acr:pcie} bus.
@@ -867,7 +875,7 @@ Additionally, by swapping testpmd for a Rust-based receive stack and reading fro
 
 %?? Extra lat and very high variability, comparatively.
 
-\subsection{Frameworks for Automatic Offloading}\label{sec:frameworks-for-automatic-offloading}
+\subsection{Frameworks for automatic offloading}\label{sec:frameworks-for-automatic-offloading}
 One of the strengths of the above offload technologies is that their architects are keen to seem them achieve widespread adoption, and as such they tend to be well-integrated with existing technical stacks.
 For instance, \gls{acr:ebpf} has a codegen target for both the LLVM and GCC compiler suites since 2015 and 2019 respectively~\parencite{ebpf-llvm,ebpf-gcc}, enabling code written in popular high-level languages like C or Rust to be compiled to this level.
 I provide here a brief overview of the higher- and lower-level tooling developed by the research community to either lower the barrier for adoption (and easily migrate existing \gls{acr:nf} solutions), or to improve on the potential performance benefits.
@@ -962,7 +970,7 @@ These blocks are statically analysed to extract the data dependencies between su
 %
 %?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
 
-\section{In-Network Compute Use Cases}\label{sec:in-network-compute-use-cases}
+\section{In-network compute use cases}\label{sec:in-network-compute-use-cases}
 %?? Lead-in, describe...
 To make the value of \glspl{acr:pdp} and in-network compute clearer, I present here a selection of specific applications that have been improved or enabled outright by these new capabilities.
 These include advances in network monitoring and telemetry, application acceleration by in-network services, and how the network may allow improved or more dynamic transport and routing.
@@ -970,7 +978,7 @@ Finally, as it is of particular importance to this thesis and the overall goal o
 It must be said that the works shown here are indicative, rather then exhaustive.
 Interested readers should also examine dedicated surveys such as that of \Textcite{DBLP:journals/access/KfouryCB21}.
 
-\subsection{Network Monitoring}\label{sec:network-monitoring}
+\subsection{Network monitoring}\label{sec:network-monitoring}
 %?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
 %?? Maybe explain them?
 Traffic monitoring solutions built on non-\gls{acr:pdp} fabrics can be imprecise or limited.
@@ -1026,7 +1034,7 @@ To detect \gls{acr:ddos} attack victims in pure P4, \emph{INDDoS}~\parencite{DBL
 To gather state, it maintains sketches of source/destination \glspl{acr:ip} and ports alongside counters, as well as useful primitives like native stateless P4 implementations of SYN cookie functions and approximate Bloom-filter-based allow/blocklists.
 State is polled by the control plane which is responsible for interpreting sketches to perform higher-level logic (e.g., thresholds, significant changes), and installs detection and mitigation functions using a heuristic algorithm to ensure sufficient coverage.
 
-\subsection{Service Acceleration and Offloading}
+\subsection{Service acceleration and offloading}
 Distributed data structures, such as key-value stores, are a foundational part of many data centre applications for process coordination and concurrency control.
 \emph{NetChain}~\parencite{DBLP:conf/nsdi/JinLZFLSKS18} and \emph{FLAIR}~\parencite{DBLP:conf/nsdi/TakruriKAA20} offer P4-based implementations of distributed key-value stores, routing and serving requests and updates subject to a chain replication protocol for reliability, achieving an order-of-manitude latency improvement for reads and writes.
 NetChain in particular uses a mixture of \glspl{acr:mat} and registers to accelerate index lookups and store data respectively, though both eliminate steering costs and host stack costs.
@@ -1049,7 +1057,7 @@ To reduce traffic impact on infrastructure while freeing host resources, \emph{Z
 
 %?? In-network storage/caching~\parencite{DBLP:conf/eurosys/SchmidPWEP20}
 
-\subsection{Transports, Protocols, and Routing}
+\subsection{Transports, protocols, and routing}
 %?? ROuting and load balancing (over paths) more dynamic, fairer and more uniform than e.g. \gls{acr:ecmp}
 Multipath networks are commonly used to achieve high bisection bandwidth between hosts, but require specialised schemes like \gls{acr:ecmp} to balance load across their fabric.
 \gls{acr:pdp} hardware is configurable enough to allow the development and deployment of new routing protocols which are more dynamic, fairer, and uniform; ideally, with less control plane interaction.
@@ -1084,7 +1092,7 @@ These may be modified via small user-programmable blocks containing \glspl{acr:a
 The remainder of their framework handles (de)packetisation, packet transmission for many waiting flows, and \gls{acr:dma} handling.
 %?? Hi~\parencite{DBLP:conf/nsdi/ArashlooLGRWW20} Network stacks being moved into NICs to reduce latency/CPU utilisation, mainly for datacentre use-cases---otherwise, \SI{100}{\giga\bit\per\second} can't be hit. New API \emph{Tonic} for transport layer in user code (send, data management), DMA to NIC and let it handle all (de)packetisation. ``Transport logic'' goes to Tonic. Main design is datacentres, so not very high BDPs (long-fat) $\rightarrow$ \si{\kilo\byte} inflight data.
 
-\subsection{Machine Learning}\label{sec:inc-uses-pdp-ml}
+\subsection{Machine learning}\label{sec:inc-uses-pdp-ml}
 As we'll examine throughout \cref{chap:ddn}, \gls{acr:ml} techniques make it possible to learn and act upon complex patterns or relationships in network data to perform all manner of management and optimisation tasks more effectively.
 While I cover specific implications of data formats and training algorithms later (\cref{sec:numerical-representations-for-embedded-ml,sec:learning-an-approximation}), the gist is that machine learning inference and training are generally dependent on floating point data (as training gradients are real-valued), specialised accelerators accessed as peripherals like \glspl{acr:gpu} or \glspl{acr:tpu}, and are computationally complex.
 %?? Using ML needs putting at accel (slow)
@@ -1196,7 +1204,7 @@ Unfortunately, to the best of my knowledge true on-device model training for \gl
 %
 %\subsection{Limitations}
 
-\section{A Large-scale Problem in Modern Networks: Distributed Denial of Service}\label{sec:problems-in-modern-networks}
+\section{A large-scale problem in modern networks: distributed denial of service}\label{sec:problems-in-modern-networks}
 While computer networks are prone to all manner of operational problems on account of their gradual, continued construction via many complex interlocking systems, we train our focus here on \glsxtrfull{acr:dos} and \glsxtrfull{acr:ddos} attacks.\sidenote{A vast array of other, keenly relevant problems are briefly explained alongside the \gls{acr:ddn} use cases presented throughout \cref{sec:use-cases}.}
 \gls{acr:ddos} attacks are concentrated efforts by many hosts to reduce the availability of a service, typically to inflict financial harm or as an act of vandalism.
 Attackers achieve this by either exploiting peculiarities of \gls{acr:os} or application behaviour in \emph{semantic attacks} (e.g., \emph{\texttt{SYN} flooding attacks}), or overwhelming their target through sheer volume of requests or inbound packets (\emph{volume-based attacks})~\parencite{DBLP:conf/imc/JonkerKKRSD17}.
@@ -1477,11 +1485,29 @@ Hosts and agents must perform proof-of-work challenges attached to flow cookies 
 
 Some collaborative solutions appear to hinge on the condition that \gls{acr:http} and \gls{acr:tcp} sessions can be reliably held over the saturation zone between high-priority endpoints.
 Alternative channels may be possible through elected proxies or \gls{acr:udp}-based mechanisms like \gls{acr:dots}~\parencite{ietf-dots-use-cases-17}.
-\gls{acr:dots} provides an architecture for network operators to enumerate, discover, and communicate with \gls{acr:ddos} mitigation services, with who they can exchange telemetry information and explcit mitigation requests.
+\gls{acr:dots} provides an architecture for network operators to enumerate, discover, and communicate with \gls{acr:ddos} mitigation services, with who they can exchange telemetry information and explicit mitigation requests.
 
 \section{Summary}
-Eh.
+%Eh.
+%
+%?? History
+%
+%This chapter begins by motivating and describing initial attempts at dataplane programmability in the '90s (primarily \emph{active networking}), how control-plane programmability and \gls{acr:sdn} arose in their wake, and the reasons behind these movements' respective failures and successes (\cref{sec:from-fixed-function-to-fully-programmable}).
+%\Cref{sec:modern-pdps} introduces modern, programmable dataplanes by tracing efforts parallel to \gls{acr:sdn} for improving the performance of host-based packet processing such as \glspl{acr:vnf}, before leading into the emergence of specialised \gls{acr:pdp} hardware and its legacy owed to \gls{acr:sdn} and \glspl{acr:npu}.
+%This is followed by commentary on how the original active networking movement differs from modern \glspl{acr:pdp} (and context behind the latter's successful adoption), as well as a selection of open challenges and proposals in \gls{acr:pdp} programming languages and hardware designs.
+%\Cref{sec:offloading-and-in-network-compute} then provides the rationale for \emph{offloading} service logic to \gls{acr:pdp} hardware and within host network stacks, and describes existing research on using these capabilities to automatically accelerate existing dataplane programs.
+%To further motivate in-network compute, point solutions which take advantage of the execution environment and more granular view of network data to improve measurement and operation are described (\cref{sec:in-network-compute-use-cases}).
+%Finally, \cref{sec:problems-in-modern-networks} provides some literature on volumetric \gls{acr:ddos} attacks (and defences against them) as necessary background for \cref{chap:ddos-rl}.
 
-?? History
+I have described the rich history of programmable networks from their initial forays to-date, including what is now a rich tapestry of software-defined routing and bespoke programmable devices mixed with heavily-optimised host machines.
+We've examined how advances in dataplane programmability enable application performance to be meaningfully improved---lower latencies and higher throughputs---by taking clever advantage of \gls{acr:pdp} hardware.
+In particular, this covers the importance of moving high-performance services to the right execution environment---\emph{offloading}.
+Most crucially, considering in-network compute from the outset enables a plethora of ways to meaningfully improve the management of today's networks.
+Finally, we covered a large-scale problem in modern networks---the ever-present threat of \gls{acr:ddos} attacks---and how Internet traffic characteristics make its solution more difficult.
 
-?? The importance of moving high-performance services to the right execution environment---offloading
+My concluding thought is that \gls{acr:pdp} and its use cases present a vibrant, ongoing line of research---particularly when we consider how it can be combined with \gls{acr:ddn}.
+It offers today source of raw device data which we would have never been able to feasibly use or export, as well as the necessary tools to perform complex data analysis at line-rate and switches' scale.
+At the same time it provides ways of helping host machines scale further via aggregation, and a promising location to perform complex, data-driven logic and reaction.
+I am of the opinion, however, that it is still a field in its adolescence.
+The hardware solutions and designs which have arisen and entered widespread market adoption (e.g., \gls{acr:rmt}$\rightarrow$Tofino) are impressive, powerful and capable---but they are the first wave of fully programmable devices at this scale and this form-factor, and we should expect even more innovation in hardware and languages as the field evolves.
+This may well take the form of incoming heterogeneity, as device manufacturers produce \gls{acr:pdp} devices tailored to different use cases in much the same way as \emph{Taurus}---projects like \emph{BrainWave} reiterate that network hypergiants already hold the means and motivation to do just this.

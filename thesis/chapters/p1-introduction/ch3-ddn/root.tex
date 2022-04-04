@@ -1,10 +1,12 @@
 \chapter{Data-driven Networking}\label{chap:ddn}
-Once we have any computer network as described above, we have a good basis for not only allowing two machines to communicate with one another, but also to do so \emph{efficiently}.
-That isn't to say that there is no room to improve on how networks and operating systems provide this functionality.
+%Once we have any computer network as described above, we have a good basis for not only allowing two machines to communicate with one another, but also to do so \emph{efficiently}.
+%That isn't to say that there is no room to improve on how networks and operating systems provide this functionality.
+%In amongst the design of ?? \cref{chap:nets} are ?? tunable aspects, algorithms in protocol to improve perf... ????
 Many aspects of modern networks, such as \glspl{acr:cca}, thresholds for differentiating services, and flow classification rely heavily upon hand-tuned heuristics.
-As in \cref{sec:problems-in-modern-networks}, there is still vast scope to improve on communication latency and throughput, or to avoid and work around deleterious traffic patterns (such as incast communication).
+As in \cref{sec:in-network-compute-use-cases}, there is still vast scope to improve on communication latency and throughput, or to avoid and work around deleterious traffic patterns (such as incast communication).
 As a result, research into \glspl{acr:cca}, network designs, and routing procedures is very much ongoing.
 Crucially, as these operations lie at the core of network operation their solutions tend towards extremely efficient heuristic methods; they must be evaluated per-packet or react as quickly as possible to state change.
+Unlike the approaches empowered by the programmability explored through \cref{chap:nets}, the norm is that most deployment environments have no access to such tools, and thus have reduced scope for co-design or measuring network properties that would make their design simpler.
 Designing new methods for network optimisation then requires deep insight into any problem, its edge cases, and the hardware/performance characteristics of the target environment.\sidenote{This affects how we design such heuristics even on commodity hosts---for instance, kernel-space \glspl{acr:cca} (i.e., as part of the TCP stack) are unable to use floating point arithmetic.}
 
 Suppose that, as network administrators or protocol designers, we have access to a reasonable amount of information about the machines, network segments or \glspl{acr:as} under our control---measurements, observations, and statistics taken at run-time, from simulation, or by modelling.
@@ -26,7 +28,7 @@ Specifically, I introduce relevant function approximations (\cref{sec:function-a
 Although this context and its challenges are rapidly evolving, an understanding of security issues is key to offering a complete picture of the viability of \gls{acr:ddn} and the care which must be taken in its research.
 Sadly, full examination and further development lies beyond the scope of this thesis---it is, in fact, a thesis-worthy topic in its own right~\parencite{papernot-thesis}.
 
-\section{Use Cases}\label{sec:use-cases}%
+\section{Use cases}\label{sec:use-cases}%
 \input{chapters/p1-introduction/ch3-ddn/use-cases.tex}
 
 \section{Function approximation}\label{sec:function-approximation}
