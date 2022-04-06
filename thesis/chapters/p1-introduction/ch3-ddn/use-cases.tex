@@ -170,11 +170,11 @@ Agents are punished when the network is overloaded \emph{and} their team contrib
 Although their results appear competitive, their simulation environment uses only congestion-unaware \gls{acr:udp} traffic, in opposition to the realities of Internet traffic as discussed in \cref{sec:uk}.
 Congestion-aware protocols dominate in many networks; incorrectly applying a packet drop action imposes greater \emph{pushback}~\parencite{DBLP:journals/ccr/MahajanBFIPS02a} on these legitimate flows than it would on attack traffic.
 For congestion-aware traffic, this is non-negligible; when packet loss occurs with probability $p\ne0$, the Mathis equation~\parencite{DBLP:journals/ccr/MathisSMO97} states that TCP bandwidth is proportional to $1/\sqrt{p}$, while modern TCP Cubic is proportional to $1/p^{0.75}$~\parencite{rfc8312}.
-Congestion-unaware, \gls{acr:cbr} traffic then occupies bandwidth proportional to $1 - p$, and recalling section \cref{sec:uk} we understand from the literature that volumetric \gls{acr:ddos} attack traffic mainly falls into this category.
+Congestion-unaware, \gls{acr:cbr} traffic then occupies bandwidth proportional to $1 - p$, and recalling section \cref{sec:problems-in-modern-networks} we understand from the literature that volumetric \gls{acr:ddos} attack traffic mainly falls into this category.
 %Congestion-unaware, \gls{acr:cbr} traffic then occupies bandwidth proportional to $1 - p$---when we consider that analysis of CAIDA datasets~\parencite{caida-2018-passive} shows that congestion-aware traffic makes up at least \SIrange{73}{82}{\percent} of packets\footnote{\url{https://github.com/FelixMcFelix/caida-stats}}, it is clear that collateral damage applied by Marl is greatly worsened.
 %?? Reward measurement relies on perfect a-priori knowledge.
 Furthermore, the static overlay topology does not account for the defence of load-balanced or multipath networks, and the reward function relies on either \emph{a priori} knowledge of traffic or an accurate heuristic.
-These weaknesses are shown more concretely throughout section \cref{sec:uk}, and motivate the design of ??\{name\} throughout \cref{chap:ddos-rl}.
+These weaknesses are shown more concretely throughout section \cref{sec:uk}, and motivate the design of the \emph{Instant} and \emph{Guarded} \gls{acr:rl} agents throughout \cref{chap:ddos-rl}.
 %?? I investigate this much further in-depth in section ??.
 %?? Sim issue: All UDP
 
