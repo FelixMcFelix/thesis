@@ -1,41 +1,80 @@
-\chapter{Introduction}
+\chapter{Introduction}\label{chap:intro}
 
-\epigraphhead{\epigraph{Insert thoughtful quote here.}{Some author---\emph{Some Book}}}
+%\epigraphhead{\epigraph{Insert thoughtful quote here.}{Some author---\emph{Some Book}}}
 
-\section{Overview}
+?? Remember: Topic Sentences!
 
-Run over the main topics in the thesis: take the time to explain both thoroughly and personably.
+%?? PROBLEM
+Computer networks are complex, yet critical infrastructure.
+?? layers upon layers.
+?? keeping them well-oiled is...
+?? why we want DDN: in combination, many aspects of networks complex, heuristic, hand-tuned
 
-\subsection{The resurgence of PDP}
-?? an old idea returns to the fore
-
-\subsection{The emergence of DDN}
+?? TOOLS DDN
+?? Meteoric rise of \gls{acr:ml}
 ?? an new idea takes the stage
+?? why we want \gls{acr:ddn}: in combination, many aspects of networks complex, heuristic, hand-tuned
 
-\subsection{Why we want DDN}
+?? TOOLS PDP
+?? such \gls{acr:pdp} hardware can...
+?? The resurgence of PDP
+?? an old idea returns to the fore
+?? What's fascinating is that these ideas are not entirely novel.
 
-\subsection{Why we want to run complex stuff in the network}
+?? HOW TOOLS HELP
+?? Why we want to run complex stuff in the network
+?? The complexities of running complex stuff in the network
 
-\subsection{The complexities of running complex stuff in the network}
+?? SOLUTION
+?? The intersection
+?? new data to play with
+?? data reduction to make it feasible to export
+?? in-situ processing
 
-\subsection{The intersection}
+?? cusp of a promising field
+?? or networking is on the cusp of two promising fields?
 
-\section{Thesis Statement}
+\section{Thesis statement}
+This thesis asserts that:
+\begin{quotation}
+	\noindent
+	Data-driven networking---enhancing networks with \gls{acr:ml}---and data plane programmability are key tools in .
+	
+	Programmable dataplanes and in-network computation can make data-driven networking more efficient, effective, and responsive.
+	Programmable dataplanes and in-network computation can enable new data-driven networking use-cases.
+	
+	
+	?? Modern programmable network hardware will allow these key parts of data-driven or RL systems to run within the network fabric, improving performance and response times.
+	?? \emph{Reinforcement learning can lead to improved performance in network optimisation and control problems, such as DDoS prevention.}
+	?? \emph{Programmable dataplanes and in-network computation can enable new data-driven networking use-cases.}
+	?? \emph{Programmable dataplanes and in-network computation can make data-driven networking more efficient, effective, and responsive.}
+	
+	Taken together, programmable data-driven networks improve computer network operation beyond the sum of their parts.
+\end{quotation}
 
-These statement: if there are one or two phrases which sum it all up, what are they?
+To unpack some of this...
 
 \section{Contributions}
-
-?? Secondary purpose; want this to be the hypothetical book I would have wanted to read when I was starting out.
-
-From the main goals:
+From the main goals: ?? Subdivide these into constituent parts?
 \begin{itemize}
-	\item \emph{A thorough summary of the literature on modern computer networks (including recent hardware trends), and of machine learning techniques suitable for their control (??)}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
+	\item \emph{A thorough summary of the literature on modern computer networks (including recent hardware trends) (\cref{chap:nets}), and of machine learning techniques suitable for their control (\cref{chap:ddn})}. Describe in detail... ?? Not just how ML benefits networks, but how creative networking can benefit ML use cases \textbf{Link this to a specific part of the thesis statement.}
 	\item \emph{A novel synthesis of best practices, design decisions, and environmental tradeoffs to consider in the design of \gls{acr:ml}-led system control (\cref{sec:ddn-use-takeaways})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
-	\item \emph{Marl DDoS (\cref{sec:uk})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
-	\item \emph{In-Network RL (\cref{sec:uk})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
-	\item \emph{\seidr{} (\cref{sec:uk})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
+	\item \emph{Marl DDoS (\cref{chap:ddos-rl})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
+	\begin{itemize}
+		\item Part 1...
+	\end{itemize}
+	\item \emph{In-Network RL (\cref{chap:in-net-rl})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
+	\begin{itemize}
+		\item Part 1...
+	\end{itemize}
+	\item \emph{\seidr{} (\cref{chap:seidr})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
 \end{itemize}
+
+At the same time, my intent in writing this thesis is to collect together enough of the literature on \gls{acr:ddn} and \glspl{acr:pdp} to serve as a comfortable introduction to a newer researcher in the field.
+To be the hypothetical book I would have wanted to read and use as a starting point when I was setting out on this research venture.
+
+?? Topic of \gls{acr:ddn} in particular bloomed during the course of this---scarcely existed when this work was first undertaken.
+?? as such, I'm one case study among many?
 
 In addition to the main goals:
 \begin{itemize}
@@ -43,5 +82,24 @@ In addition to the main goals:
 \end{itemize}
 
 \section{Thesis Outline and Structure}
+Broadly speaking, this thesis is presented in two halves.
+The first offers in-depth background on both the fields of \gls{acr:ddn} and \gls{acr:pdp}:
+\begin{description}
+	\item[\Cref{chap:nets}] describes the evolution of computer networks from purely fixed-function devices towards increased programmability in both the control plane and dataplane---critically examining early research directions in contrast with modern successes. It then describes how modern dataplanes allow new, or more performant, networked applications---offloading and in-network compute---before discussing the threat landscape of volumetric \gls{acr:ddos} attacks.
+	\item[\Cref{chap:ddn}] description
+\end{description}
+The second half presents novel, concrete use cases which each demonstrate a part of the thesis statement (as discussed above):
+\begin{description}
+	\item[\Cref{chap:ddos-rl}] description
+	\item[\Cref{chap:in-net-rl}] description
+	\item[\Cref{chap:seidr}] description
+\end{description}
+\Cref{chap:conclusion} then concludes the thesis by summarising its main takeaways, offering closing thoughts on these fields, and outlines future work specific to the above use cases.
 
-abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm
+Additional, supplementary details follow:
+\begin{description}
+	\item[\Cref{adx:caida-traffic}] describes the methodology and results of a small-scale study on the distribution of protocols in \gls{acr:caida} trace data, to establish a rough estimate of congestion-unaware traffic's presence in \gls{acr:isp} networks.
+	\item[\Cref{adx:opus-traffic}] provides additional detail on the measurement process used to collect trace data for simulating \gls{acr:voip}-like traffic, as well as the software architecture for packet generation.
+	\item[\Cref{adx:nfp-arch}] expands on architectural details for the \gls{acr:nfp} family of SmartNICs to offer some additional context for \approachshort{}'s design constraints.
+	\item[\Cref{adx:opal-proto}] contains packet header and protocol descriptions for \approachshort{}'s control protocol.
+\end{description}
