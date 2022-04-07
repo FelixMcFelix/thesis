@@ -11,7 +11,7 @@ Computer networks are complex, yet critical infrastructure.
 ?? why we want DDN: in combination, many aspects of networks complex, heuristic, hand-tuned
 
 ?? TOOLS DDN
-?? Meteoric rise of \gls{acr:ml}
+?? Meteoric rise of \gls{acr:ml}, \gls{acr:rl}
 ?? an new idea takes the stage
 ?? why we want \gls{acr:ddn}: in combination, many aspects of networks complex, heuristic, hand-tuned
 
@@ -30,6 +30,8 @@ Computer networks are complex, yet critical infrastructure.
 ?? new data to play with
 ?? data reduction to make it feasible to export
 ?? in-situ processing
+
+?? ALSO: how the network can help ML.
 
 ?? cusp of a promising field
 ?? or networking is on the cusp of two promising fields?
@@ -85,16 +87,16 @@ In addition to the main goals:
 Broadly speaking, this thesis is presented in two halves.
 The first offers in-depth background on both the fields of \gls{acr:ddn} and \gls{acr:pdp}:
 \begin{description}
-	\item[\Cref{chap:nets}] describes the evolution of computer networks from purely fixed-function devices towards increased programmability in both the control plane and dataplane---critically examining early research directions in contrast with modern successes. It then describes how modern dataplanes allow new, or more performant, networked applications---offloading and in-network compute---before discussing the threat landscape of volumetric \gls{acr:ddos} attacks.
-	\item[\Cref{chap:ddn}] description
+	\item[\Cref{chap:nets}] describes the evolution of computer networks from fixed-function devices towards increased programmability in both the control plane and dataplane---critically examining early research directions in contrast with modern successes. It then describes how modern dataplanes improve or allow new networked applications---offloading and in-network compute---before discussing the threat landscape of volumetric \gls{acr:ddos} attacks.
+	\item[\Cref{chap:ddn}] provides an introduction to the new field of data-driven networking by a critical review the design of many recent \gls{acr:ml} solutions to network problems and relevant function approximation and learning methods. This includes methods for networked infrastructure to improve training, and data formats needed to run \gls{acr:ml} techniques in resource-constrained environments. This concludes with some discussion on the limitations and security context of \gls{acr:ml}.
 \end{description}
 The second half presents novel, concrete use cases which each demonstrate a part of the thesis statement (as discussed above):
 \begin{description}
-	\item[\Cref{chap:ddos-rl}] description
-	\item[\Cref{chap:in-net-rl}] description
-	\item[\Cref{chap:seidr}] description
+	\item[\Cref{chap:ddos-rl}] investigates using multi-agent \gls{acr:rl} to automatically learn the features of attack traffic online. This requires exploration of agent designs, informed by past \gls{acr:rl} approaches (and their failures) relative to the realities of Internet traffic. State spaces in particular are experimentally justified to find `per-feature' value. A system architecture as part of a larger \gls{acr:vnf} system is shown, followed evaluation of efficacy on different traffic classes and scenarios.
+	\item[\Cref{chap:in-net-rl}] takes to task the goal of enabling in-network, online \gls{acr:rl} for the first-time. I present an exploration of the design space around the interaction mechanisms, compute models, algorithm modifications, and data structures needed for \gls{acr:pdp} devices. This high-level design is named \approachshort{}. It then presents significant implementation detail for \approachshort{} on \gls{acr:nfp} SmartNIC hardware, followed by performance evaluation to show its improvements in state-action latency and assert that its impact on traffic is minimal.
+	\item[\Cref{chap:seidr}] examines how in-network data reduction to histograms can make complex, non-latency-sensitive \gls{acr:ml} decisions on host machines scalable. I motivate their use with a measurement study on \gls{acr:cca} detection from per-flow \unit{\nano\second}-level timestamps, before evaluating their general scalability and effectiveness in the target use case.
 \end{description}
-\Cref{chap:conclusion} then concludes the thesis by summarising its main takeaways, offering closing thoughts on these fields, and outlines future work specific to the above use cases.
+The thesis then concludes by summarising its main takeaways, offering closing thoughts on these fields, and outlines future work specific to the above use cases (\cref{chap:conclusion}).
 
 Additional, supplementary details follow:
 \begin{description}
