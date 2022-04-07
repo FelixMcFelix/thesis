@@ -53,6 +53,66 @@
 		\end{tipblock}
 	}
 
+% Thesis stmt stuffs
+% partially reliant on https://tex.stackexchange.com/questions/150790/how-to-make-text-be-copied-to-another-part-of-a-document
+\newcounter{stmtc}
+
+\newcommand\stmtno[1]{\emph{\color{kthesis-glance}\textsc{s#1}}}
+
+% \makeatletter
+% \newif\ifmytext@warning
+% \newcommand\rememberthesis[1]{% #1 is the text
+%   \refstepcounter{stmtc}
+%   \ifcsname mytext@\thestmtc\endcsname
+%     \begingroup
+%     \long\def\@tempa{#1}%
+%     \expandafter\ifx\csname mytext@\thestmtc\endcsname\@tempa
+%       % didn't change
+%     \else
+%       \global\mytext@warningtrue
+%     \fi
+%     \endgroup
+%   \fi
+%   \immediate\write\@auxout{\global\long\@namedef{mytext@\thestmtc}{#1}}%
+%   #1 (\stmtno{\thestmtc})%
+% }
+
+% \newcommand\recallthesis[1]{%
+%   \ifcsname mytext@#1\endcsname
+%     \@nameuse{mytext@#1}%
+%   \else
+%     ``??''
+%   \fi
+% }
+
+% \newcommand\superrecallthesis[1]{\enquote{\recallthesis{#1}} (\stmtno{#1})}
+
+% \AtEndDocument{%
+%   \ifmytext@warning
+%     \@latex@warning@no@line{Text references may have changed, rerun}
+%   \fi
+% }
+% \makeatother
+
+\makeatletter
+\newcommand\remembertext[2]{% #1 is a key, #2 is the text
+  \refstepcounter{stmtc}%
+  \immediate\write\@auxout{\unexpanded{\global\long\@namedef{mytext@#1}{#2}}}%
+  #2 (\stmtno{\thestmtc})%
+}
+
+\newcommand\recalltext[1]{%
+  \ifcsname mytext@#1\endcsname
+    \@nameuse{mytext@#1}%
+  \else
+    ``??''
+  \fi
+}
+\makeatother
+
+
+\newcommand\superrecallthesis[1]{\enquote{\recalltext{#1}} (\stmtno{#1})}
+
 % ToC lettering: change page numbers to be SF family.
 \makeatletter
 \let\oldl@chapter\l@chapter

@@ -6,32 +6,58 @@
 
 %?? PROBLEM
 Computer networks are complex, yet critical infrastructure.
+From their birth 
 ?? layers upon layers.
 ?? keeping them well-oiled is...
+?? need for flexibility: don't want to be shackled to the decisions of 1980s
+?? cursed with the awareness of the fragility.
 ?? why we want DDN: in combination, many aspects of networks complex, heuristic, hand-tuned
 
-?? TOOLS DDN
-?? Meteoric rise of \gls{acr:ml}, \gls{acr:rl}
-?? an new idea takes the stage
-?? why we want \gls{acr:ddn}: in combination, many aspects of networks complex, heuristic, hand-tuned
-
 ?? TOOLS PDP
+?? Computer networks have become more flexible to... (why?)
 ?? such \gls{acr:pdp} hardware can...
+?? Why? greater control/adaptability of networks, but also now measurement, exec?
+?? install new approaches at runtime, as net evolves.
+?? difficulties of line-rate, latency
+
 ?? The resurgence of PDP
 ?? an old idea returns to the fore
 ?? What's fascinating is that these ideas are not entirely novel.
+?? So we must ask: what has changed now?
+?? manycore SOCs vs ASICs? Emphasise heterogeneity?
+
+?? Intel's Tofino 2~\parencite{tofino2} (\qty{400}{\giga\bit\per\second}, \qty{12.8}{\tera\bit\per\second} aggregate) and Nokia's FP5~\parencite{nokia-fp5} (\qty{800}{\giga\bit\per\second}, \qty{14.4}{\tera\bit\per\second} aggregate) full-prog switches, Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
+
+%?? TOOLS DDN
+At the same time, computing science at large by the meteoric rise of \gls{acr:ml} and \gls{acr:rl} ?? enabled by more compute resources/ram/??
+?? an new idea takes the stage
+?? Meteoric rise of \gls{acr:ml}, \gls{acr:rl} due to high-profile, breakaway successes in difficult tasks (such as?)
+?? why we want \gls{acr:ddn}: in combination, many aspects of networks complex, heuristic, hand-tuned
+?? learn from every change and its effects. -- RL at a high level, incl. deliberate exploration
+?? DDN: better solutions in general, or tailored to the training environment. Relate with example.
+
+%?? Trim down, recast.
+%Commercial developments along the same lines as this modern \gls{acr:pdp} hardware are proceeding apace as network bandwidth demands grow larger.
+%Intel's Tofino 2~\parencite{tofino2} represents the latest product in the lineage of \gls{acr:rmt} hardware, offering \qty{12.8}{\tera\bit\per\second} with support for \qty{400}{\giga\bit\per\second} Ethernet.
+%Nokia's FP5~\parencite{nokia-fp5} similarly promises full programmability for high-density switching and routing at \qty{800}{\giga\bit\per\second} Ethernet (\qty{14.4}{\tera\bit\per\second} total), while Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
 
 ?? HOW TOOLS HELP
 ?? Why we want to run complex stuff in the network
+?? measure more
 ?? The complexities of running complex stuff in the network
+?? diff capabilities, embedded, no \glspl{acr:fpu}...
 
 ?? SOLUTION
 ?? The intersection
 ?? new data to play with
 ?? data reduction to make it feasible to export
 ?? in-situ processing
+?? Mismatch between ML direction and network capabilities? specifically resource costs vs availability
 
 ?? ALSO: how the network can help ML.
+?? ML: act on unspecified or difficult system dynamics, and with rl possibly as they evolve too
+
+?? However, programming in-network services has its own challenges (e.g., restricted instruction sets, data types and memory), prohibiting the implementation of a fully in-network classification solution.
 
 ?? cusp of a promising field
 ?? or networking is on the cusp of two promising fields?
@@ -40,21 +66,26 @@ Computer networks are complex, yet critical infrastructure.
 This thesis asserts that:
 \begin{quotation}
 	\noindent
-	Data-driven networking---enhancing networks with \gls{acr:ml}---and data plane programmability are key tools in .
-	
-	Programmable dataplanes and in-network computation can make data-driven networking more efficient, effective, and responsive.
-	Programmable dataplanes and in-network computation can enable new data-driven networking use-cases.
-	
-	
-	?? Modern programmable network hardware will allow these key parts of data-driven or RL systems to run within the network fabric, improving performance and response times.
-	?? \emph{Reinforcement learning can lead to improved performance in network optimisation and control problems, such as DDoS prevention.}
-	?? \emph{Programmable dataplanes and in-network computation can enable new data-driven networking use-cases.}
-	?? \emph{Programmable dataplanes and in-network computation can make data-driven networking more efficient, effective, and responsive.}
-	
-	Taken together, programmable data-driven networks improve computer network operation beyond the sum of their parts.
+	Data-driven networking---enhancing networks with \gls{acr:ml}---and dataplane programmability are key tools in enhancing the control and measurement of future networks.
+	\remembertext{1}{Data-driven methods such as reinforcement learning can lead to improved performance in network optimisation and control problems, such as DDoS prevention}.
+	\remembertext{2}{In-network compute can make data-driven networking more efficient, effective, and responsive}.
+	Finally, \remembertext{3}{dataplane programmability will allow the precise measurement \emph{and} data aggregation that can enable fine-grained data-driven analyses to scale to high flow rates or large networks}.
+	Applied together, programmable data-driven networks can improve computer network operation beyond the sum of its parts.
+%	?? Modern programmable network hardware will allow these key parts of data-driven or RL systems to run within the network fabric, improving performance and response times.
+%	?? \emph{Reinforcement learning can lead to improved performance in network optimisation and control problems, such as DDoS prevention.}
+%	?? \emph{Programmable dataplanes and in-network computation can enable new data-driven networking use-cases.}
+%	?? \emph{Programmable dataplanes and in-network computation can make data-driven networking more efficient, effective, and responsive.}
 \end{quotation}
 
 To unpack some of this...
+
+?? Points for \stmtno{1}?
+
+??dplane more eff: reduced time for decisions to be acted upon, possibly reduced time to make said decisions. local state... line rate.
+
+?? point 3: good local data, but volumes of it too high  to export at scale and possibly even train hosts machines from w/o impact.
+
+%?? \recallthesis{0}
 
 \section{Contributions}
 From the main goals: ?? Subdivide these into constituent parts?
@@ -77,6 +108,7 @@ To be the hypothetical book I would have wanted to read and use as a starting po
 
 ?? Topic of \gls{acr:ddn} in particular bloomed during the course of this---scarcely existed when this work was first undertaken.
 ?? as such, I'm one case study among many?
+?? In one way, I'm fortunate that the work of many others tackles the same problems as I do which I think lends credence to the thesis statement.
 
 In addition to the main goals:
 \begin{itemize}
@@ -92,7 +124,7 @@ The first offers in-depth background on both the fields of \gls{acr:ddn} and \gl
 \end{description}
 The second half presents novel, concrete use cases which each demonstrate a part of the thesis statement (as discussed above):
 \begin{description}
-	\item[\Cref{chap:ddos-rl}] investigates using multi-agent \gls{acr:rl} to automatically learn the features of attack traffic online. This requires exploration of agent designs, informed by past \gls{acr:rl} approaches (and their failures) relative to the realities of Internet traffic. State spaces in particular are experimentally justified to find `per-feature' value. A system architecture as part of a larger \gls{acr:vnf} system is shown, followed evaluation of efficacy on different traffic classes and scenarios.
+	\item[\Cref{chap:ddos-rl}] investigates using multi-agent \gls{acr:rl} to automatically learn the features of attack traffic online. I explore of agent designs informed by past \gls{acr:rl} approaches (and their failures) relative to the realities of Internet traffic. State spaces in particular are experimentally justified to find `per-feature' value. A system architecture as part of a larger \gls{acr:vnf} system is shown, followed evaluation of efficacy on different traffic classes and scenarios.
 	\item[\Cref{chap:in-net-rl}] takes to task the goal of enabling in-network, online \gls{acr:rl} for the first-time. I present an exploration of the design space around the interaction mechanisms, compute models, algorithm modifications, and data structures needed for \gls{acr:pdp} devices. This high-level design is named \approachshort{}. It then presents significant implementation detail for \approachshort{} on \gls{acr:nfp} SmartNIC hardware, followed by performance evaluation to show its improvements in state-action latency and assert that its impact on traffic is minimal.
 	\item[\Cref{chap:seidr}] examines how in-network data reduction to histograms can make complex, non-latency-sensitive \gls{acr:ml} decisions on host machines scalable. I motivate their use with a measurement study on \gls{acr:cca} detection from per-flow \unit{\nano\second}-level timestamps, before evaluating their general scalability and effectiveness in the target use case.
 \end{description}
