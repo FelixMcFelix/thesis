@@ -11,7 +11,7 @@ From their birth
 ?? keeping them well-oiled is...
 ?? need for flexibility: don't want to be shackled to the decisions of 1980s
 ?? cursed with the awareness of the fragility.
-?? why we want DDN: in combination, many aspects of networks complex, heuristic, hand-tuned
+?? why we want DDN: in combination, many aspects of networks complex, heuristic, hand-tuned \glspl{acr:cca} etc.
 
 ?? TOOLS PDP
 ?? Computer networks have become more flexible to... (why?)
@@ -28,6 +28,8 @@ From their birth
 
 ?? Intel's Tofino 2~\parencite{tofino2} (\qty{400}{\giga\bit\per\second}, \qty{12.8}{\tera\bit\per\second} aggregate) and Nokia's FP5~\parencite{nokia-fp5} (\qty{800}{\giga\bit\per\second}, \qty{14.4}{\tera\bit\per\second} aggregate) full-prog switches, Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
 
+\gls{acr:nic}
+
 %?? TOOLS DDN
 At the same time, computing science at large by the meteoric rise of \gls{acr:ml} and \gls{acr:rl} ?? enabled by more compute resources/ram/??
 ?? an new idea takes the stage
@@ -35,6 +37,8 @@ At the same time, computing science at large by the meteoric rise of \gls{acr:ml
 ?? why we want \gls{acr:ddn}: in combination, many aspects of networks complex, heuristic, hand-tuned
 ?? learn from every change and its effects. -- RL at a high level, incl. deliberate exploration
 ?? DDN: better solutions in general, or tailored to the training environment. Relate with example.
+
+\gls{acr:ddos}
 
 %?? Trim down, recast.
 %Commercial developments along the same lines as this modern \gls{acr:pdp} hardware are proceeding apace as network bandwidth demands grow larger.
@@ -66,8 +70,8 @@ At the same time, computing science at large by the meteoric rise of \gls{acr:ml
 This thesis asserts that:
 \begin{quotation}
 	\noindent
-	Data-driven networking---enhancing networks with \gls{acr:ml}---and dataplane programmability are key tools in enhancing the control and measurement of future networks.
-	\remembertext{1}{Data-driven methods such as reinforcement learning can lead to improved performance in network optimisation and control problems, such as DDoS prevention}.
+	\remembertext{0}{Data-driven networking---enhancing networks with \gls{acr:ml}---and dataplane programmability are key tools in enhancing the control and measurement of future networks}.
+	\remembertext{1}{Data-driven methods such as reinforcement learning can lead to improved performance in network optimisation and control problems, such as \gls{acr:ddos} prevention}.
 	\remembertext{2}{In-network compute can make data-driven networking more efficient, effective, and responsive}.
 	Finally, \remembertext{3}{dataplane programmability will allow the precise measurement \emph{and} data aggregation that can enable fine-grained data-driven analyses to scale to high flow rates or large networks}.
 	Applied together, programmable data-driven networks can improve computer network operation beyond the sum of its parts.
@@ -77,43 +81,74 @@ This thesis asserts that:
 %	?? \emph{Programmable dataplanes and in-network computation can make data-driven networking more efficient, effective, and responsive.}
 \end{quotation}
 
-To unpack some of this...
+While claims \stmtno{\numrange{0}{1}} fall in-line with expected uses of these new technologies, the others require some extra explanation to unpack.
+%?? Points for \stmtno{0}?
+Claim \stmtno{2} may be somewhat surprising, if we think only of the massive $\mathcal{O}\left(\text{\unit{\mebi\byte}--\unit{\gibi\byte}}\right)$ models which dominate classification, control, and language tasks.
+By considering changes to algorithms and numerical formats, smaller models can be executed in the limited resources of \gls{acr:pdp} hardware.
+The architecture of these devices is specialised around processing high rates of packet events---by parallelism or pipelining---which can allow line-rate operation of models transformed as above.
+If such decisions can be made \emph{at the same time and location as input data arrive}, then the network can (re-)act faster.
+%-- dplane more eff: reduced time for decisions to be acted upon, possibly reduced time to make said decisions. local state... line rate. architecture of these devices? Smaller models
+Claim \stmtno{3} arises due to the scale and volume of data which \gls{acr:pdp} hardware can produce.
+Consider a single \qty{100}{\giga\bit\per\second} port on a switch, operating at line rate with a mean packet size of \qty{500}{\byte}, from which we want to make some \gls{acr:ddn} decision based on \gls{acr:pdp}-only state such as \unit{\nano\second}-level timestamps and queue occupancies.
+On average, this produces \qty[per-symbol=p,sticky-per=true]{25}{\mega\packet\per\second} events \emph{per-port}, which is difficult for a single machine to handle---let alone when it must perform per-packet inference.
+\gls{acr:pdp} hardware thus has an important role to play in digesting and summarising its newly available metrics for host machines.
 
-?? Points for \stmtno{1}?
-
-??dplane more eff: reduced time for decisions to be acted upon, possibly reduced time to make said decisions. local state... line rate.
-
-?? point 3: good local data, but volumes of it too high  to export at scale and possibly even train hosts machines from w/o impact.
+%?? point \stmtno{3}: good local data, but volumes of it too high  to export at scale and possibly even train hosts machines from w/o impact.
 
 %?? \recallthesis{0}
 
 \section{Contributions}
-From the main goals: ?? Subdivide these into constituent parts?
+Grouped according to the claims (\stmtno{\numrange{0}{3}}) in the thesis statement:
 \begin{itemize}
-	\item \emph{A thorough summary of the literature on modern computer networks (including recent hardware trends) (\cref{chap:nets}), and of machine learning techniques suitable for their control (\cref{chap:ddn})}. Describe in detail... ?? Not just how ML benefits networks, but how creative networking can benefit ML use cases \textbf{Link this to a specific part of the thesis statement.}
-	\item \emph{A novel synthesis of best practices, design decisions, and environmental tradeoffs to consider in the design of \gls{acr:ml}-led system control (\cref{sec:ddn-use-takeaways})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
-	\item \emph{Marl DDoS (\cref{chap:ddos-rl})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
+	\item \emph{A thorough summary of the literature on modern, programmable computer networks (including recent hardware trends) (\cref{chap:nets}), and of machine learning techniques suitable for their control (\cref{chap:ddn})}. This includes the history of a spectrum of tools to optimising dataplane processing---both automatically and by bespoke design. Not just how \gls{acr:ml} benefits networks, but how creative networking can benefit \gls{acr:ml} use cases (\stmtno{0,2}).
+	\item \emph{A novel synthesis of best practices, design decisions, and environmental tradeoffs to consider in the design of \gls{acr:ml}-led system control (\cref{sec:ddn-use-takeaways}, \stmtno{1})}.
+	\item \emph{An improved \gls{acr:rl}-based \gls{acr:ddos} prevention scheme (\cref{chap:ddos-rl}, \stmtno{1})}
 	\begin{itemize}
-		\item Part 1...
+		\item Two protocol-agnostic, flow-granularity \gls{acr:rl} agent designs (\emph{Instant} and \emph{Guarded} action models),
+		\item Algorithmic modifications to Sarsa to enable better concurrent learning from many in-progress \gls{acr:rl} trajectories,
+		\item Reward functions tailored to detecting th enegative impacts of amplification \gls{acr:ddos} and \glspl{acr:lfa},
+		\item A quantitative investigation of suitable flow features for attack traffic detection via \gls{acr:rl},
+		\item Deadline-aware action planning and state fusion to shield agents from being overloaded,
+		\item The architecture and design of a \gls{acr:vnf}- and \gls{acr:sdn}-based installation of this anti-\gls{acr:ddos} solution,
+		\item Procedures and trace data for modelling and generating traffic similar to modern Opus-based \gls{acr:voip} flows,
+		\item An empirical evaluation of these models against the prior state-of-the-art in \gls{acr:rl}-based \gls{acr:ddos} mitigation, and a  non-\gls{acr:ml} algorithm tailored towards \glspl{acr:lfa}.
 	\end{itemize}
-	\item \emph{In-Network RL (\cref{chap:in-net-rl})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
+	\item \emph{\approachshort---the first implementation of in-network, online \gls{acr:rl} (\cref{chap:in-net-rl}, \stmtno{2})}.
 	\begin{itemize}
-		\item Part 1...
+		\item An analysis of why \gls{acr:rl} in \gls{acr:pdp} hardware is needed and best-placed to interact with the network, made feasible by classical RL methods and quantisation,
+		\item An \gls{acr:rl} interaction model based on path-adjacent compute to protect carried traffic,
+		\item Analysis of suitable data formats for online \gls{acr:ddn} in resource-constrained hardware,
+		\item A proof that 1-step temporal-difference \gls{acr:rl} algorithms admit a parallelisable, map-reduce form with tile-coded policies,
+		\item \emph{ParSa}, a wait-free, parallel, online \gls{acr:rl} algorithm to accelerate tile-coded policy inference and updates,
+		\item Parallel \gls{acr:rl} strategies tailored to provide either maximum offline throughput, or optimal state-action latencies and online throughput,
+		\item Work allocation algorithms and communication tailored to SmartNIC devices with an explicitly tiered memory model,
+		\item In-depth evaluation of how \approachshort{} affects carried dataplane traffic, performs in latency and throughput under different policy sizes (simple/complex state), and improves on explicit offloading,
+		\item A description of how \approachshort{} would integrate with state-of-the-art \gls{acr:pdp} applications to perform fully in-\gls{acr:nic}, fast, automated \gls{acr:ddos} mitigation based on \cref{chap:ddos-rl}.
 	\end{itemize}
-	\item \emph{\seidr{} (\cref{chap:seidr})}. Describe in detail... \textbf{Link this to a specific part of the thesis statement.}
+	\item \emph{\seidr{} histograms for aggregation of precise flow telemetry (\cref{chap:seidr}, \stmtno{3})}.
+	\begin{itemize}
+		\item A flexible dataplane-assisted architecture and algorithm compatible with the \gls{acr:psa}~\parencite{p4-psa} that allows data aggregation in the form of histograms,
+		\item An measurement study of \gls{acr:iat} microstructure between \gls{acr:tcp} \glspl{acr:cca} variants, and analysis which establishes the algorithmic cause for these differences,
+		\item A high-accuracy method for using the \seidr{} procedure to track \glspl{acr:iat} with nanosecond-accurate timing to tell apart timer-based (\eg, BBR) and \texttt{cwnd}-based \gls{acr:tcp} \glspl{acr:cca}
+		\item An extensive evaluation of TCP congestion control classification using \gls{acr:iat} histograms using different \gls{acr:ml} models,
+		\item Analysis of \seidr's scalability compression ratio relative to input sequence length.
+	\end{itemize}
 \end{itemize}
 
-At the same time, my intent in writing this thesis is to collect together enough of the literature on \gls{acr:ddn} and \glspl{acr:pdp} to serve as a comfortable introduction to a newer researcher in the field.
-To be the hypothetical book I would have wanted to read and use as a starting point when I was setting out on this research venture.
+A contribution I can't claim to offer, but hope sincerely to have done, is to collect together enough of the literature on \gls{acr:ddn} and \glspl{acr:pdp} to serve as a comfortable introduction to a newer researcher in the field.
+The topic of \gls{acr:ddn} in particular has blossomed during the course of my PhD education---and scarcely existed at the scale it does today when this work was first undertaken in 2017.
+Making the case for its relevance and best practices has become much easier over the last few years alone in light of this.
+I'm fortunate that the work of many others tackles the same problems as I do, which I think lends credence to the thesis statement (\stmtno{0} in particular)---in a sense, this work contributes one set of case studies among many.
+I hope that this thesis can be the book I would have wanted to read (and use) as a starting point when I was setting out on this research venture.
 
-?? Topic of \gls{acr:ddn} in particular bloomed during the course of this---scarcely existed when this work was first undertaken.
-?? as such, I'm one case study among many?
-?? In one way, I'm fortunate that the work of many others tackles the same problems as I do which I think lends credence to the thesis statement.
 
-In addition to the main goals:
-\begin{itemize}
-	\item Procedures for modelling and generating traffic similar to modern Opus-based \gls{acr:voip} flows (\cref{adx:opus-traffic}).
-\end{itemize}
+%?? as such, I'm one case study among many?
+%?? In one way, I'm fortunate that the work of many others tackles the same problems as I do which I think lends credence to the thesis statement.
+%
+%In addition to the main goals:
+%\begin{itemize}
+%	\item Procedures for modelling and generating traffic similar to modern Opus-based \gls{acr:voip} flows (\cref{adx:opus-traffic}).
+%\end{itemize}
 
 \section{Thesis Outline and Structure}
 Broadly speaking, this thesis is presented in two halves.
@@ -135,5 +170,5 @@ Additional, supplementary details follow:
 	\item[\Cref{adx:caida-traffic}] describes the methodology and results of a small-scale study on the distribution of protocols in \gls{acr:caida} trace data, to establish a rough estimate of congestion-unaware traffic's presence in \gls{acr:isp} networks.
 	\item[\Cref{adx:opus-traffic}] provides additional detail on the measurement process used to collect trace data for simulating \gls{acr:voip}-like traffic, as well as the software architecture for packet generation.
 	\item[\Cref{adx:nfp-arch}] expands on architectural details for the \gls{acr:nfp} family of SmartNICs to offer some additional context for \approachshort{}'s design constraints.
-	\item[\Cref{adx:opal-proto}] contains packet header and protocol descriptions for \approachshort{}'s control protocol.
+	\item[\Cref{adx:opal-proto}] contains packet header and protocol descriptions for \approachshort{}'s in-band control protocol.
 \end{description}

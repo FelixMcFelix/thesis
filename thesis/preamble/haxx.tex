@@ -98,7 +98,7 @@
 \newcommand\remembertext[2]{% #1 is a key, #2 is the text
   \refstepcounter{stmtc}%
   \immediate\write\@auxout{\unexpanded{\global\long\@namedef{mytext@#1}{#2}}}%
-  #2 (\stmtno{\thestmtc})%
+  #2 (\stmtno{#1})%
 }
 
 \newcommand\recalltext[1]{%
