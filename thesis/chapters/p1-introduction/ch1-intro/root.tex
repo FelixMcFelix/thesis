@@ -2,24 +2,37 @@
 
 %\epigraphhead{\epigraph{Insert thoughtful quote here.}{Some author---\emph{Some Book}}}
 
-?? Remember: Topic Sentences!
-
 %?? PROBLEM
 Computer networks are complex, yet critical infrastructure.
-From their birth 
-?? layers upon layers.
-?? keeping them well-oiled is...
+Today's Internet is a prime example.
+From its birth as \emph{ARPANET}~\parencite{DBLP:conf/afips/HeartKOCW70}, interlinking the computers of research institutions under sole administration, it has scaled to connect together billions of devices over chains of smaller networks owned by totally separate entities.
+This growth has come at a cost; large scale networks are beset with layers upon layers of interlocking and overlaid systems divided amongst endpoint hosts and operators of the network fabric.
+Owing to this complexity, keeping the `Internet machinery' well-oiled and performant is a difficult task.
+As these networks have grown larger over the last half-century, become more flexible to do just this... (why? larger? more clients?) Control plane, \gls{acr:sdn}. ?? step away from limits and hard, fixed impls? ?? avoid being shackled to archaic design choices
+?? need a pdp problem
+many aspects of networks complex, heuristic, hand-tuned CCAs etc. operating on limited information
+This is embodied by the \glspl{acr:cca} which underpin the majority of Internet traffic---
+?? effectively reverse-engineering network state by a proxy metric
+?? while this is impressive...
+What happens as networks change?
+?? infeasible to hand-tune per workload, per topology.
+?? better info? and machines can do better.
+
+?? divided among endpoints and the network, TE/TO trying to work around it...
+?? routing policies built on black magic
 ?? need for flexibility: don't want to be shackled to the decisions of 1980s
 ?? cursed with the awareness of the fragility.
-?? why we want DDN: in combination, many aspects of networks complex, heuristic, hand-tuned \glspl{acr:cca} etc.
+?? why we want DDN: in combination, many aspects of networks complex, heuristic, hand-tuned \glspl{acr:cca} etc. operating on limited information
+?? optimisation, protection against abuse of network resources such as \gls{acr:ddos} attacks.
 
 ?? TOOLS PDP
-?? Computer networks have become more flexible to... (why?)
+As these networks have grown larger over the last half-century, become more flexible to... (why? larger? more clients?) Control plane, \gls{acr:sdn}.
 ?? such \gls{acr:pdp} hardware can...
 ?? Why? greater control/adaptability of networks, but also now measurement, exec?
 ?? install new approaches at runtime, as net evolves.
 ?? difficulties of line-rate, latency
 
+?? The last decade has seen a more surprising kind of change...
 ?? The resurgence of PDP
 ?? an old idea returns to the fore
 ?? What's fascinating is that these ideas are not entirely novel.
@@ -36,7 +49,8 @@ At the same time, computing science at large by the meteoric rise of \gls{acr:ml
 ?? Meteoric rise of \gls{acr:ml}, \gls{acr:rl} due to high-profile, breakaway successes in difficult tasks (such as?)
 ?? why we want \gls{acr:ddn}: in combination, many aspects of networks complex, heuristic, hand-tuned
 ?? learn from every change and its effects. -- RL at a high level, incl. deliberate exploration
-?? DDN: better solutions in general, or tailored to the training environment. Relate with example.
+?? DDN: better solutions in general, or tailored to the training environment. Relate with example -- specifically RL i.e. act, explore, observe, improve.
+?? closed loop, feedback loop whatever.
 
 \gls{acr:ddos}
 
@@ -66,11 +80,13 @@ At the same time, computing science at large by the meteoric rise of \gls{acr:ml
 ?? cusp of a promising field
 ?? or networking is on the cusp of two promising fields?
 
+?? Remember: Topic Sentences!
+
 \section{Thesis statement}
 This thesis asserts that:
 \begin{quotation}
 	\noindent
-	\remembertext{0}{Data-driven networking---enhancing networks with \gls{acr:ml}---and dataplane programmability are key tools in enhancing the control and measurement of future networks}.
+	\remembertext{0}{Data-driven networking---enhancing networks with \gls{acr:ml}---and dataplane programmability are key tools in aiding the control and measurement of future networks}.
 	\remembertext{1}{Data-driven methods such as reinforcement learning can lead to improved performance in network optimisation and control problems, such as \gls{acr:ddos} prevention}.
 	\remembertext{2}{In-network compute can make data-driven networking more efficient, effective, and responsive}.
 	Finally, \remembertext{3}{dataplane programmability will allow the precise measurement \emph{and} data aggregation that can enable fine-grained data-driven analyses to scale to high flow rates or large networks}.
