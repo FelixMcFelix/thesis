@@ -4,55 +4,100 @@
 
 %?? PROBLEM
 Computer networks are complex, yet critical infrastructure.
-Today's Internet is a prime example.
+The Internet of today is a prime example.
 From its birth as \emph{ARPANET}~\parencite{DBLP:conf/afips/HeartKOCW70}, interlinking the computers of research institutions under sole administration, it has scaled to connect together billions of devices over chains of smaller networks owned by totally separate entities.
 This growth has come at a cost; large scale networks are beset with layers upon layers of interlocking and overlaid systems divided amongst endpoint hosts and operators of the network fabric.
-Owing to this complexity, keeping the `Internet machinery' well-oiled and performant is a difficult task.
-As these networks have grown larger over the last half-century, become more flexible to do just this... (why? larger? more clients?) Control plane, \gls{acr:sdn}. ?? step away from limits and hard, fixed impls? ?? avoid being shackled to archaic design choices
-?? need a pdp problem
-many aspects of networks complex, heuristic, hand-tuned CCAs etc. operating on limited information
-This is embodied by the \glspl{acr:cca} which underpin the majority of Internet traffic---
-?? effectively reverse-engineering network state by a proxy metric
-?? while this is impressive...
-What happens as networks change?
-?? infeasible to hand-tune per workload, per topology.
-?? better info? and machines can do better.
+The isolated, resilient design of all these layers is a strength in itself as these layers can, in theory, be replaced.
+Yet owing to this complexity, keeping the `Internet machinery' well-oiled and performant is a difficult task.
 
-?? divided among endpoints and the network, TE/TO trying to work around it...
-?? routing policies built on black magic
-?? need for flexibility: don't want to be shackled to the decisions of 1980s
-?? cursed with the awareness of the fragility.
-?? why we want DDN: in combination, many aspects of networks complex, heuristic, hand-tuned \glspl{acr:cca} etc. operating on limited information
-?? optimisation, protection against abuse of network resources such as \gls{acr:ddos} attacks.
+As these networks have grown larger and faster over the last half-century, they have become more flexible to do just this.
+Early design choices had been bonded to fixed-function hardware, such as routing algorithms.
+To escape these shackles, the community sought through the early 2000s to separate the high-level forwarding behaviour of network packets (the \emph{control plane}) from the hardware dataplane, giving rise to \gls{acr:sdn}.
+This is a research success that has meaningfully impacted the design, adaptability, performance, and fault-tolerance of production networks.
+For instance, making routing decisions per-flow has enabled \gls{acr:te} that otherwise requires complex workarounds.
+What this did not solve was inflexible \emph{dataplane} behaviour; switches still supported a fixed set of actions applied to a fixed set of protocols known ahead-of-time, with limited shared state for measurement purposes.
+Many packet actions---security functions and the like---were and are implemented as \glspl{acr:asic} inside \emph{middleboxes} to process traffic at line rate.
+Infamously, these add yet more inflexibility by relying on (possibly incorrect) handling of known protocols.
+Making up for this shortfall in malleability by implementing these tasks in host machines causes significant, orders-of-magnitude reductions in packet throughput and added latency.
+Between fixed-function dataplanes and commodity hosts, there is no way to balance performance and arbitrary programmability.
+While it is one thing to argue around performance and ossification, what of new functionality?
+To observe incorrect (yet transient) paths followed by packets, or to inspect and aggregate queue state and nanosecond-level timestamps to detect recent issues such as \emph{microbursts} both require packet modification and access to state which past switches simply do not allow.
+%For the longest time, , and so the dataplane must evolve.
+%?? such as, while adverse performance events like \emph{microbursts} 
+%??? traffic scales 
+%?? need a pdp problem -- measurement? -- modification? -- new problems like microburst dependent on speed \& workload? --
 
-?? TOOLS PDP
-As these networks have grown larger over the last half-century, become more flexible to... (why? larger? more clients?) Control plane, \gls{acr:sdn}.
-?? such \gls{acr:pdp} hardware can...
-?? Why? greater control/adaptability of networks, but also now measurement, exec?
-?? install new approaches at runtime, as net evolves.
-?? difficulties of line-rate, latency
 
-?? The last decade has seen a more surprising kind of change...
-?? The resurgence of PDP
-?? an old idea returns to the fore
-?? What's fascinating is that these ideas are not entirely novel.
-?? So we must ask: what has changed now?
-?? manycore SOCs vs ASICs? Emphasise heterogeneity?
+%(why? larger? more clients?) Control plane, \gls{acr:sdn}. ?? step away from limits and hard, fixed impls? ?? avoid being shackled to archaic design choices
+%?? SDN proved `layers being replaced' as above.
+%?? TE/TO trying to work around it
+%?? need a pdp problem -- measurement? -- modification? -- new problems like microburst dependent on speed \& workload? -- 
 
-?? Intel's Tofino 2~\parencite{tofino2} (\qty{400}{\giga\bit\per\second}, \qty{12.8}{\tera\bit\per\second} aggregate) and Nokia's FP5~\parencite{nokia-fp5} (\qty{800}{\giga\bit\per\second}, \qty{14.4}{\tera\bit\per\second} aggregate) full-prog switches, Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
+Many other aspects of networks are run by heuristic methods: each complex, hand-tuned, and operating on limited information.
+Their responses must be both approximately correct \emph{and} computationally cheap to compute to scale reasonably.
+To make the point clear, consider \glspl{acr:cca}.
+\glspl{acr:cca} underpin the majority of Internet traffic's ability to dynamically scale send rates up or down---in the absence of actual network state, they must in effect reverse-engineer optimal actions by following a proxy metric such as delay or packet losses.
+%?? effectively reverse-engineering network state by a proxy metric
+While this is impressive, one can't help but ask if better information about the network itself could allow more useful decision making.
+What also happens, then, as networks change? % holy shit iambic pentameter
+Experience has shown that we simply iterate, from NewReno~\parencite{rfc6582} to Cubic~\parencite{rfc8312} to BBR~\parencite{DBLP:journals/queue/CardwellCGYJ16}\sidenote{Deployed circa 1999, 2006, and 2016 respectively.} in long-fat networks.
+But even after years of design and tuning, these are easy to get subtly or fatally wrong; initial actively-deployed BBR versions were notably unfair to other flows~\parencite{DBLP:conf/imc/WareMSS19}.
+The takeaway is that it's infeasible to develop and hand-tune strategies per workload, per topology, and per protocol distribution.
+Should we not be able to automatically infer tailored mechanisms or parameters, robust to changes and evolution, from local performance and global management data---a \emph{data-driven} solution?
+%?? better info? and machines/stats can do better---\emph{data-driven} solution.
+\glspl{acr:cca} are but one case where we should ask ourselves these questions.
+Consider general optimisation of network protocols and infrastructure, or protection against the abuse of network resources such as \gls{acr:ddos} attacks, or even the above dataplane measurement---equally strong candidates to consider whether \emph{data-driven} and \emph{network cooperation} can lead to meaningful improvement.
 
-\gls{acr:nic}
+%?? divided among endpoints and the network, TE/TO trying to work around it...
+%?? routing policies built on black magic
+%?? need for flexibility: don't want to be shackled to the decisions of 1980s
+%?? cursed with the awareness of the fragility.
+%?? why we want DDN: in combination, many aspects of networks complex, heuristic, hand-tuned \glspl{acr:cca} etc. operating on limited information
+%?? optimisation, protection against abuse of network resources such as \gls{acr:ddos} attacks.
+
+%?? TOOLS PDP
+%As these networks have grown larger over the last half-century, become more flexible to... (why? larger? more clients?) Control plane, \gls{acr:sdn}.
+%?? such \gls{acr:pdp} hardware can...
+%?? install new approaches at runtime, as net evolves.
+%?? difficulties of line-rate, latency
+
+%?? Even with the advances above, network can't really expose better info because it has one job.
+%?? Coop means reprogrammability, capability to express general logic.
+While these aims are lofty, the last decade has seen surprising and rapid kinds of change, first of all in the design and introduction of \emph{programmable} switching hardware and \glspl{acr:nic}.
+\gls{acr:pdp} switch hardware was originally designed to evolve past the fixed action sets of \gls{acr:sdn} at line rate, using a limited compute model rather than aiming for full programmability on par with host \glspl{acr:cpu}.
+Indeed, the turnaround from the original \gls{acr:rmt} proposal~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13} to full-scale switches based on Intel's \emph{Tofino 2}~\parencite{tofino2} and Nokia's \emph{FP5}~\parencite{nokia-fp5}, aggregating \qtyrange{12.8}{14.4}{\tera\bit\per\second}, in a scant few years is remarkable.
+%\gls{acr:pdp} hardware, enabling tighter cooperation with end hosts, must be factored into the design of switching hardware, ?? rather than starting with full prog, ask how much we can get 
+%\gls{acr:pdp}
+%?? The last decade has seen a more surprising kind of change...
+%?? Why? greater control/adaptability of networks, but also now measurement, exec? ?? enabling tighter cooperation with end hosts ?? arbitrary-ish.
+%?? manycore SOCs vs ASICs? Emphasise heterogeneity? mention legacy NPUs `diverse'
+Diversifying the field further, the legacy of older \glspl{acr:npu} has led to \emph{SmartNICs}, offering more expressive and capable compute at a smaller scale such as via Intel's \emph{infrastructure processing units}~\parencite{intel-ipu}.
+As it happens, these tools have not only enabled greater control and adaptability of networks but also powerful schemes to measure them, a new environment to execute program logic, and tighter cooperation with end hosts.
+%Fast turnaround from \gls{acr:rmt}~\parencite{DBLP:conf/sigcomm/BosshartGKVMIMH13} to ... Intel's Tofino 2~\parencite{tofino2} and Nokia's FP5~\parencite{nokia-fp5} aggregating \qtyrange{12.8}{14.4}{\tera\bit\per\second} full-prog switches, Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
+%?? The resurgence of PDP
+What's fascinating is that \emph{these} ideas and use cases are not entirely novel, reflecting an undercurrent present since the \emph{active networking} movement~\parencite{DBLP:journals/ccr/TennenhouseW96}.
+%?? an old idea returns to the fore, undercurrent which has always been here.
+%?? manycore SOCs vs ASICs? Emphasise heterogeneity? mention legacy NPUs `diverse'
+%?? So we must ask: what has changed now?
+Instead, both classes of efficient hardware have revealed the value of \emph{offloading} and \emph{in-network compute}---moving all or part of an application's logic to the network fabric to accelerate it further, in spite of its different compute capabilities versus a typical \gls{acr:cpu}.
+
+%?? \gls{acr:psa}~\parencite{p4-psa}
+
+%?? Intel's Tofino 2~\parencite{tofino2} (\qty{400}{\giga\bit\per\second}, \qty{12.8}{\tera\bit\per\second} aggregate) and Nokia's FP5~\parencite{nokia-fp5} (\qty{800}{\giga\bit\per\second}, \qty{14.4}{\tera\bit\per\second} aggregate) full-prog switches, Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
+
+%\gls{acr:nic}
 
 %?? TOOLS DDN
-At the same time, computing science at large by the meteoric rise of \gls{acr:ml} and \gls{acr:rl} ?? enabled by more compute resources/ram/??
+The second kind of change to have dominated the last decade, computing science at large by the meteoric rise of \gls{acr:ml} and \gls{acr:rl} ?? enabled by more compute resources/ram/??
 ?? an new idea takes the stage
 ?? Meteoric rise of \gls{acr:ml}, \gls{acr:rl} due to high-profile, breakaway successes in difficult tasks (such as?)
+?? the tools to do this automatic tuning.
 ?? why we want \gls{acr:ddn}: in combination, many aspects of networks complex, heuristic, hand-tuned
 ?? learn from every change and its effects. -- RL at a high level, incl. deliberate exploration
 ?? DDN: better solutions in general, or tailored to the training environment. Relate with example -- specifically RL i.e. act, explore, observe, improve.
 ?? closed loop, feedback loop whatever.
 
-\gls{acr:ddos}
+%\gls{acr:ddos}
 
 %?? Trim down, recast.
 %Commercial developments along the same lines as this modern \gls{acr:pdp} hardware are proceeding apace as network bandwidth demands grow larger.
@@ -64,6 +109,7 @@ At the same time, computing science at large by the meteoric rise of \gls{acr:ml
 ?? measure more
 ?? The complexities of running complex stuff in the network
 ?? diff capabilities, embedded, no \glspl{acr:fpu}...
+?? host-network cooperation?
 
 ?? SOLUTION
 ?? The intersection
@@ -143,7 +189,7 @@ Grouped according to the claims (\stmtno{\numrange{0}{3}}) in the thesis stateme
 	\end{itemize}
 	\item \emph{\seidr{} histograms for aggregation of precise flow telemetry (\cref{chap:seidr}, \stmtno{3})}.
 	\begin{itemize}
-		\item A flexible dataplane-assisted architecture and algorithm compatible with the \gls{acr:psa}~\parencite{p4-psa} that allows data aggregation in the form of histograms,
+		\item A flexible dataplane-assisted architecture and algorithm compatible with the \gls{acr:psa} that allows data aggregation in the form of histograms,
 		\item An measurement study of \gls{acr:iat} microstructure between \gls{acr:tcp} \glspl{acr:cca} variants, and analysis which establishes the algorithmic cause for these differences,
 		\item A high-accuracy method for using the \seidr{} procedure to track \glspl{acr:iat} with nanosecond-accurate timing to tell apart timer-based (\eg, BBR) and \texttt{cwnd}-based \gls{acr:tcp} \glspl{acr:cca}
 		\item An extensive evaluation of TCP congestion control classification using \gls{acr:iat} histograms using different \gls{acr:ml} models,
