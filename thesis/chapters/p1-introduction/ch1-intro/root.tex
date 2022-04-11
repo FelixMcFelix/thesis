@@ -80,6 +80,7 @@ What's fascinating is that \emph{these} ideas and use cases are not entirely nov
 %?? manycore SOCs vs ASICs? Emphasise heterogeneity? mention legacy NPUs `diverse'
 %?? So we must ask: what has changed now?
 Instead, both classes of efficient hardware have revealed the value of \emph{offloading} and \emph{in-network compute}---moving all or part of an application's logic to the network fabric to accelerate it further, in spite of its different compute capabilities versus a typical \gls{acr:cpu}.
+Moreover, these new classes of hardware are fully reprogrammable at runtime, allowing line-rate services to be easily installed, upgraded, and replaced.
 
 %?? \gls{acr:psa}~\parencite{p4-psa}
 
@@ -88,14 +89,22 @@ Instead, both classes of efficient hardware have revealed the value of \emph{off
 %\gls{acr:nic}
 
 %?? TOOLS DDN
-The second kind of change to have dominated the last decade, computing science at large by the meteoric rise of \gls{acr:ml} and \gls{acr:rl} ?? enabled by more compute resources/ram/??
-?? an new idea takes the stage
-?? Meteoric rise of \gls{acr:ml}, \gls{acr:rl} due to high-profile, breakaway successes in difficult tasks (such as?)
-?? the tools to do this automatic tuning.
-?? why we want \gls{acr:ddn}: in combination, many aspects of networks complex, heuristic, hand-tuned
-?? learn from every change and its effects. -- RL at a high level, incl. deliberate exploration
-?? DDN: better solutions in general, or tailored to the training environment. Relate with example -- specifically RL i.e. act, explore, observe, improve.
-?? closed loop, feedback loop whatever.
+The second substantial change of the last decade is the meteoric rise of \gls{acr:ml} and \gls{acr:rl} through high-profile, breakaway successes in difficult domains such as classification~\parencite{DBLP:conf/cvpr/HeZRS16} and game playing~\parencite{DBLP:journals/corr/abs-1912-06680,DBLP:journals/nature/SilverSSAHGHBLB17}.
+These approaches learn a function to map input data (like the statistics of a monitored flow) to output labels or actions, repeatedly transforming it according to complex learned statistical properties, with the aim that a learned function extends well from seen to unseen data.
+This, too, is the revival of an older line of research---statistical and connectionist ideas which have been extended and empowered by powerful, specialised compute resources like commodity \glspl{acr:gpu}.
+%?? Meteoric rise of \gls{acr:ml}, \gls{acr:rl} due to high-profile, breakaway successes in difficult tasks (such as?)
+%?? why we want \gls{acr:ddn}: in combination, many aspects of networks complex, heuristic, hand-tuned
+%?? the tools to do this automatic tuning.
+%?? input-output relationships from seen to unseen data
+%?? learn from every change and its effects. -- RL at a high level, incl. deliberate exploration
+%?? providing the tools to do this automatic, data-driven tuning that networks cry out for.
+What this offers us is the necessary toolkit for \gls{acr:ddn}---the automatic tuning that networks cry out for---allowing the development of better generalised solutions to network problems, or even policies specifically tailored to the needs of a deployment environment.
+\gls{acr:rl} methods in particular have a unique affinity for closed-loop control tasks.
+These policies are iteratively learned by taking an action---deliberately exploring supposedly suboptimal choices from time to time---before observing the controlled system's state some time later and using a measured \emph{reward} score to improve the policy itself in its own feedback loop.
+We have, at last, the tools to learn complex decision boundaries and effective control in spite of the very non-trivial (and often surprisingly involved) system dynamics of computer networks.
+%?? Relate with example -- specifically RL i.e. act, deliberate explore, observe, improve.
+%?? closed loop, feedback loop whatever.
+The beauty is that, even as our networks evolve, we should be able to learn adjustments and corrections to account for new protocols, behaviours, and topology changes by learning from (always-available) performance and \gls{acr:qos} metrics.
 
 %\gls{acr:ddos}
 
@@ -104,29 +113,45 @@ The second kind of change to have dominated the last decade, computing science a
 %Intel's Tofino 2~\parencite{tofino2} represents the latest product in the lineage of \gls{acr:rmt} hardware, offering \qty{12.8}{\tera\bit\per\second} with support for \qty{400}{\giga\bit\per\second} Ethernet.
 %Nokia's FP5~\parencite{nokia-fp5} similarly promises full programmability for high-density switching and routing at \qty{800}{\giga\bit\per\second} Ethernet (\qty{14.4}{\tera\bit\per\second} total), while Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
 
-?? HOW TOOLS HELP
-?? Why we want to run complex stuff in the network
-?? measure more
-?? The complexities of running complex stuff in the network
-?? diff capabilities, embedded, no \glspl{acr:fpu}...
-?? host-network cooperation?
+%?? SOLUTION
+While these developments enable \gls{acr:ddn} and network programmability, it is at their intersection that the field of networking is truly on the cusp of something promising.
+%This thesis explores and chronicles how these angles benefit the network and one another, as well as the challenges introduced by the limited capabilities of a \gls{acr:pdp} environment.
+%?? The intersection
+%?? new data to play with
+For instance, \gls{acr:pdp} hardware and the integrated network measurement it enables expose new sources of data and state, such as port and queue occupancies, or precise and accurate flow telemetry.
+In the case of flows, \gls{acr:ddn} processes can then act based on such data rather than sampled metrics, potentially offering more accurate classification for uses like \gls{acr:qos} assignment.
+In the network at large, they may act on a network-wide picture of device state which \emph{would have otherwise been unavailable}.
+Although this data is evidently too much for any one host machine to process---particularly per-packet events at a switch's aggregate $\mathcal{O}\left(\unit{\tera\bit\per\second}\right)$---the enhanced programmability allows \gls{acr:pdp} devices to pick up the slack by acting on it \emph{in situ}.
+The first way we could achieve this is by aggregating and reducing data in \gls{acr:pdp} hardware to make it feasible to export (at lower volumes and rates), or to apply early statistical processing to ease the workload on process machines.
+The second is by \emph{moving \gls{acr:ml} and \gls{acr:rl} logic directly into \gls{acr:pdp} hardware}.
+\gls{acr:ddn} decisions may then be instantly factored into the routing and processing of typical dataplane \glspl{acr:mat}, at minimal latency cost.
+%?? in-situ processing
+However, programming in-network services has its own challenges: the hardware offers restricted instruction sets, program lengths, data types, \glspl{acr:fu} which would have provided floating-point support, and memory.
+Each limits the kinds of processing we aim to perform, but nowhere is this felt more keenly than the mismatch between the needs of \gls{acr:ml} algorithms and capabilities of network hardware.
+While this logic could also be pushed to host machines, there are significant drawbacks in decision latency and throughput.
+This thesis explores and chronicles how these approaches benefit the network and one another, as well as the challenges introduced by the limited capabilities of a \gls{acr:pdp} environment.
+To that end, I show through the community's advances and my own additions to the state of the art how these approaches can offer meaningful benefit to network operators, as well as how we might enable both online and offline learning in the \gls{acr:pdp} networks of tomorrow.
+%specifically resource costs vs availability
 
-?? SOLUTION
-?? The intersection
-?? new data to play with
-?? data reduction to make it feasible to export
-?? in-situ processing
-?? Mismatch between ML direction and network capabilities? specifically resource costs vs availability
+%?? ALSO: how the network can help ML.
 
-?? ALSO: how the network can help ML.
-?? ML: act on unspecified or difficult system dynamics, and with rl possibly as they evolve too
+%?? The complexities of running complex stuff in the network
+%?? diff capabilities, embedded, no \glspl{acr:fpu}...
 
-?? However, programming in-network services has its own challenges (e.g., restricted instruction sets, data types and memory), prohibiting the implementation of a fully in-network classification solution.
 
-?? cusp of a promising field
-?? or networking is on the cusp of two promising fields?
+%?? ML: act on unspecified or difficult system dynamics, and with rl possibly as they evolve too
 
-?? Remember: Topic Sentences!
+%?? cusp of a promising field
+%?? or networking is on the cusp of two promising fields?
+
+%?? Remember: Topic Sentences!
+%
+%?? HOW TOOLS HELP
+%?? Why we want to run complex stuff in the network
+%?? measure more
+%?? The complexities of running complex stuff in the network
+%?? diff capabilities, embedded, no \glspl{acr:fpu}...
+%?? host-network cooperation?
 
 \section{Thesis statement}
 This thesis asserts that:
