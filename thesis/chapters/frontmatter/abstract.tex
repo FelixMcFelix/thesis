@@ -2,15 +2,30 @@
 \addcontentsline{toc}{chapter}{Abstract}
 %\def\theHchapter{1}
 
-?? This thesis does/makes the case for...
+%?? Context + Why
+This thesis makes the case for managing computer networks with \emph{data-driven methods}---automated statistical inference and control based on measurement data and runtime observations---and argues for their tight integration with \emph{programmable dataplane} hardware.
+Optimisation, defence, and measurement of networked infrastructure are each challenging tasks in their own right, which are currently dominated by the use of hand-crafted heuristic methods.
+%?? While domin'd by heurs, scaling up and evol make their continued use infeasible?
+%?? scale in topol + rates ?? interactions between traffic
+%?? per depl/workload tuning?
+These become harder to reason about and deploy as networks scale in rates and number of forwarding elements, but their design requires expert knowledge and care around unexpected protocol interactions.
+This makes tailored, per-deployment or -workload solutions infeasible to develop.
+Recent advances in machine learning offer capable function approximation and closed-loop control which suit many of these tasks.
+New, programmable dataplane hardware enables more agility in the network---runtime reprogrammability, precise traffic measurement, and low latency on-path processing.
+The synthesis of these two developments allows complex decisions to be made on previously unusable state, and made quicker by offloading inference to the network.
 
-?? Important role in the administration and optimisation of computer networks of all scales.
-
-?? Context + Why
-
-?? What done?
-
-?? Results
+%?? What done?
+To justify this argument, this thesis advances the state of the art in data-driven defence of networks, novel dataplane-friendly online reinforcement learning algorithms, and in-network data reduction to allow classification of switch-scale data.
+%?? list each thing
+Each requires co-design aware of the network, and of the failure modes of systems and carried traffic.
+To make online learning possible in the dataplane, I use fixed-point arithmetic and modify classical (non-neural) approaches to take advantage of the SmartNIC compute model, while being able to make use of rich device-local state.
+%?? Doing this right requires co-design aware of network and failure modes of systems and carried traffic, but effective.
+Producing summary packets from flow statistics similarly requires careful workarounds without device support for certain \texttt{extern} operations.
+%?? Results
+I show that data-driven solutions still require great care to correctly design, but with the right domain expertise they can improve on pathological cases in DDoS defence, such as protecting legitimate UDP traffic.
+Moving reinforcement learning to the dataplane is shown to offer concrete, substantial benefits to state-action latency and online learning throughput versus commodity host machines.
+Finally, in-network aggregation to histograms is shown to enable accurate classification tasks conditioned on fine temporal effects, and to allow hosts to scale such classification to far larger flow counts and traffic volume.
 
 %Temporary bookkeeping: \printbibliography[env=counter] references!
+%\glsresetall
 

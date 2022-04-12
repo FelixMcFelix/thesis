@@ -6,7 +6,7 @@
 Computer networks are complex, yet critical infrastructure.
 The Internet of today is a prime example.
 From its birth as \emph{ARPANET}~\parencite{DBLP:conf/afips/HeartKOCW70}, interlinking the computers of research institutions under sole administration, it has scaled to connect together billions of devices over chains of smaller networks owned by totally separate entities.
-This growth has come at a cost; large scale networks are beset with layers upon layers of interlocking and overlaid systems divided amongst endpoint hosts and operators of the network fabric.
+This growth has come at a cost; large-scale networks are beset with layers upon layers of interlocking and overlaid systems divided amongst endpoint hosts and operators of the network fabric.
 The isolated, resilient design of all these layers is a strength in itself as these layers can, in theory, be replaced.
 Yet owing to this complexity, keeping the `Internet machinery' well-oiled and performant is a difficult task.
 
@@ -46,7 +46,7 @@ The takeaway is that it's infeasible to develop and hand-tune strategies per wor
 Should we not be able to automatically infer tailored mechanisms or parameters, robust to changes and evolution, from local performance and global management data---a \emph{data-driven} solution?
 %?? better info? and machines/stats can do better---\emph{data-driven} solution.
 \glspl{acr:cca} are but one case where we should ask ourselves these questions.
-Consider general optimisation of network protocols and infrastructure, or protection against the abuse of network resources such as \gls{acr:ddos} attacks, or even the above dataplane measurement---equally strong candidates to consider whether \emph{data-driven} and \emph{network cooperation} can lead to meaningful improvement.
+Consider general optimisation of network protocols and infrastructure, or protection against the abuse of network resources such as \gls{acr:ddos} attacks, or even the above dataplane measurement---equally strong candidates to consider whether \emph{data-driven} logic and \emph{network cooperation} can lead to meaningful improvement.
 
 %?? divided among endpoints and the network, TE/TO trying to work around it...
 %?? routing policies built on black magic
@@ -187,13 +187,13 @@ On average, this produces \qty[per-symbol=p,sticky-per=true]{25}{\mega\packet\pe
 \section{Contributions}
 Grouped according to the claims (\stmtno{\numrange{0}{3}}) in the thesis statement:
 \begin{itemize}
-	\item \emph{A thorough summary of the literature on modern, programmable computer networks (including recent hardware trends) (\cref{chap:nets}), and of machine learning techniques suitable for their control (\cref{chap:ddn})}. This includes the history of a spectrum of tools to optimising dataplane processing---both automatically and by bespoke design. Not just how \gls{acr:ml} benefits networks, but how creative networking can benefit \gls{acr:ml} use cases (\stmtno{0,2}).
+	\item \emph{A thorough summary of the literature on modern, programmable computer networks (including recent hardware trends) (\cref{chap:nets}), and of machine learning techniques suitable for their control (\cref{chap:ddn})}. This includes the history of a spectrum of tools to optimise dataplane processing---both automatically and by bespoke design. Not just how \gls{acr:ml} benefits networks, but how creative networking can benefit \gls{acr:ml} use cases (\stmtno{0,2}).
 	\item \emph{A novel synthesis of best practices, design decisions, and environmental tradeoffs to consider in the design of \gls{acr:ml}-led system control (\cref{sec:ddn-use-takeaways}, \stmtno{1})}.
 	\item \emph{An improved \gls{acr:rl}-based \gls{acr:ddos} prevention scheme (\cref{chap:ddos-rl}, \stmtno{1})}
 	\begin{itemize}
 		\item Two protocol-agnostic, flow-granularity \gls{acr:rl} agent designs (\emph{Instant} and \emph{Guarded} action models),
 		\item Algorithmic modifications to Sarsa to enable better concurrent learning from many in-progress \gls{acr:rl} trajectories,
-		\item Reward functions tailored to detecting th enegative impacts of amplification \gls{acr:ddos} and \glspl{acr:lfa},
+		\item Reward functions tailored to detecting the negative impacts of amplification \gls{acr:ddos} and \glspl{acr:lfa},
 		\item A quantitative investigation of suitable flow features for attack traffic detection via \gls{acr:rl},
 		\item Deadline-aware action planning and state fusion to shield agents from being overloaded,
 		\item The architecture and design of a \gls{acr:vnf}- and \gls{acr:sdn}-based installation of this anti-\gls{acr:ddos} solution,
@@ -202,27 +202,27 @@ Grouped according to the claims (\stmtno{\numrange{0}{3}}) in the thesis stateme
 	\end{itemize}
 	\item \emph{\approachshort---the first implementation of in-network, online \gls{acr:rl} (\cref{chap:in-net-rl}, \stmtno{2})}.
 	\begin{itemize}
-		\item An analysis of why \gls{acr:rl} in \gls{acr:pdp} hardware is needed and best-placed to interact with the network, made feasible by classical RL methods and quantisation,
+		\item An analysis of why \gls{acr:rl} in \gls{acr:pdp} hardware is needed and best-placed to interact with the network, made feasible by classical \gls{acr:rl} methods and quantisation,
 		\item An \gls{acr:rl} interaction model based on path-adjacent compute to protect carried traffic,
 		\item Analysis of suitable data formats for online \gls{acr:ddn} in resource-constrained hardware,
 		\item A proof that 1-step temporal-difference \gls{acr:rl} algorithms admit a parallelisable, map-reduce form with tile-coded policies,
 		\item \emph{ParSa}, a wait-free, parallel, online \gls{acr:rl} algorithm to accelerate tile-coded policy inference and updates,
 		\item Parallel \gls{acr:rl} strategies tailored to provide either maximum offline throughput, or optimal state-action latencies and online throughput,
 		\item Work allocation algorithms and communication tailored to SmartNIC devices with an explicitly tiered memory model,
-		\item In-depth evaluation of how \approachshort{} affects carried dataplane traffic, performs in latency and throughput under different policy sizes (simple/complex state), and improves on explicit offloading,
+		\item In-depth evaluation of how \approachshort{} affects carried dataplane traffic, performs in latency and throughput under different policy sizes (simple/complex state), and improves on host machines,
 		\item A description of how \approachshort{} would integrate with state-of-the-art \gls{acr:pdp} applications to perform fully in-\gls{acr:nic}, fast, automated \gls{acr:ddos} mitigation based on \cref{chap:ddos-rl}.
 	\end{itemize}
 	\item \emph{\seidr{} histograms for aggregation of precise flow telemetry (\cref{chap:seidr}, \stmtno{3})}.
 	\begin{itemize}
 		\item A flexible dataplane-assisted architecture and algorithm compatible with the \gls{acr:psa} that allows data aggregation in the form of histograms,
-		\item An measurement study of \gls{acr:iat} microstructure between \gls{acr:tcp} \glspl{acr:cca} variants, and analysis which establishes the algorithmic cause for these differences,
-		\item A high-accuracy method for using the \seidr{} procedure to track \glspl{acr:iat} with nanosecond-accurate timing to tell apart timer-based (\eg, BBR) and \texttt{cwnd}-based \gls{acr:tcp} \glspl{acr:cca}
-		\item An extensive evaluation of TCP congestion control classification using \gls{acr:iat} histograms using different \gls{acr:ml} models,
+		\item A measurement study of \gls{acr:iat} microstructure between \gls{acr:tcp} \gls{acr:cca} variants, and analysis which establishes the algorithmic cause for these differences,
+		\item A high-accuracy method for using the \seidr{} procedure to track \glspl{acr:iat} with nanosecond-accurate timing to tell apart timer-based (\eg, BBR) and \texttt{cwnd}-based \gls{acr:tcp} \glspl{acr:cca},
+		\item An extensive evaluation of \gls{acr:tcp} congestion control classification using \gls{acr:iat} histograms using different \gls{acr:ml} models,
 		\item Analysis of \seidr's scalability compression ratio relative to input sequence length.
 	\end{itemize}
 \end{itemize}
 
-A contribution I can't claim to offer, but hope sincerely to have done, is to collect together enough of the literature on \gls{acr:ddn} and \glspl{acr:pdp} to serve as a comfortable introduction to a newer researcher in the field.
+A contribution I can't claim to offer, but hope sincerely to have done, is to collect together enough of the literature and intuition on \gls{acr:ddn} and \glspl{acr:pdp} to serve as a comfortable introduction to a newer researcher in the field.
 The topic of \gls{acr:ddn} in particular has blossomed during the course of my PhD education---and scarcely existed at the scale it does today when this work was first undertaken in 2017.
 Making the case for its relevance and best practices has become much easier over the last few years alone in light of this.
 I'm fortunate that the work of many others tackles the same problems as I do, which I think lends credence to the thesis statement (\stmtno{0} in particular)---in a sense, this work contributes one set of case studies among many.
@@ -237,17 +237,17 @@ I hope that this thesis can be the book I would have wanted to read (and use) as
 %	\item Procedures for modelling and generating traffic similar to modern Opus-based \gls{acr:voip} flows (\cref{adx:opus-traffic}).
 %\end{itemize}
 
-\section{Thesis Outline and Structure}
+\section{Thesis outline and structure}
 Broadly speaking, this thesis is presented in two halves.
 The first offers in-depth background on both the fields of \gls{acr:ddn} and \gls{acr:pdp}:
 \begin{description}
 	\item[\Cref{chap:nets}] describes the evolution of computer networks from fixed-function devices towards increased programmability in both the control plane and dataplane---critically examining early research directions in contrast with modern successes. It then describes how modern dataplanes improve or allow new networked applications---offloading and in-network compute---before discussing the threat landscape of volumetric \gls{acr:ddos} attacks.
-	\item[\Cref{chap:ddn}] provides an introduction to the new field of data-driven networking by a critical review the design of many recent \gls{acr:ml} solutions to network problems and relevant function approximation and learning methods. This includes methods for networked infrastructure to improve training, and data formats needed to run \gls{acr:ml} techniques in resource-constrained environments. This concludes with some discussion on the limitations and security context of \gls{acr:ml}.
+	\item[\Cref{chap:ddn}] provides an introduction to the new field of data-driven networking by a critically reviewing the design of many recent \gls{acr:ml} solutions to network problems and relevant function approximation and learning methods. This includes methods for networked infrastructure to improve training, and data formats needed to run \gls{acr:ml} techniques in resource-constrained environments. This concludes with some discussion on the limitations and security context of \gls{acr:ml}.
 \end{description}
 The second half presents novel, concrete use cases which each demonstrate a part of the thesis statement (as discussed above):
 \begin{description}
-	\item[\Cref{chap:ddos-rl}] investigates using multi-agent \gls{acr:rl} to automatically learn the features of attack traffic online. I explore of agent designs informed by past \gls{acr:rl} approaches (and their failures) relative to the realities of Internet traffic. State spaces in particular are experimentally justified to find `per-feature' value. A system architecture as part of a larger \gls{acr:vnf} system is shown, followed evaluation of efficacy on different traffic classes and scenarios.
-	\item[\Cref{chap:in-net-rl}] takes to task the goal of enabling in-network, online \gls{acr:rl} for the first-time. I present an exploration of the design space around the interaction mechanisms, compute models, algorithm modifications, and data structures needed for \gls{acr:pdp} devices. This high-level design is named \approachshort{}. It then presents significant implementation detail for \approachshort{} on \gls{acr:nfp} SmartNIC hardware, followed by performance evaluation to show its improvements in state-action latency and assert that its impact on traffic is minimal.
+	\item[\Cref{chap:ddos-rl}] investigates using multi-agent \gls{acr:rl} to automatically learn the features of attack traffic online. I explore agent designs informed by past \gls{acr:rl} approaches (and their failures) relative to the realities of Internet traffic. State spaces in particular are experimentally justified to find `per-feature' value. A system architecture as part of a larger \gls{acr:vnf} system is shown, followed by evaluation of efficacy on different traffic classes and scenarios.
+	\item[\Cref{chap:in-net-rl}] takes to task the goal of enabling in-network, online \gls{acr:rl} for the first-time. I present an exploration of the design space around the interaction mechanisms, compute models, algorithm modifications, and data structures needed for \gls{acr:pdp} devices. This high-level design is named \approachshort{}. It then presents significant implementation detail for \approachshort{} on \gls{acr:nfp} SmartNIC hardware, followed by performance evaluation to show its improvements in state-action latency and to assert that its impact on traffic is minimal.
 	\item[\Cref{chap:seidr}] examines how in-network data reduction to histograms can make complex, non-latency-sensitive \gls{acr:ml} decisions on host machines scalable. I motivate their use with a measurement study on \gls{acr:cca} detection from per-flow \unit{\nano\second}-level timestamps, before evaluating their general scalability and effectiveness in the target use case.
 \end{description}
 The thesis then concludes by summarising its main takeaways, offering closing thoughts on these fields, and outlines future work specific to the above use cases (\cref{chap:conclusion}).
