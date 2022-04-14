@@ -1,5 +1,127 @@
 \chapter{Conclusion}\label{chap:conclusion}
+This thesis has made online \gls{acr:rl} in \gls{acr:pdp} hardware possible, while also meaningfully advancing the state of the art in data-driven, programmable networks.
+%?? collected literature
+%
+%?? Say all we've shown
+%?? This thesis has... (keep short)
+%?? then subsections to discuss broad themes
+Through these advances and thorough review of the literature, I have given substantial evidence for the value and viability of \gls{acr:pdp} networks empowered by data-driven methods, satisfying claims \stmtno{\numrange{0}{3}}.
+Recalling the initial thesis statement:
+\begin{quotation}
+	\noindent
+	\recalltext{stmt}
+\end{quotation}
+The value of each of these tools on their own for network management (\stmtno{0}) has been shown mostly by the use cases considered throughout \cref{chap:nets,chap:ddn}, but is also implicitly shown through the novel techniques presented in the thesis's main developments.
+\gls{acr:rl}'s value in particular was shown by its use to learn to mitigate \gls{acr:ddos} attacks in an online way (\stmtno{1}).
+By adapting classical \gls{acr:rl} policy formats and algorithm choices to suit the design, threading model, and \glspl{acr:fu} of manycore SmartNIC hardware, online in-\gls{acr:nic} \gls{acr:rl} was made possible.
+Eliminating \gls{acr:pcie} and host stack overheads offered substantial latency benefits, and the parallelised Sarsa algorithm brought higher-throughput online learning (\stmtno{2}).
+In-network aggregation of per-packet statistics to histograms made the handling of high-rate timestamps feasible, and enabled a flow classification task with clear operational benefits (\stmtno{3}).
+
+What is far more interesting, however, are the wider takeaways and lessons learned in the development of this work, and by collecting together a wide family of solutions falling under the \gls{acr:ddn} or \gls{acr:pdp} umbrella.
+Each has its own impact on the design and deployment of the other.
+Equally, it's worth mulling over the horizon of networking capabilities and form factors in the short- and long-term.
+%Synthesis of implications, takeaways on design, deployment...
+%?? which I will try to opine on here.
+
+\section{The need for co-design}
+?? in ddn...
+?? and in INC in particular for PDPs.
+?? feature engineering needed
+
+?? Downside? still need deep knowledge, from where I stand (though may be proven wrong) completely `clean-slate' unlikely to do great -- but we can still do better in params etc.
+
+?? Diversity of device designs and programming models requires insight, expertise... but rewarding.
+
+?? Downside:
+\begin{quotation}
+	\noindent
+	Our experience from this thesis has been that implementing parallelism properly is hard. It requires deep and intrusive coupling with the algorithm, and can increase the amount of code needed by as much as an order of magnitude.
+	
+	\hfill\parencite[p.~214]{ciaran-phd}
+\end{quotation}
+?? even though different field
+
+?? little unification? between what? Compute models?
+
+?? Heterogeneity great and useful, (necessary, some might say  to hit perf, if not price points) but also a curse: see above.
+?? Even so, needs great awareness.
+
+---
+
+?? notes from cycle in
+?? no such thing as zero-touch ddn, more likely zero-touch for pdp with offload texh. INC still needs all the thought (probably can't auto-derive many data structure transforms)
+?? ddn cannot derive mechanisms, and at scales of interest (i.e., small model capacity) need to integrate human expertise -- even if ``reward is all you need''~\parencite{DBLP:journals/ai/SilverSPS21}, still need to design actions.
+
+\section{A difficult security context}
+?? Uncomfortable security context
+?? Try to establish when good/bad, wrt opsec?
+
+?? One can make the argument for a safe deployment so long as there is a `reasonable' degree of isolation -- problem is to define isolation! Could be steps in processing, true isolation (i.e., design-time vs runtime), or via proportionality (to prevent evasion, adversarial behaviour, etc.), or hiding outputs as appropriate (to prevent model stealing and similar attacks).
+
+\section{The ghost of hardware yet to come}
+Ooooo
+
+What will this mean for programmability? Abstractions?
+
+?? increasing fallback to IRs from commodity languages the `right move'... probably.
 
 \section{Future directions}
-?? OPaL: In future, we aim to examine the performance of individual applications driven by \approachshort---both classical and \gls{acr:drl}-based---and how a NetFPGA implementation can offer further latency and throughput improvements.
-A promising avenue here would be to investigate constant transfer learning between online \approachshort{} agents and high-throughput offline function approximators such as \glspl{acr:bnn}.
+%?? Drop the headings once written
+
+%A problem we raised (without a clear solution) was the design of reward functions which do not rely upon heuristic estimates or a priori knowledge of benign traffic content.
+%If true online learning is desired (i.e., coping with a non-stationary environment), then such reward functions are sorely needed.
+%While $\bload{\cdot}$ is likely to be a good candidate for many deployments, we believe that finding an effective metric derived from the individual statistics we suggested serves as an interesting research problem.
+
+%?? Benefit of the more realistic emulation environment is that it is far closer in behaviour and architecture (i.e. viable) to a real SDN-enabled deployment, captures some dynamics which were otherwise hidden/lost by human ignorance. It also allows me to develop the system towards evolving traffic models where it is expected that RL should shine over and above standard ML techniques. THEN: Room to introduce/roll-in dynamic changepoint detection or adaptive exploration \cite{DBLP:conf/ki/Tokic10, DBLP:conf/ki/TokicP11, DBLP:conf/annpr/TokicP12}?
+
+Given that one of the advantages of \gls{acr:rl} methods is their ability to dynamically learn by trading off exploration and exploitation, precisely how well-suited they are to handling the evolution of networks is an interesting problem.
+Handling non-stationary problems is \emph{possible}, but rarely recommended, particularly with \gls{acr:dnn}-based policies.
+Responding to such change requires either scaling up gradient contributions, or increasing the value exploration parameters like $\epsilon$.
+Trying to do so introduces two key challenges.
+The first is that we need robust means of detecting the kinds of problem-space evolution we're interested in.
+There are tricky tuning factors to consider: chief among them are handling seasonality, and the timescales and magnitudes of evolution worth adapting to.
+Suppose traffic varies diurnally, in which case choosing the wrong timescales would likely cause an online learner to oscillate between policies---meanwhile, the expected behaviour would be to learn to handle these modes in the \emph{same policy}.
+The techniques discussed in \cref{sec:ddn-rl-design-considerations} may be useful to this end, such as adaptive exploration, changepoint detection, or signal processing methods (whose intersection with \gls{acr:rl} seems as-yet unexplored).
+The second challenge is that we must understand and model what problem-space evolution \emph{really} looks like.
+While it is known that \gls{acr:ddos} attack strategies evolve in real time~\parencite{DBLP:conf/spw/KangGS16}, to my knowledge no works detail what patterns such evolution might take.
+In the wider Internet, aggregate changes in bandwidth and usage are likely easy enough to model~\parencite{DBLP:conf/anrw/BauerJHBC21}.
+But, barring historic case studies, estimating the effects of new protocols and \glspl{acr:cca} before their deployment is unlikely to be feasible.
+
+%?? problems: policy-space variation, and timescales, detection. i.e., seasonality in diurnal traffic probably counts as two `learned behaviours' to handle in the \emph{same policy}.
+%?? need to understand what problem-space variation really looks like: we can do it w/ traffic scales, attack patterns and protocol evolution less so.
+%?? need to quantify.
+%?? scaling up of gradient contributions, or exploration params like $\epsilon$.
+%it is important to propose and test sensible simulations or captures of evolving networks.
+%While it is known that DDoS attack strategies evolve in real time~\parencite{DBLP:conf/spw/KangGS16}, evaluation is difficult at present since, to my knowledge, no works detail what patterns such evolution might take.
+%Regardless, these scenarios present ideal circumstances to apply some of the techniques discussed in \cref{sec:ddn-rl-design-considerations}: adaptive exploration, changepoint detection, or intelligent sampling methods to judge which flows are most worthy of consideration.
+%For estimating \emph{when} to explore, we believe that the intersection of  and RL is as-yet unexplored.
+%?? broaden to networks in general?
+
+%\paragraph{OPaL}
+
+%OPaL itself... In future, we aim to examine the performance of individual applications driven by \approachshort---both classical and \gls{acr:drl}-based---and how a NetFPGA implementation can offer further latency and throughput improvements.
+%?? Different problems cover different proportions of tile-coding, distribs of state accesses...
+
+Online \gls{acr:rl} via \approachshort{} is limited to devices in a SmartNIC or \gls{acr:npu}-style form-factor.
+This is less than ideal for larger deployments, yet achieving this level of flexibility at switch scale is unlikely to be possible without heavy concessions.
+Register access limits and a fixed number of pipeline stages would make a purely P4-\gls{acr:pdp} variant impossible to express, let alone a \gls{acr:mat}-accelerated approach (which would be dependent on the controller for policy updates).
+A promising avenue here would be to investigate ongoing transfer learning between online \approachshort{} agents and high-throughput offline function approximators such as \glspl{acr:bnn}.
+This might allow, for instance, having a canonical `known good' policy in the majority of the network via Tofino switches, while a smaller proportion of flows or packets are routed through actively learning bump-in-the-wire nodes.
+The controller is then responsible for collating these local policy modifications and generating a set of \gls{acr:bnn} parameters which expresses the same decision boundaries as the aggregated tile-coded policy.
+
+%\paragraph{\seidr}
+%In the future, we aim to examine the use of \seidr{} towards microburst detection and diagnosis~\parencite{DBLP:conf/sigcomm/ChenFKRR18} and for the identification of \emph{BBR}-like temporal properties of emerging UDP-based congestion-aware protocols, such as \emph{QUIC}.%~\cite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}.
+
+%\paragraph{general}
+While this thesis achieves online \gls{acr:rl} in \gls{acr:pdp} hardware, it does so by choosing a function approximation scheme with lower model capacity than more common alternatives such as \glspl{acr:nn}.
+How could we enable online learning for these more complex approximators?
+Practically speaking, minibatches and replay buffers are necessities and require storage in high-speed memory: this is somewhat counter to the design of \gls{acr:pdp} hardware, but this wouldn't be too onerous a requirement in bespoke designs.
+Scalable gradient computation tailored to the execution model (many weaker cores or \glspl{acr:fu}) remains a challenge.
+We might find value in combining insights from the field of distributed model-training (\cref{sec:distributed-training}), such as wait-free backpropagation, to achieve low-latency forward passes and parallellised updates to the policy when using model-parallel inference.
+Here though, we would constrain the scope of such algorithms to a single device, which might enable some shortcuts and further optimisations.
+This continues to make use of the many cores or \glspl{acr:fu} that we might expect on SmartNICs or \gls{acr:fpga} devices---\emph{N3IC}~\parencite{DBLP:journals/corr/abs-2009-02353} offers a model-parallel \gls{acr:nfp} implementation of the \gls{acr:nn} forward pass which might be compatible in theory.
+\glspl{acr:bnn} are not, however, suited for this purpose, given that training generally requires that we make incremental real-valued adjustments to the model parameters.
+As such, online \gls{acr:nn} training in the \gls{acr:pdp} would likely mandate fixed-point operation, ruling out the strong performance benefits of \glspl{acr:bnn}.
+
+%\emph{N3IC}~\parencite{DBLP:journals/corr/abs-2009-02353} offers a model-parallel \gls{acr:nfp} implementation of the \gls{acr:nn} forward pass---this execution model 
+%?? Insights from distributed model-training? Gradient calculation still tricky. Wait-free backpropagation as in \cref{sec:distributed-training} might work with non-\glspl{acr:bnn} to divide gradient compute across agents (again, exploiting multi-core or many \glspl{acr:fu} that we might get out of \glspl{acr:fpga})

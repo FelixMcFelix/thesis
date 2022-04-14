@@ -1,7 +1,7 @@
 Leaving security aside for now, there remain key issues in the training and design of \gls{acr:ddn}-backed systems.
 I briefly discuss several high-level challenges in the applicability of \gls{acr:ddn}, and initial in-roads to their solution: issues inherent to data collection and simulation in representative environments; the seeming lack of generality of \gls{acr:ml}/\gls{acr:rl} models in the systems domain; and the interpretation and verification of trained function approximators, particularly when given control over such critical infrastructure as the Internet.
 
-\subsection{Input Data and Simulation}
+\subsection{Input data and simulation}
 A key issue in \gls{acr:ddn} is that training from trace data is inherently fraught with risk.
 Consider that traces contain fixed sequences of states, and it should be apparent that through their use we cannot model or learn how the controlled system acts in response to change.
 This includes the tacit assumption that the model will not change in response to the input, either due to an unforeseen operational mode, or because the users of the system actively change their behaviour.
@@ -41,7 +41,7 @@ Looking at this task on scheduling, planning, and placement tasks\sidenote{Gener
 Non-deterministic behaviour (i.e., stochastic load balancing) is for instance an obvious source of noise, but threshold-based behaviours also cause significant discontinuities.
 Even after diagnosis of these noise sources (negating the desired ease-of-use), input-sensitive tasks still require probabilistic \gls{acr:ml} methods, which can be harder to reason about or act on.
 
-\subsection{Interpretability and Verification}
+\subsection{Interpretability and verification}
 For all the effort, time and expertise required to craft them, algorithmic or heuristic solutions to network problems have a key advantage over data-driven methods.
 Because they are so well-specified, it is reasonable for a network operator or expert who has observed some unintended behaviour to derive the root cause, and possibly formulate a fix for the issue.
 In contrast, \gls{acr:ml} and \gls{acr:ddn} models' behaviour is governed almost entirely by an opaque set of parameters ($\wvec{}$, which can contain \numrange{e3}{e9} real numbers), which makes it harder to understand what aspects of input data are being acted on and prioritised.
