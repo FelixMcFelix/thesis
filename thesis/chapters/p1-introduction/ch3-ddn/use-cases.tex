@@ -104,13 +104,13 @@ For optimisation tasks their use is straightforward, but it must be noted that h
 As discussed and introduced earlier in \cref{sec:wtf}, the design of effective \glspl{acr:cca} very much remains an open topic.
 The degree of diversity in networks, from long-fat Internet-style networks to dense low-\gls{acr:rtt} data centres, in buffering and forwarding behaviours of different path segments, \emph{and} the unforeseen interactions between disparate \gls{acr:cca} mechanisms, presents a huge problem space to work in.
 Incorrect assumptions can have knock-on effects in not just overall performance, but in fairness of longer-lived flows to other traffic, or in catastrophic increases to the \glspl{acr:fct} of short flows.
-As a result, automated \gls{acr:cca} learning is a particularly attractive prospect; more so when we recall the dominance of congestion-aware traffic in the wider Internet (\cref{sec:uk}).
+As a result, automated \gls{acr:cca} learning is a particularly attractive prospect; more so when we recall the dominance of congestion-aware traffic in the wider Internet (\cref{adx:caida-traffic}).
 
 \emph{MVFST-RL}~\parencite{DBLP:journals/corr/abs-1910-04054} uses \gls{acr:drl} to manage window-based congestion control in QUIC.
 %For context, a congestion-aware flow's \emph{cwnd} determines how much traffic may be ``on the wire'' at any point in time, where a higher cwnd implies higher bandwidth consumption.
 %Typically, the cwnd value oscillates to prevent congestion and packet loss while maximising throughput.
 An agent then controls the congestion window size; incrementing, decrementing, halving, doubling, or keeping its value \prllitact{} to optimise throughput and latency \prllitreward.
-In contrast with many prior \gls{acr:rl} works built on the OpenAI Gym, their RL agent takes actions asynchronously by coalescing state updates over time, between action choices.\sidenote{The \gls{acr:ddos} mitigation use case I develop and describe in \cref{chap:ddos-rl} uses a similar trick, though this arises due to delayed \emph{reaction} times in the environment rather than inference cost. See \cref{sec:uk}.}
+In contrast with many prior \gls{acr:rl} works built on the OpenAI Gym, their \gls{acr:rl} agent takes actions asynchronously by coalescing state updates over time, between action choices.\sidenote{The \gls{acr:ddos} mitigation use case I develop and describe in \cref{chap:ddos-rl} uses a similar trick, though this arises due to delayed \emph{reaction} times in the environment rather than inference cost. See \cref{sec:uk}.}
 Input states are comprised of \gls{acr:rtt} statistics, byte transmission and receive counts and loss information, combined with the last \num{5} actions \prllitstate.
 By applying fully-connected \glspl{acr:nn} followed by an \gls{acr:lstm} for policy approximation, this work is competitive with the state-of-the-art due to \glspl{acr:lstm}' particular suitability for identifying long-term relations in time-series data.
 Their work raises again the primary drawback of applying \glspl{acr:dnn} in latency sensitive applications like \gls{acr:cca} design: they observe up to \qty{30}{\milli\second} action computation time, and have only trained agents via parallel simulation, requiring vast amounts of training data.
@@ -140,7 +140,7 @@ Orca tracks $m$-long histories of a flow's current (and best) throughput and \gl
 Using the TD3 actor-critic algorithm, Orca chooses some $\alpha\in\left(-2, 2\right)$ every \qty{20}{\milli\second}, multiplying the congestion window by $2^\alpha$ \prllitactreal, and allows the baseline classical \gls{acr:cca} to otherwise act as normal.
 Each flow acts to improve the current ratio between its current \emph{power} and the best estimate of the Gail-Kleinrock optimal operating point~\parencite{KleinrockPoint1,KleinrockPoint2}---with some tradeoffs to minimise loss and allow small \gls{acr:rtt} variance \prllitreward.
 While this naturally requires higher resource use than a heuristic method such as Cubic or BBRv2, this strategy reduces resource costs beyond even the control-theoretic PCC family of \glspl{acr:cca} (with better, fairer operation).
-Reducing the length of time between DRL actions predictably increases resource demands, but leads to better flow performance, allowing a runtime trade-off to be made.
+Reducing the length of time between \gls{acr:drl} actions predictably increases resource demands, but leads to better flow performance, allowing a runtime trade-off to be made.
 
 \paragraph{Media access control}
 An exciting, perhaps unexpected, network environment is within \glspl{acr:cpu} themselves---a \emph{network on a chip}---for coordination in multi-threaded programs and ensuring cache coherency in many-core architectures.
@@ -178,14 +178,14 @@ Agents are punished when the network is overloaded \emph{and} their team contrib
 %?? Recap their flaws, since they've been cut form every other aspect.
 %Our results show that their technique underperforms at high host density and when congestion-aware traffic dominates---that their results do not demonstrate this suggests an evaluation driven purely by traces (rather than live application dynamics).
 %?? Mention why congestion-aware traffic gets screwed.
-Although their results appear competitive, their simulation environment uses only congestion-unaware \gls{acr:udp} traffic, in opposition to the realities of Internet traffic as discussed in \cref{sec:uk}.
+Although their results appear competitive, their simulation environment uses only congestion-unaware \gls{acr:udp} traffic, in opposition to the realities of Internet traffic as discussed in \cref{sec:ddos-contributing-factors,adx:caida-traffic}.
 Congestion-aware protocols dominate in many networks; incorrectly applying a packet drop action imposes greater \emph{pushback}~\parencite{DBLP:journals/ccr/MahajanBFIPS02a} on these legitimate flows than it would on attack traffic.
 For congestion-aware traffic, this is non-negligible; when packet loss occurs with probability $p\ne0$, the Mathis equation~\parencite{DBLP:journals/ccr/MathisSMO97} states that TCP bandwidth is proportional to $1/\sqrt{p}$, while modern TCP Cubic is proportional to $1/p^{0.75}$~\parencite{rfc8312}.
 Congestion-unaware, \gls{acr:cbr} traffic then occupies bandwidth proportional to $1 - p$, and recalling section \cref{sec:problems-in-modern-networks} we understand from the literature that volumetric \gls{acr:ddos} attack traffic mainly falls into this category.
 %Congestion-unaware, \gls{acr:cbr} traffic then occupies bandwidth proportional to $1 - p$---when we consider that analysis of CAIDA datasets~\parencite{caida-2018-passive} shows that congestion-aware traffic makes up at least \SIrange{73}{82}{\percent} of packets\footnote{\url{https://github.com/FelixMcFelix/caida-stats}}, it is clear that collateral damage applied by Marl is greatly worsened.
 %?? Reward measurement relies on perfect a-priori knowledge.
 Furthermore, the static overlay topology does not account for the defence of load-balanced or multipath networks, and the reward function relies on either \emph{a priori} knowledge of traffic or an accurate heuristic.
-These weaknesses are shown more concretely throughout section \cref{sec:uk}, and motivate the design of the \emph{Instant} and \emph{Guarded} \gls{acr:rl} agents throughout \cref{chap:ddos-rl}.
+These weaknesses are shown more concretely throughout section \cref{sec:ddos-action-space-risks}, and motivate the design of the \emph{Instant} and \emph{Guarded} \gls{acr:rl} agents throughout \cref{chap:ddos-rl}.
 %?? I investigate this much further in-depth in section ??.
 %?? Sim issue: All UDP
 
@@ -205,7 +205,7 @@ P4-capable edge switches or \glspl{acr:nic} host a \gls{acr:bnn} computed from a
 Their work supports the hypotheses that \glspl{acr:bnn} achieve sufficient accuracy on existing \gls{acr:ids} datasets and that overall model convergence makes \gls{acr:fl} suitable for this type of data.
 However, this work neither mentions nor considers the central limitation of \gls{acr:fl}; that edge models need some local means of generating labels for new data.\sidenote{\gls{acr:fl} can still be used to train \emph{unsupervised methods} without a local oracle, but clustering and forecasting have limited application for this class of flow filtering.}
 As a result, it's not clear whether \gls{acr:fl} is even a suitable choice for this task, and so this remains far from a feasible system.
-A core element of the design---that the P4-enabled device can add rules to its own tables from inside the RMT pipeline---is in fact impossible on reasonable hardware implementations as I discuss in section \cref{sec:uk}.
+A core element of the design---that the P4-enabled device can add rules to its own tables from inside the \gls{acr:rmt} pipeline---is in fact impossible on reasonable hardware implementations as I discuss in section \cref{sec:uk}.
 This is approximated using a \num{65535}-entry register file and primitive flow-key reduction into this space.
 The claim of line-rate operation is unsubstantiated, given that the evaluation focusses only on a software-based BMv2 implementation (costing a heavy \qtyrange{10}{25}{\milli\second} per-packet classification latency) and fails to quantify the costs of flow state extraction.
 

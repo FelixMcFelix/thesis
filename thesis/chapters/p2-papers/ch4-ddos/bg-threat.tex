@@ -256,17 +256,18 @@
 \section{Motivation}\label{sec:ddos-motivation}
 %?? What makes RL a suitable method for network anomaly detection, what features are most relevant?
 %?? Point I was thinking of: feedback-loop-like model allows monitoring \emph{after} an action is taken to (in theory) allow forgiveness of mistakenly punished flows. This does hinge on taking a flow-by-flow look at the state space, but if we can combine knowledge of current state (duh!), the last action taken (i.e. an indicator of our previous assessment [such as high pdrop $\implies$ bad]) then perhaps a flow which falls off identically to a legit flow can be rescued.
-Moving beyond the overt benefits of choosing RL-based defences for coping with non-stationary problems, we believe that there are concrete reasons for their use here.
-We have seen that for other domains in particular, misclassification is a serious problem, which can introduce \emph{collateral damage} in the context of DDoS prevention.
+Moving beyond the overt benefits of choosing \gls{acr:rl}-based defences for coping with evolving or ongoing control problems, we believe that there are concrete reasons for their use here.
+We have seen that for other domains in particular, misclassification is a serious problem, which can introduce \emph{collateral damage} in the context of \gls{acr:ddos} prevention.
 In theory, the feedback-loop-like model allows us to monitor flows \emph{after} an action is taken to allow forgiveness of mistakenly punished flows.
 This does rely upon the ability to take a flow-by-flow view of the state space, but if we can combine knowledge of current state with the last applied action, then perhaps a flow which falls off identically to a legitimate flow can be rescued.
 
 %Which features might be best suited to this problem?
 %?? Relevant features: aggregate network state (load at various points [this has been done, of course]), flow-specific measurements (upload/download ratio when bandwidth above threshold \cite{DBLP:conf/ndss/Rossow14}, packet inter-arrival times, etc.)
-Other studies suggest that there are particularly useful features which make the task of online DDoS flow identification feasible.
-Aggregate network load observed at various locations suggests the overall health of a network \cite{DBLP:journals/eaai/MalialisK15}, and the ratio of correspondence between pair flows can suggest asymmetry and in many cases illegitimacy \cite{DBLP:conf/ndss/Rossow14}.
-Generic volume-based statistics (counts, counts per duration, average packet sizes) have seen effectiveness in such as $k$-nearest neighbours classifiers trained to detect DDoS attacks in progress \cite{DBLP:conf/dsn/LeeKSPY17}.
-Most importantly, there is evidence showing behavioural changes in response to bandwidth expansion \cite{DBLP:conf/ndss/KangGS16}, suggesting similar artefacts might arise after throttling, packet drop, or other interference.
+Other studies suggest that there are particularly useful features which make the task of online \gls{acr:ddos} flow identification feasible.
+Aggregate network load measures observed at various locations suggest the overall health of a network~\parencite{DBLP:journals/eaai/MalialisK15}, for instance high link occupations but few successful requests reported by a target server might be an indicative feature.
+Similarly, the ratio of correspondence between pair flows can suggest asymmetry, and in many cases illegitimacy~\parencite{DBLP:conf/ndss/Rossow14}.
+Generic volume-based statistics (counts, counts per duration, average packet sizes) have seen effectiveness in such as \gls{acr:knn} classifiers trained to detect DDoS attacks in progress~\parencite{DBLP:conf/dsn/LeeKSPY17}.
+Most importantly, there is evidence showing behavioural changes in response to bandwidth expansion~\parencite{DBLP:conf/ndss/KangGS16}, suggesting similar artefacts might arise after throttling, packet drop, or other interference.
 %?? If we assume amplification attacks, we know it won't be `random' source IPs (since it's mostly-legit servers who think that they're doing a good job by replying)
 %?? If we assume amplification attacks, we know it won't be `random' source IPs (since it's mostly-legit servers who think that they're doing a good job by replying)
 
@@ -285,11 +286,13 @@ Most importantly, there is evidence showing behavioural changes in response to b
 An attacker's goal is to minimise the fair-share bandwidth allocation that a server can give to hosts, and they are expected to act rationally in its pursuit.
 Threat actors are external and act intentionally, aren't expected to be 
 \emph{advanced persistent threats}, and likely range from hacktivists to moderately funded adversaries.
-We assume that attacks will be volumetric DDoS attacks with the structure of an \emph{amplification attack}, and that traffic aggregates at the target (unlike in a transit-link attack).
-The addresses of the set of unwitting reflector nodes are visible to the target, though any bots taking part in an attack or the machines those bots control are not revealed to the target without communication with \nth{3} party organisations such as upstream ISPs.
-The discovery of any reflector by some defence system does have a cost to the attacker---there is a particularly large (yet finite) supply of viable reflector nodes \cite{DBLP:conf/ndss/Rossow14}, but the constraints that each has a large upstream bandwidth and support for high-amplification-factor protocols narrow this pool.
+We assume that attacks will be volumetric \gls{acr:ddos} attacks with the structure of an \emph{amplification attack}, and that traffic aggregates at the target (unlike in a transit-link attack or \gls{acr:lfa}).
+The addresses of the set of unwitting reflector nodes are visible to the target, though any bots taking part in an attack or the machines those bots control are not revealed to the target without communication with \nth{3} party organisations such as upstream \glspl{acr:isp}.
+The discovery of any reflector by some defence system does have a cost to the attacker---there is a particularly large (yet finite) supply of viable reflector nodes~\parencite{DBLP:conf/ndss/Rossow14}, but the constraints that each has a large upstream bandwidth and support for high-amplification protocols narrow this pool.
 
-We do not assume that an attacker has white-box access to an agent's policy, or that they will attempt to intelligently modify flow/system state to indirectly control an agent \cite{DBLP:conf/eurosp/PapernotMJFCS16, DBLP:conf/eurosp/PapernotMSW18, DBLP:journals/corr/HuangPGDA17, DBLP:conf/sp/Carlini017}.
-While they may be able to perform some degree of reverse engineering by observing the health of their own legitimate canary flows, ``stealing'' the policy through observation \cite{DBLP:conf/uss/TramerZJRR16}, investigating whether perturbations would persist in volatile network traffic statistics falls outside of the scope of this work.
-The same observation extends to the possibility of poisoning attacks \cite{DBLP:journals/corr/abs-1902-09062}.
+We do not assume that an attacker has white-box access to an agent's policy, or that they will attempt to intelligently modify flow/system state to indirectly control an agent~\parencite{DBLP:conf/eurosp/PapernotMJFCS16, DBLP:conf/eurosp/PapernotMSW18, DBLP:journals/corr/HuangPGDA17, DBLP:conf/sp/Carlini017}---the kinds of evasion attack considered throughout \cref{sec:ddn-security}.
+While they may be able to perform some degree of reverse engineering by observing the health of their own legitimate canary flows, ``stealing'' the policy through observation~\parencite{DBLP:conf/uss/TramerZJRR16}, this would require an attacker to indirectly observe the effects of (probabilistic) actions applied to their traffic---in addition to effects imposed by other flows competing for resources.
+Moreover, gaining feedback on the fate of attack packets is less feasible with connectionless traffic, and doubly so when it is generated by an amplifier not under the adversary's control.
+Investigating whether perturbations applied to flow state would persist in volatile network traffic statistics falls also outside of the scope of this work.
+The same observation extends to the possibility of poisoning attacks~\parencite{DBLP:journals/corr/abs-1902-09062}.
 These are APT-level capabilities, whose exploration presents a rich source for future work.
