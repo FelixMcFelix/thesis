@@ -1,10 +1,81 @@
-\chapter{DDoS Prevention by Multi-Agent Reinforcement Learning}\label{chap:ddos-rl}
-?? Something to elaborate on versus paper: design of Ryu controller?
+\chapter{DDoS Prevention by Multi-agent Reinforcement Learning}\label{chap:ddos-rl}
+Network anomaly detection and intrusion detection/prevention are continually evolving problems, compounded by the partial, non-\gls{acr:iid} view of data at each point in the network.
+Hearkening back to our discussion of \gls{acr:ddos} attacks in \cref{sec:problems-in-modern-networks}, attacks and anomalous behaviours evolve, becoming more sophisticated or employing new vectors to harm a network or system's confidentiality, integrity, and availability without being detected~\parencite{DBLP:journals/comsur/BhuyanBK14}.
+These attacks and anomalies have measurable consequences and symptoms which allow a skilled analyst to infer new signatures for detection by signature-based classifiers, but unseen attacks may only be defended against after-the-fact.
+%This issue is inherent to \emph{misuse-} or \emph{signature-based} intrusion detectors, and it has been long-hoped that \emph{anomaly-based} detectors would surpass this by making effective use of statistical measures \cite{DBLP:journals/comsur/BhuyanBK14}.
 
-\glspl{acr:iat}
+%?? ML would seem like a natural fit for this problem.
+%\gls{acr:ml} and other statistical approaches have , ... but languished. ?? try chain straight into DDoS: domains where labels and rewards derivable at runtime.
+%While \emph{machine learning} (ML) approaches seem like a sensible fit for this problem, in \citeyear{DBLP:conf/sp/SommerP10} \citeauthor{DBLP:conf/sp/SommerP10} identified the `failure to launch' of ML-based anomaly detection systems---a distinct lack of real-world system deployments \cite{DBLP:conf/sp/SommerP10}.
+%To quite a large extent, this remains the case today.
+%They posit that their use is made difficult due to significant operational differences from standard ML tasks, including: the high cost of errors and extraordinarily low tolerance for false positives inherent to network intrusion detection \cite{DBLP:conf/ccs/Axelsson99}; a general lack of recent, openly available (and high-quality) training data; and diversity of network traffic across varying timescales combined with significant burstiness \cite{DBLP:journals/ccr/LelandWTW95}.
+%Above the aggregate level, the constant deployment of new services and protocols means that traffic is \emph{non-stationary} and displays an evolving notion of normality.
+%Learning is made harder still by the challenges encountered with unlabelled (often partial) data.
+%All of these factors greatly inflate the difficulty of the detection problem.
 
-The work presented in this chapter considers how online \gls{acr:rl} can be used to defend networks from volumetric \gls{acr:ddos} attacks, and is based upon \citetitle{DBLP:journals/tnsm/SimpsonRP20}~\parencite{DBLP:journals/tnsm/SimpsonRP20}.
-?? Then summarise contents from here...
+%?? Make it clearer here what problem I specifically want to solve: principally a particular class of DDoS attacks; volume-based DDoS attacks. Amplification attacks are just a specialisation, this can be made more obvious. I think I need to be clearer about the \emph{intended deployment environment} of service hosts (i.e., not ISPs).
+
+We've already discussed how \gls{acr:ml} and \gls{acr:ddn} were hoped to make this domain easier to solve---e.g., automatic detection of attack signatures, reliable anomaly detection---and the operational limits which have become clear in \cref{sec:ddn-uses-security}.
+Consider pick on one point in particular, availability of useful training data.
+in many of these cases, anomalous events still require human expertise to label and detect; to complicate matters, this effort must be sustained in the face of network evolution.
+For certain classes of problem e.g., volumetric \gls{acr:ddos} attacks, system health corresponds to wider load and performance metrics which are typically more easily known.
+It is here that \gls{acr:rl} offers another perspective.
+%?? Unclear explanation of RL here?
+Recall from \cref{chap:ddn} that \gls{acr:rl} agents operate by following a \emph{policy} to interact with or control a system, while at the same time using observed performance metrics and deliberate exploration to dynamically improve this policy.
+In this way the role of a \gls{acr:rl} agent differs from that of a standard classifier, adaptively reacting to threats by assuming the role of a feedback loop for network optimisation, typically to safeguard service guarantees.
+In a sense, this allows us to ``overcome'' some of the difficulties of the detection problem by monitoring \emph{performance characteristics and consequences} in real-time; by looking for (and controlling) the effect rather than the cause.
+%Long-term, we expect that the value of RL-based defence systems will be to augment what existing misuse-based solutions can provide, by automatically alerting, recording and controlling what are believed to be illegal system states.
+%The goal of this work is much less general; we aim to prevent volume-based DDoS attacks with the aid of RL-based techniques (an important goal in its own right), while bringing to light the flexibility and applicability of these techniques in the security domain.
+
+%Whether it takes direct control of the network, or is used indirectly to optimise a key part of another system, more powerful `deep' RL techniques (and well-founded action spaces) aren't yet well explored for network IDS/IPS.
+%These range from more modern training algorithms \cite{DBLP:journals/corr/SchulmanWDRK17, DBLP:conf/icml/SchulmanLAJM15}, to evolutionary strategies \cite{DBLP:journals/corr/SalimansHCS17, DBLP:journals/corr/abs-1802-08842}, hierarchical action composition \cite{DBLP:journals/corr/abs-1710-09767}, and competitive multi-agent learning \cite{DBLP:journals/corr/abs-1710-03748}.
+
+%To date, there have been few applications of this class of algorithms towards intrusion detection and prevention which make use of their full potential for online control, rather than using them as the basis for a classifier.
+%We aim to take steps to redress this and establish their proper capabilities, beyond simple ``blind application''.
+%?? Expand as required
+%?? THAT IS A MAJOR CONTRIB, MENTION IT EVERYWHERE YOU CAN
+
+%?? Discuss the most important conclusions before the outline.
+What \gls{acr:rl} approaches do exist are aimed towards the task of adaptive online \gls{acr:ddos} mitigation, and rely upon learning to control probabilistic packet drop.
+These have concrete weaknesses compared to the reality of network traffic.
+\Cref{sec:ddn-uses-security} presents my analysis of the existing work for this task---\emph{Marl}~\parencite{DBLP:journals/eaai/MalialisK15}---particularly how it fails to account for congestion-aware traffic (i.e., \gls{acr:tcp}) and environments with high host density per egress point such as \glspl{acr:isp} or datacentre networks.
+As a result, they achieve poor protection of legitimate traffic due to an overly coarse view of the network and the dominance of congestion-aware traffic in today's networks (\cref{sec:ddos-contributing-factors,adx:caida-traffic}).
+However, there are limits to how we should infer these properties given network evolution---we must remain protocol- and content-agnostic to offer future-proofing against the rollout of protocols like QUIC.
+
+%To remedy this, we make throttling decisions on a per-source basis and present the engineering decisions this mandates: updating RL agents from multiple traces per timestep, timed random sequential action computation and a supporting \emph{software-defined network} (SDN) architecture.
+%In tandem with the development and evaluation of an effective state space and model, we provide the design of a second model inspired by past work on algorithmic DDoS prevention, as an example of the integration of domain-specific knowledge.
+%Our introduction of per-source decisions improves substantially upon the state-of-the-art when acting upon most internet traffic (i.e., congestion-aware protocols), and we show that our second model achieves excellent performance for high host density in this case.
+%Crucially, both models remain protocol- and content-agnostic to offer future-proofing against the rollout of future protocols like QUIC \cite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}.
+%?? Also algorithmic enhancements such as multiple actions per timestep, 
+%?? PROTOCOL-AGNOSTIC -- HOW WILL THESE THINGS COPE WITH QUIC ET AL.?!?!
+
+%\subsection{Contributions}
+%This paper contributes two source-level granularity approaches to RL-driven DDoS prevention (\emph{Instant} and \emph{Guarded} action models), improving upon past aggregate-based models (\cref{sec:ddos-mitigation-with-per-flow-reinforcement-learning}).
+%These are designed to make effective decisions irrespective of protocol, and act on individual flows at the edge of any network topology.
+%We offer an in-depth investigation into suitable features for automatic DDoS mitigation, with qualitative and quantitative justification (\cref{sec:rethinking-the-state-space}).
+%These features have been suggested by past studies, and independently tested in their own contexts.
+%Our study is the first attempt to quantify the individual efficacy of each in an RL setting.
+%
+%We implement reactive simulations of HTTP and VoIP web-server traffic, designed to test system characteristics that packet trace playback fails to capture (\cref{sec:a-new-normal}).
+%%To our knowledge, this is the first attempt to study or replicate Opus-based VoIP traffic, which has become commonplace since the codec's release in 2012.
+%These new traffic models inform an empirical evaluation of our new models against the state-of-the-art in RL-based DDoS mitigation using (\cref{sec:the-results-of-doing-so}), alongside a discussion of security concerns and real-world deployment (\cref{sec:discussion}).
+%We additionally compare our work against SPIFFY \cite{DBLP:conf/ndss/KangGS16}, reuniting two divergent strands of research and grounding the study of RL-based DDoS defences.
+
+The work presented in this chapter considers how online \gls{acr:rl} can be used to defend networks from volumetric \gls{acr:ddos} attacks, agnostic of the protocols of carried traffic, and is based upon \citetitle{DBLP:journals/tnsm/SimpsonRP20}~\parencite{DBLP:journals/tnsm/SimpsonRP20}.
+I first reiterate the motivation for the task and \gls{acr:rl} as a solution (\cref{sec:ddos-motivation}), and define the threat model for attackers with respect to known \gls{acr:ddos} attack methods and the security context of \gls{acr:ml} (\cref{sec:ddos-threat}).
+\Cref{sec:ddos-mitigation-with-per-flow-reinforcement-learning} then outlines the design and rationale behind new agent designs built to improve on the failings of past \gls{acr:rl} works, by making decisions on a per-flow or per-source basis.
+This includes algorithmic modifications to learn from and control many traces simultaneously, achieve faster convergence by per-tile updates, and to better learn form individual features.
+I describe a feature space built on a mixture of global and local state, reward functions tailored to different attack classes, and contribute two action models and their risks (\emph{Instant} and \emph{Guarded}).
+The \emph{Guarded} model is inspired by past work on algorithmic \gls{acr:ddos} prevention, as an example of how the integration of domain-specific knowledge can lead to more effective \gls{acr:rl} agents in shorter timescales.
+\Cref{sec:ddos-architecture} then describes how state measurement and installation of actions could be managed in an \gls{acr:sdn} deployment.
+To determine \emph{which} per-flow features are worth using for \gls{acr:ddos} control and mitigation, I then present qualitative and quantitative analysis of a large selection of these metrics for different agent designs on varied protected traffic types (\cref{sec:rethinking-the-state-space}).
+\Cref{sec:a-new-normal} then details my implementation of reactive simulations of \gls{acr:http} and \gls{acr:voip} web-server traffic, designed to test system characteristics that packet trace playback fails to capture.
+\Cref{sec:ddos-evaluation,sec:the-results-of-doing-so} then describe and show empirical performance measurements of the two new agent designs against existing \gls{acr:rl} \gls{acr:ddos} techniques, and algorithmic works via \emph{SPIFFY}~\parencite{DBLP:conf/ndss/KangGS16}, reuniting two divergent strands of research and grounding the study of \gls{acr:rl}-based \gls{acr:ddos} defences.
+I conclude with some discussion on the significance of the results and wider security implications of this solution in particular (\cref{sec:ddos-discussion}), and summarise in \cref{sec:ddos-summary}.
+
+%?? \Cref{chap:ddos-rl} investigates using multi-agent \gls{acr:rl} to automatically learn the features of attack traffic online. I explore agent designs informed by past \gls{acr:rl} approaches (and their failures) relative to the realities of Internet traffic. State spaces in particular are experimentally justified to find `per-feature' value. A system architecture as part of a larger \gls{acr:vnf} system is shown, followed by evaluation of efficacy on different traffic classes and scenarios.
+%
+%?? Although there are variations of each class of attack, flooding attacks are the most relevant to our work.
 
 % \section{Threat Model}
 % \section{Agent Design}
@@ -24,83 +95,74 @@ The work presented in this chapter considers how online \gls{acr:rl} can be used
 % \subsection{Increased Attack Volume}
 % \subsection{Computational Cost}
 
-\section{Introduction}
-\input{chapters/p2-papers/ch4-ddos/introduction.tex}
+%\section{Introduction}
+%\input{chapters/p2-papers/ch4-ddos/introduction.tex}
 
-\section{Background and Threat Model}
+%\section{Background and Threat Model}
 \input{chapters/p2-papers/ch4-ddos/bg-threat.tex}
 
-\section{DDoS Mitigation with Per-flow Reinforcement Learning}\label{sec:ddos-mitigation-with-per-flow-reinforcement-learning}
+\section{Per-flow RL agent designs}\label{sec:ddos-mitigation-with-per-flow-reinforcement-learning}
 \input{chapters/p2-papers/ch4-ddos/algo.tex}
 
-\section{System Architecture}\label{sec:system-architecture}
+\section{System architecture}\label{sec:ddos-architecture}
 \input{chapters/p2-papers/ch4-ddos/arch.tex}
 
-\section{Rethinking the State Space}\label{sec:rethinking-the-state-space}
+\section{Rethinking the state space}\label{sec:rethinking-the-state-space}
 \input{chapters/p2-papers/ch4-ddos/state-space.tex}
 
-\section{Traffic Modelling}\label{sec:a-new-normal}
+\section{Traffic modelling}\label{sec:a-new-normal}
 \input{chapters/p2-papers/ch4-ddos/traffic-modelling.tex}
 
-\section{Evaluation}\label{sec:evaluation}
+\section{Evaluation}\label{sec:ddos-evaluation}
 \input{chapters/p2-papers/ch4-ddos/evaluation.tex}
 
 \section{Results}\label{sec:the-results-of-doing-so}
 \input{chapters/p2-papers/ch4-ddos/results.tex}
 
-\section{Discussion}\label{sec:discussion}
+\section{Discussion}\label{sec:ddos-discussion}
 \input{chapters/p2-papers/ch4-ddos/discussion.tex}
 
-\section{Related Work}\label{sec:related-work}
-\input{chapters/p2-papers/ch4-ddos/related.tex}
+%\section{Related Work}\label{sec:related-work}
+%\input{chapters/p2-papers/ch4-ddos/related.tex}
 
-\section{Conclusions and Future Work}
-Through this paper, we have discussed reinforcement learning and its relevance to network intrusion prevention.
-We believe the potential to learn feedback loop-like control online and against non-stationarity makes it particularly suited to the problems endemic to the field.
-We identified weaknesses in past work, recommending an RL agent which acts per flow, and have outlined the algorithmic and engineering choices needed to make its deployment feasible.
-Supporting this, we've presented an in-depth examination of our feature space, offering quantitative and qualitative justification for our choices.
-Our evaluation shows that our new agent designs considerably advance the state-of-the-art in RL-based DDoS prevention, with \emph{Guarded} agents showing the most promise for future evaluation.
+%\section{Conclusions and Future Work}
+\section{Summary}\label{sec:ddos-summary}
+Through this chapter, we have discussed reinforcement learning and how it can be used to approach the task of \gls{acr:ddos} prevention, lending credence to one of the claims in the initial thesis statement: \superrecallthesis{1}.
+The key to doing so was to study the dynamics of the network itself---its behaviours, and realistic recreations thereof---to detect operational flaws in existing \gls{acr:rl} and algorithmic works.
+In turn, I designed different action models built upon a shared (and justified) model: making decisions on a per-flow or per-source basis, and relying upon learned policies to differentiate congestion-aware and -unaware flows that methods like SPIFFY ignore.
 
-The most direct improvements to be made lie in the correct protection of legitimate UDP traffic, which our agent designs have difficulty safeguarding.
-Outside of this, there is scope to test these new techniques against link-flooding attacks in large-scale topologies using reward functions such as \cref{eqn:lfa-reward}.
-Simulation is the most likely avenue for such evaluation.
+We identified weaknesses in past work, recommending an \gls{acr:rl} agent design which acts per flow, and have outlined the algorithmic and engineering choices needed to make its deployment feasible.
+Supporting this, we've examined the presented feature space in depth, offering quantitative and qualitative justification for each choice, while also expanding the global state in past Marl approaches to support arbitrary network topologies.
+Using simpler tile-coded policies, we have also covered how decision narrowings and per-tile updates allowed faster convergence---and independently developed methods for coalescing state which have become more common in tasks with long inference times as the field has bloomed.
+We have examined the \emph{Instant} and \emph{Guarded} action models, integrating various degrees of domain expertise with \gls{acr:rl} agents.
+To make real-world deployment possible in the face of obviously adversarial inputs, we have seen how it is essential to consider rate limiting (and probabilistic) strategies like \gls{acr:trs} scheduling, and have presented a \gls{acr:vnf}- and \gls{acr:sdn}-backed system architecture.
+By empirical evaluation, we've seen that these new agent designs advance the state of the art in \gls{acr:rl}-based \gls{acr:ddos} prevention, with \emph{Guarded} agents showing the most promise for future evaluation.
 
-%(rather than na\"{i}ve simulation, blind ML applications etc.) and choose well-considered pathways to solution. \emph{Call-to-action}?
+%We hope it is clear that reinforcement learning holds promise and can inspire further innovation.
+%It allows us to offer distinct advantages above existing works, such as protocol-agnostic DDoS flow detection, flexible deployment, and automatically learned low-overhead decision-making---without requiring many of the network resources or capabilities that other techniques rely upon.
+%It's hoped that more research in this direction will open the door to works which \emph{respect the complexity of the network}; evolving topologies, natural change in traffic and protocol distributions, and the mutation of attacks.
 
-%\section{Future Work}
-%Airlift half of the ``conclusion'' and paste it in here, so that it can be a lot neater.
-%?? Future Work? I.e., \emph{everything}: no one else is really looking at/interested in this specific kind of application of RL yet. \emph{Yet}.
+While this adds another positive note to the score of \gls{acr:ddn} use cases seen throughout \cref{sec:use-cases}, what I must stress is that this chapter emphasises the value of \emph{co-design} and true subject-matter expertise.
+Networks in particular are complex, and controlled elements respond to an agent's action in ways which trace-based evaluation cannot capture---hence my disdain in the frontmatter of \cref{sec:use-cases}.
+This builds on the general advice of \cref{sec:ddn-use-takeaways}: better modelling, simulation, and understanding of the environment \emph{led to better designs for their control}.
+%?? Justifies trace-hatred \cref{sec:use-cases,sec:ddn-use-takeaways}, need for deep expertise
+%?? actually really emph this wrt co-design: better modelling of the environment led to better designs!
+This foundation is crucial, as it falls to us to derive the \emph{mechanisms} of control: state and action spaces, reward functions, interaction and measurement models, and similar aspects of agent or classifier design.
+Learnt \gls{acr:ddn} policies work well at optimising within these constraints that we set.
+The final takeaway is that \gls{acr:ddn} solutions, and how we evaluate them, \emph{must respect the complexity of the network}; evolving topologies, natural change and diversity in traffic and protocol distributions, as well as the mutation of attacks and the wider problem space.
 
-%?? IDEA: try out average reward, TD($\lambda$) methods as future work...
-%A natural research direction to enhance this work would be the combination of the classic function approximation techniques we make use of alongside the improved algorithms that the RL community has introduced in the past few years.
-%Actor-critic methods, or algorithms based on eligibility traces are good candidates for investigation. 
-The remaining weaknesses invite many improvements worth investigation.
-%?? What might we do for a reward function in the absence of heuristic estimates and/or explicit a priori knowledge? I think a good candidate is the sum of up and down throughputs (normalised by capacity sum), so long as \emph{neither exceeds the link capacity}. We can extend the team-based formulations similarly. This, in theory, promotes traffic diversity since it's not like flooding-based DDoS attacks are going to submit meaningful work to a server. The intuition, I suppose, is that certain classes of flow will have a small footprint in one direction which causes a sizeable increase in the other! Alternatively, monitor the health of canary flows which cross the team boundary (i.e. only one in-out link).
-A problem we raised (without a clear solution) was the design of reward functions which do not rely upon heuristic estimates or a priori knowledge of benign traffic content.
-If true online learning is desired (i.e., coping with a non-stationary environment), then such reward functions are sorely needed.
-While $\bload{\cdot}$ is likely to be a good candidate for many deployments, we believe that finding an effective metric derived from the individual statistics we suggested serves as an interesting research problem.
+%While we can train successful policies, \gls{acr:ddn} cannot itself derive the \emph{mechanisms} of control: action models, reward functions, and the state which they should operate on.
+%Learnt policies and parameters operate as well as they can \emph{within the framework we give them}, and generally succeed at so doing.
 
-%?? Benefit of the more realistic emulation environment is that it is far closer in behaviour and architecture (i.e. viable) to a real SDN-enabled deployment, captures some dynamics which were otherwise hidden/lost by human ignorance. It also allows me to develop the system towards evolving traffic models where it is expected that RL should shine over and above standard ML techniques. THEN: Room to introduce/roll-in dynamic changepoint detection or adaptive exploration \cite{DBLP:conf/ki/Tokic10, DBLP:conf/ki/TokicP11, DBLP:conf/annpr/TokicP12}?
-Given that one of the advantages of RL methods is the ability to handle non-stationary problems, it is important to propose and test sensible simulations or captures of evolving networks.
-While it is known that DDoS attack strategies evolve in real time \cite{DBLP:conf/spw/KangGS16}, evaluation is difficult at present since no works detail what patterns such evolution might take.
-Regardless, these scenarios present ideal circumstances to apply adaptive exploration \cite{DBLP:conf/annpr/TokicP12}, changepoint detection, or intelligent sampling methods to judge which flows are most worthy of consideration.
-For estimating \emph{when} to explore, we believe that the intersection of signal processing and RL is as-yet unexplored.
-
-%?? IDEA: Apply these techniques to programmable data planes etc. While it's pretty neat that what we have works assuming that ach router is a software (x86) switch running OVS, what might we need to consider when applying this to `real' switches? ``PDP can allow this to be added to real routers to make it efficient to keep \& process state in the manner we require, as well as enabling more adaptive deployment''. Cite P4, BPFabric, other work on PDPs?
-%?? What concessions will we have to make in order to make per-flow processing more viable? Intelligent sampling/reanalysis of flows when needed (i.e. an external heuristic guiding method)? In SPIFFY's \cite{DBLP:conf/ndss/KangGS16} evaluation, we see clearly that it can take around \SI{2}{\second} for a flow to react fully to a rate increase---I think for the TCP step it may be wise to factor this in, too!
-%?? More future work --- share knowledge between agents. ``Knowledge bases'' for this purpose? (see: Qianru).
-Effective real-world deployment of RL-based defences cannot assume that switches in a network will support a custom version of OVS or other arbitrary software, introducing the question of whether agent training, execution and distribution may be possible when using \emph{programmable data planes} \cite{DBLP:conf/ancs/JouetP17}.
-We also expect it will be fruitful to look into \emph{how} agents may share knowledge with one another.
-
-%?? Security? I suspect that the very qualities that make inference difficult in IDS/IPS also increase the level of challenge an advanced threat must overcome.
-%?? Might want to mention it in related work above, but the recent attention on adversarial examples/tricking models needs to be looked into for RL. Poisoning attacks relevant for online techniques: old bounds exist \textcite{DBLP:journals/jmlr/KloftL10}, new stuff concerns collaborative learners \cite{DBLP:conf/acsac/ShenTS16}, nothing for rl. Hot topic in deep networks \cite{DBLP:conf/eurosp/PapernotMJFCS16, DBLP:conf/eurosp/PapernotMSW18}, but naturally still relevant with even linear approximations or exact tabular case due to limits of the PAC assumption. There is now examination of evasion attacks wrt.\ RL \cite{DBLP:journals/corr/HuangPGDA17}!
-%?? evasion attacks by \textcite{DBLP:conf/sp/Carlini017}---all of these are computed by way of a general stochastic optimiser, such as \emph{Adam} \cite{DBLP:journals/corr/KingmaB14}. possible to apply something similar to our learned model to assess its security? would the suggested states even be valid? (i.e. since they're monotonically increasing for the most part).
-Although we believe that the security landscape for classical RL models is not \emph{identical} to that of neural-network based approaches (particularly with such noisy, volatile, and hard-to-control data), there is still immense value in determining the exact capabilities of a sufficiently powerful adversary as the risk of external control still exists.
-In particular, we believe that poisoning attacks and evasion attacks merit close consideration.
-
-%While this work still trails behind the performance of exact DDoS flow detection mechanisms, w
-We hope it is clear that reinforcement learning holds promise and can inspire further innovation.
-It allows us to offer distinct advantages above existing works, such as protocol-agnostic DDoS flow detection, flexible deployment, and automatically learned low-overhead decision-making---without requiring many of the 
-network resources or capabilities that other techniques rely upon.
-It's hoped that more research in this direction will open the door to works which \emph{respect the complexity of the network}; evolving topologies, natural change in traffic and protocol distributions, and the mutation of attacks.
+%The work presented in this chapter considers how online \gls{acr:rl} can be used to defend networks from volumetric \gls{acr:ddos} attacks, agnostic of the protocols of carried traffic, and is based upon \citetitle{DBLP:journals/tnsm/SimpsonRP20}~\parencite{DBLP:journals/tnsm/SimpsonRP20}.
+%I first reiterate the motivation for the task and \gls{acr:rl} as a solution (\cref{sec:ddos-motivation}), and define the threat model for attackers with respect to known \gls{acr:ddos} attack methods and the security context of \gls{acr:ml} (\cref{sec:ddos-threat}).
+%\Cref{sec:ddos-mitigation-with-per-flow-reinforcement-learning} then outlines the design and rationale behind new agent designs built to improve on the failings of past \gls{acr:rl} works, by making decisions on a per-flow or per-source basis.
+%This includes algorithmic modifications to learn from and control many traces simultaneously, achieve faster convergence by per-tile updates, and to better learn form individual features.
+%I describe a feature space built on a mixture of global and local state, reward functions tailored to different attack classes, and contribute two action models and their risks (\emph{Instant} and \emph{Guarded}).
+%The \emph{Guarded} model is inspired by past work on algorithmic \gls{acr:ddos} prevention, as an example of how the integration of domain-specific knowledge can lead to more effective \gls{acr:rl} agents in shorter timescales.
+%\Cref{sec:ddos-architecture} then describes how state measurement and installation of actions could be managed in an \gls{acr:sdn} deployment.
+%To determine \emph{which} per-flow features are worth using for \gls{acr:ddos} control and mitigation, I then present qualitative and quantitative analysis of a large selection of these metrics for different agent designs on varied protected traffic types (\cref{sec:rethinking-the-state-space}).
+%\Cref{sec:a-new-normal} then details my implementation of reactive simulations of \gls{acr:http} and \gls{acr:voip} web-server traffic, designed to test system characteristics that packet trace playback fails to capture.
+%\Cref{sec:ddos-evaluation,sec:the-results-of-doing-so} then describe and show empirical performance measurements of the two new agent designs against existing \gls{acr:rl} \gls{acr:ddos} techniques, and algorithmic works via \emph{SPIFFY}~\parencite{DBLP:conf/ndss/KangGS16}, reuniting two divergent strands of research and grounding the study of \gls{acr:rl}-based \gls{acr:ddos} defences.
+%I conclude with some discussion on the significance of the results and wider security implications of this solution in particular (\cref{sec:ddos-discussion}), and summarise in \cref{sec:ddos-summary}.
 

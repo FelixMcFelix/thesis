@@ -158,6 +158,17 @@ Interestingly, this shows that small, pre-trained, quantised \glspl{acr:nn} can 
 
 \subsection{Security, defence, and verification}\label{sec:ddn-uses-security}
 \paragraph{Network and computer defence}
+\gls{acr:ml} and other statistical approaches would seem like a natural fit for the problem of network defence, and have been long-awaited in hope that they might aid automated anomaly detection and the derivation of attack signatures~\parencite{DBLP:journals/comsur/BhuyanBK14}.
+Barring some recent exceptions, \gls{acr:ddn} approaches have languished.
+In 2010, \citeauthor{DBLP:conf/sp/SommerP10} identified the `failure to launch' of \gls{acr:ml}-based anomaly detection systems---a distinct lack of real-world system deployments~\parencite{DBLP:conf/sp/SommerP10}.
+To quite a large extent, this still holds true today.
+They posited that their use is made difficult due to significant operational differences from standard \gls{acr:ml} tasks, including: the high cost of errors and extraordinarily low tolerance for false positives inherent to network intrusion detection~\parencite{DBLP:conf/ccs/Axelsson99}; a general lack of recent, openly available (and high-quality) training data; and diversity of network traffic across varying timescales combined with significant burstiness~\parencite{DBLP:journals/ccr/LelandWTW95}.
+Above the aggregate level, the constant deployment of new services and protocols means that traffic is \emph{non-stationary} and displays an evolving notion of normality (\cref{sec:ddos-contributing-factors}).
+Learning is made harder still by the challenges encountered with unlabelled (often partial) data.
+Moreover, known-poor datasets such as the problematic `DARPA99' dataset~\parencite{DARPA-IDD, DBLP:conf/cisda/TavallaeeBLG09, DBLP:conf/sp/SommerP10} and its derivatives such as KDDCup99 or NSL-KDD have yet to be excised from works appearing even today.
+%The position of this work is weakened by its reliance on the problematic `DARPA99' dataset \cite{DARPA-IDD, DBLP:conf/cisda/TavallaeeBLG09, DBLP:conf/sp/SommerP10}, but the idea itself is well-treated and this acts as a driver for improvements in this direction.
+%All of these factors greatly inflate the difficulty of the detection problem.
+
 \emph{Marl}~\parencite{DBLP:conf/iaai/MalialisK13,DBLP:journals/eaai/MalialisK15} examines the automated detection and mitigation of \gls{acr:ddos} attacks using the Sarsa \gls{acr:rl} algorithm.
 As a multiagent system, Marl agents are distributed at the edges of a network and adaptively learn a policy to control traffic \emph{without} explicit communication or sharing of policy updates.
 Agents reside at the \gls{acr:as}'s ingress points, and choose a packet drop probability for \emph{all inbound flows} from the discrete choices $a\in\left\{0.0,0.1,...,0.9\right\}$ \prllitact{} according to load measurements along their route to a protected server \prllitstate.

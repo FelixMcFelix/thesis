@@ -11,7 +11,7 @@ Each destination node $s$ has a maximum capacity, $U_s$.
 We assume that the deployment environment is a moderately complex software-defined network, because the paradigm offers features which can directly benefit RL agents acting within.
 The OpenFlow protocol allows a controller (or other authorised hosts) to install complex actions, forwarding rules and logic into a switch at runtime.
 Furthermore, networks of this kind more naturally enable the future use of \emph{network function virtualisation}, a technology which could allow relocation and easy installation of learners (e.g., as examined by \textcite{DBLP:journals/tnsm/JakariaRF19}).
-Agents communicate with their co-hosted OpenFlow-enabled switches---running a modified version of \emph{Open vSwitch} (OVS) \cite{open-vswitch}---to install probabilistic packet-drop rules.
+Agents communicate with their co-hosted OpenFlow-enabled switches---running a modified version of \gls{acr:ovs}~\parencite{open-vswitch,DBLP:conf/nsdi/PfaffPKJZRGWSSA15}---to install probabilistic packet-drop rules.
 
 Our system design applies to both software-defined and traditional networks of arbitrary shape and size.
 Only the ingress/egress nodes from a network need to be OpenFlow-enabled, as it is advantageous to perform filtering as close to a flow's source as possible.
