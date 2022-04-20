@@ -178,6 +178,7 @@ Agents are punished when the network is overloaded \emph{and} their team contrib
 %?? Recap their flaws, since they've been cut form every other aspect.
 %Our results show that their technique underperforms at high host density and when congestion-aware traffic dominates---that their results do not demonstrate this suggests an evaluation driven purely by traces (rather than live application dynamics).
 %?? Mention why congestion-aware traffic gets screwed.
+Applying filtering actions indiscriminately to all flows carried by a switch means that legitimate traffic is easily caught in the crossfire, indirectly harming harmless flows.
 Although their results appear competitive, their simulation environment uses only congestion-unaware \gls{acr:udp} traffic, in opposition to the realities of Internet traffic as discussed in \cref{sec:ddos-contributing-factors,adx:caida-traffic}.
 Congestion-aware protocols dominate in many networks; incorrectly applying a packet drop action imposes greater \emph{pushback}~\parencite{DBLP:journals/ccr/MahajanBFIPS02a} on these legitimate flows than it would on attack traffic.
 For congestion-aware traffic, this is non-negligible; when packet loss occurs with probability $p\ne0$, the Mathis equation~\parencite{DBLP:journals/ccr/MathisSMO97} states that TCP bandwidth is proportional to $1/\sqrt{p}$, while modern TCP Cubic is proportional to $1/p^{0.75}$~\parencite{rfc8312}.

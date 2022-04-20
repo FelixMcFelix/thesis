@@ -1,0 +1,41 @@
+\begin{tikzpicture}[
+	texts/.style = {text=black},
+	labeltexts/.style = {text=gray},
+	treeline/.style = {draw=uofgburgundy},
+	treenode/.style = {texts, circle, centered, fill=white, treeline},
+	load/.style = {fill=uofgcobalt},
+	loadline/.style = {draw=uofgcobalt, line width=0.75mm},
+	loadhide/.style = {fill=uofgcobalt!40!white},
+	external/.style = {fill=uofgrust},
+	externalhide/.style = {fill=uofgrust!40!white},
+	hideline/.style = {draw=uofgsandstone!40!white},
+	hidenode/.style = {treenode, hideline},
+	grow'=right
+]
+	\node [treenode, loadhide, label={[texts]above:Agent 1}] (mainagent) {};
+	\node [treenode, loadhide, right = of mainagent] (inner0) {};
+	\node [treenode, loadhide, above right = 0.2cm and 1cm of inner0] (inner1) {};
+	\node [hidenode, below right = 0.2cm and 1cm of inner0] (inner2) {};
+	\node [treenode, loadhide, below right = 0.2cm and 1cm of inner1] (inner3) {};
+	\node [treenode, loadhide, right = of inner3] (inner4) {};
+	\node [treenode, loadhide, above right = 0.2cm and 1cm of inner4, label={[texts]above:$s_0$}] (s0) {};
+	\node [hidenode, below right = 0.2cm and 1cm of inner4, label={[labeltexts]above:$s_1$}] (s1) {};
+	
+	\node [hidenode, above left = 0.2cm and 0.5cm of inner1, label={[labeltexts]above:Agent 2}] (agent2) {};
+	\node [hidenode, below left = 0.2cm and 0.5cm of inner2, label={[labeltexts]below:Agent 3}] (agent3) {};
+	
+	\draw[hideline, -] ($ (mainagent) + (-1,0) $) -- (mainagent);
+	\draw[hideline, -] ($ (agent2) + (-1,0) $) -- (agent2);
+	\draw[hideline, -] ($ (agent3) + (-1,0) $) -- (agent3);
+	\draw[hideline, -] (inner1) -- (agent2);
+	\draw[hideline, -] (inner2) -- (agent3);
+	
+	\draw[loadline, -] (mainagent) -- (inner0);
+	\draw[loadline, -] (inner0) -- (inner1);
+	\draw[hideline, -] (inner0) -- (inner2);
+	\draw[-] (inner1) -- (inner3);
+	\draw[hideline, -] (inner2) -- (inner3);
+	\draw[loadline, -] (inner3) -- (inner4);
+	\draw[loadline, -] (inner4) -- node [texts, above] {$U_{s_0}$} (s0) ;
+	\draw[hideline, -] (inner4) -- node [labeltexts, below] {$U_{s_1}$} (s1);
+\end{tikzpicture}
