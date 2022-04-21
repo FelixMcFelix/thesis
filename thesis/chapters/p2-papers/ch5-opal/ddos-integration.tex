@@ -42,7 +42,7 @@ Reward values would then be separately inserted by a modified INDDoS table.
 Reducing state-action latency (i.e., with \Coopfw) is useful for minimising the noise inherent in learning.
 However, an agent is limited by the fact that it can take at least one \gls{acr:rtt} for meaningful changes to occur in a flow's behaviour ($\mathcal{O}{\left(\si{\milli\second}\right)}$ in a transit \gls{acr:as} or \gls{acr:isp}).
 Accordingly, this use-case benefits most from an increase in \emph{throughput} using \Indfw{}.
-In this context, higher throughput means that network flows are more likely to be judged in every timestep, even when flow cardinality is high---making it more likely that changes in flow behaviour will be observed, acted on, and learned from.
+In this context, higher throughput means that network flows are more likely to be judged in every timestep, even when flow cardinality is high---making it more likely that changes in flow behaviour will be observed, acted on, and learnt from.
 
 Note that the \gls{acr:trs} scheduler is designed to handle large numbers of attack flows, combining seen state vectors over time while the asynchronous agent is itself busy.
 By design, a number of (attack) flows beyond the maximum throughput simply makes it take longer in expectation for a flow to be reassessed.

@@ -17,7 +17,7 @@ By adapting classical \gls{acr:rl} policy formats and algorithm choices to suit 
 Eliminating \gls{acr:pcie} and host stack overheads offered substantial latency benefits, and the parallelised Sarsa algorithm brought higher-throughput online learning (\stmtno{2}).
 In-network aggregation of per-packet statistics to histograms made the handling of high-rate timestamps feasible, and enabled a flow classification task with clear operational benefits (\stmtno{3}).
 
-What is far more interesting, however, are the wider takeaways and lessons learned in the development of this work, and by collecting together a wide family of solutions falling under the \gls{acr:ddn} or \gls{acr:pdp} umbrella.
+What is far more interesting, however, are the wider takeaways and lessons learnt in the development of this work, and by collecting together a wide family of solutions falling under the \gls{acr:ddn} or \gls{acr:pdp} umbrella.
 Each has its own impact on the design and deployment of the other.
 Equally, it's worth mulling over the horizon of networking capabilities and form factors in the short- and long-term.
 %Synthesis of implications, takeaways on design, deployment...
@@ -96,7 +96,7 @@ Transient network conditions make flow statistics noisier, pushing them away fro
 %Hiding outputs as appropriate to prevent model stealing and similar attacks [probably can't even see most of the time, but might be able to infer approx later?]).
 In closed loop circumstances, isolation is less clear.
 This is purely intuitive reasoning, and likely unsatisfactory, but they are the best I can offer barring further research tailored to the network problem-space.
-What the field needs instead is a set of quantitative bounds on how an attacker's input can affect learned models in reasonable scenarios.
+What the field needs instead is a set of quantitative bounds on how an attacker's input can affect learnt models in reasonable scenarios.
 
 %\section{The ghost of hardware yet to come}
 %Ooooo
@@ -127,7 +127,7 @@ While it is known that \gls{acr:ddos} attack strategies evolve in real time~\par
 In the wider Internet, aggregate changes in bandwidth and usage are likely easy enough to model~\parencite{DBLP:conf/anrw/BauerJHBC21}.
 But, barring historic case studies, estimating the effects of new protocols and \glspl{acr:cca} before their deployment is unlikely to be feasible.
 
-%?? problems: policy-space variation, and timescales, detection. i.e., seasonality in diurnal traffic probably counts as two `learned behaviours' to handle in the \emph{same policy}.
+%?? problems: policy-space variation, and timescales, detection. i.e., seasonality in diurnal traffic probably counts as two `learnt behaviours' to handle in the \emph{same policy}.
 %?? need to understand what problem-space variation really looks like: we can do it w/ traffic scales, attack patterns and protocol evolution less so.
 %?? need to quantify.
 %?? scaling up of gradient contributions, or exploration params like $\epsilon$.

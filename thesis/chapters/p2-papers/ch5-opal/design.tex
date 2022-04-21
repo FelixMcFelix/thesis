@@ -339,7 +339,7 @@ If a match is found, it computes and reduces by $\alpha$ the Sarsa \gls{acr:td} 
 Modification to other single-step algorithms such as \emph{Q-learning} would be simple, requiring only changes to the computation of $\delta_t$.
 The newest state-action-value tuple is then stored (\cref{alg:parsa:parctl-store}).
 
-The \emph{Minion} procedure processes a single request to retrieve and aggregate, or update, the action values learned for an input state over some subset of the policy tilings, \emph{tasks}.
+The \emph{Minion} procedure processes a single request to retrieve and aggregate, or update, the action values learnt for an input state over some subset of the policy tilings, \emph{tasks}.
 All minion threads cover the complete set of tilings between themselves.
 In the case that action inference is requested, the policy hit index is computed against the input state for each tiling in this thread's task list (\cref{alg:parsa:parminion-acthit}).
 As described above, each action value is atomically added to its matching position in the shared preference list \emph{values} (\crefrange{alg:parsa:parminion-liststart}{alg:parsa:parminion-listend}).

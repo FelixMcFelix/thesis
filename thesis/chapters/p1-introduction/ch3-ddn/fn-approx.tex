@@ -1,7 +1,7 @@
 The main goal of \gls{acr:ml} methods is to learn the function between a set of inputs and a set of outputs, for instance mapping histories of flow statistics into classifications in \gls{acr:ddn}.
-In most cases, we have some body of \emph{training data}---input-output pairs (supervised), inputs alone (unsupervised), or state-action-reward trajectories (\gls{acr:rl})---and require that such a learned function generalises well to unseen inputs, has reasonable accuracy, and is not especially costly to compute.
+In most cases, we have some body of \emph{training data}---input-output pairs (supervised), inputs alone (unsupervised), or state-action-reward trajectories (\gls{acr:rl})---and require that such a learnt function generalises well to unseen inputs, has reasonable accuracy, and is not especially costly to compute.
 Of course, given that we lack \emph{a priori} knowledge of the function's true structure or it may lack a closed-form expression, we must use some learnable \emph{approximation}.
-Such a learned function is then defined by a fixed structure (e.g., an \gls{acr:nn}'s architecture) and a \emph{parameter set} $\wvec{}$, which is typically a collection of real numbers.
+Such a learnt function is then defined by a fixed structure (e.g., an \gls{acr:nn}'s architecture) and a \emph{parameter set} $\wvec{}$, which is typically a collection of real numbers.
 Of particular importance is that the function approximations presented here (and in general) are differentiable with respect to their parameters, which allows for $\wvec{}$ to be trained as we discuss through \cref{sec:learning-an-approximation}.
 
 I discuss here some forms of function approximation which are pertinent to this thesis, and to \gls{acr:ddn} and \gls{acr:ml}/\gls{acr:rl} in general.
@@ -32,7 +32,7 @@ In addition, they are used for flow classification in \cref{chap:seidr} to make 
 \emph{Tile coding}~\parencite[pp.~\numrange{217}{221}]{RL2E} is a form of feature representation which converts input state $s$ into a sparse boolean feature vector $\operatorname{\mathbf{x}}(s)$.
 A tile-coded representation defines a collection of \emph{tile sets}---each a $d$-dimensional subset of input state.
 Each tile set then comprises a set of \emph{tilings}, overlapping $d$-dimensional grids with different offsets.
-Overall, this may be combined with an always-on \emph{bias tile}, which is a global estimate that can contain a reasonable starting point for unlearned parts of the state space.
+Overall, this may be combined with an always-on \emph{bias tile}, which is a global estimate that can contain a reasonable starting point for unlearnt parts of the state space.
 To compute an output value, input state is checked against every tile to identify which grid cell is activated (or \emph{hit})---each tile hit corresponds to an entry of $\operatorname{\mathbf{x}}(s)$ which is set to 1.
 As each tiling admits exactly 1 hit, $\operatorname{\mathbf{x}}(s)$ is a sparse boolean vector of fixed Hamming weight (i.e., equal to the total number of tilings).
 The parameter vector $\wvec{}$ then assigns a value to each tile, allowing us to compute the output $f_\mathit{tile}(s, \wvec{})$:

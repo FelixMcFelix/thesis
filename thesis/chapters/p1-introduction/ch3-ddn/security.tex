@@ -73,8 +73,8 @@ An alternative strategy is to directly modify the PPO algorithm, training agents
 \paragraph{Defences}
 While there is a great deal of churn in what defences will still be considered `valid' at any time, there are concrete guidelines on the evaluation of defences~\parencite{DBLP:journals/corr/abs-1902-06705} to aid in their development (particularly as earlier attempts at defence were not always considered as rigorously as they should be).
 For instance, an earlier proposed (though now defeated) defence was defensive distillation~\parencite{DBLP:conf/sp/PapernotM0JS16}.
-Ordinarily, distillation~\parencite{DBLP:journals/corr/HintonVD15} takes the softmax probability scores output by a given model, and applies these as the soft labels to be learned by a more compact \gls{acr:nn} architecture.
-For early evasion attacks, it sufficed to perform this without changing the target model's structure (selecting a higher softmax temperature) such that smoother decision boundaries would be learned, though this was invalidated by the above CW attacks.
+Ordinarily, distillation~\parencite{DBLP:journals/corr/HintonVD15} takes the softmax probability scores output by a given model, and applies these as the soft labels to be learnt by a more compact \gls{acr:nn} architecture.
+For early evasion attacks, it sufficed to perform this without changing the target model's structure (selecting a higher softmax temperature) such that smoother decision boundaries would be learnt, though this was invalidated by the above CW attacks.
 
 %?? Newest on these?~\parencite{DBLP:journals/corr/abs-1902-06705}. Attempts to offer concrete methodology in response to very variable analysis/testing and slow research on defences. Most defences posited in response to the rapid development of attacks are shown to be incorrectly or incompletely evaluated. ?? Human and machine classification/decision-making performance are tied in efficacy, while there remains a huge gap between sensitivity to adversarial examples. The norm is to assume attackers have white-box access, because this includes black-box defence.
 
@@ -148,7 +148,7 @@ This causes the target to be mapped to the same class as the hull, though takes 
 They differ from their precursors in that an attacker aims to keep the victim model's performance unchanged for all typical inputs, while an input of their choice maps to their desired output.
 An attacker may also have a model learn a `trigger' in the input (i.e., a relative sequence of state values, or a pair of glasses in an image) which immediately produces their desired label if it is present.
 These attacks are possible in black-box scenarios with little effort: consider that \citeauthor{DBLP:journals/corr/abs-1712-05526} are able to achieve both classes of attack in \numrange{5}{50} (versus a training set of size \num{600000}) without awareness of either the model or training data.
-White-box scenarios can make these learned triggers less obvious to an analyst, by including additional terms in the loss function to penalise cases where their feature activations are easy to discriminate from benign inputs~\parencite{DBLP:conf/eurosp/TanS20}.
+White-box scenarios can make these learnt triggers less obvious to an analyst, by including additional terms in the loss function to penalise cases where their feature activations are easy to discriminate from benign inputs~\parencite{DBLP:conf/eurosp/TanS20}.
 Concrete attacks have also been proposed, which target \gls{acr:fl}~\parencite{DBLP:conf/aistats/BagdasaryanVHES20} and \glspl{acr:gnn}~\parencite{DBLP:conf/uss/XiPJ021}.
 
 %In \gls{acr:ddn}...
@@ -177,13 +177,13 @@ In black-box scenarios, they explore the classification of input-output pairs se
 \subsection{Data extraction and privacy}\label{sec:data-extraction-and-privacy}
 A key consideration of many \gls{acr:ml} models is that their dense parameter sets encode an accurate, specialised, and \emph{monetarily expensive} logical transform---even if it can't be directly humanly interpreted.
 This expense arises through the processes required to collect and label input datasets, as well as the vast compute cost associated with training and hyperparameter optimisation in energy and hardware procurement.
-As a result, learned models themselves have high monetary value as intellectual property.
+As a result, learnt models themselves have high monetary value as intellectual property.
 \emph{Model extraction attacks} allow an attacker to either directly steal knowledge of the architecture and parameter set, or to train a functionally equivalent model using input and output pairs (analogous to distillation).
 An attacker typically aims to derive a new model with similar or greater accuracy on the same workloads at minimal effort.
 Furthermore, they make for an excellent precursor to the above evasion and poisoning attacks as a means to elevate a black-box adversary to a white-box one---in such scenarios it is preferable to pursue model fidelity (i.e., matching correct decisions and mistakes alike).
 
 In general, these attacks are launched through acquiring soft labels (i.e., class probabilities) for a representative set of input points from a victim model~\parencite{DBLP:conf/uss/TramerZJRR16}, and are also applicable to more models than \glspl{acr:nn}.
-The presence of soft labels essentially provides strong knowledge about the class and decision boundaries which have been learned by the victim model, simplifying the training of a new cloned model.
+The presence of soft labels essentially provides strong knowledge about the class and decision boundaries which have been learnt by the victim model, simplifying the training of a new cloned model.
 \Textcite{DBLP:conf/uss/JagielskiCBKP20} examine the extraction of high-fidelity models in greater depth, finding that this distillation-like approach is somewhat limited by non-determinism in the \gls{acr:sgd} procedure and random initialisation of $\wvec{}$ (i.e., peak \qty{93}{\percent} fidelity).
 Their analytic extraction of truly functionally equivalent models based on ReLU behaviour is limited to 2-layer models at this stage.
 Exact model theft is most possible when directly monitoring \gls{acr:pcie} bus traffic, i.e., as performed by a compromised or outright adversarial cloud host provider.
@@ -205,7 +205,7 @@ Construction of a viable query dataset with no knowledge of the victim model's t
 %\textcite{DBLP:conf/uss/TramerZJRR16,DBLP:conf/uss/JagielskiCBKP20} have shown that visibility of input-output pairs can allow neural network parameters to be reverse-engineered, and that attacks computed on these surrogates transfer to the target.
 
 %While it is feasible that an attacker could start with a \emph{white-box} understanding of your model to aid in evasion, a more feasible situation is the case where they do not.
-%\textcite{DBLP:conf/uss/TramerZJRR16} have shown that attackers can infer many classes of learned models from observation (\emph{model extraction attacks}), allowing evasion attacks, model cloning or discovery of confidential training data characteristics.
+%\textcite{DBLP:conf/uss/TramerZJRR16} have shown that attackers can infer many classes of learnt models from observation (\emph{model extraction attacks}), allowing evasion attacks, model cloning or discovery of confidential training data characteristics.
 %They are able to demonstrate model extraction on logistic regressors, SVMs, MLPs and NNs with and without confidence values.
 %Furthermore, from their retrained models they are able to extract images of faces which are ``visually indistinguishable'' from the real training data of a facial recognition classifier.
 

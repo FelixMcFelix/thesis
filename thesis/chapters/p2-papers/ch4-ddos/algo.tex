@@ -119,7 +119,7 @@ These choices reflect where the bulk of transmitted bytes in each traffic model 
 While the use and definition of $g(\cdot)$ appears nebulous, there are many possible ways to infer this quantity in practice.
 End-host servers may use canary flows or other active measurements, or employ existing quality-of-experience metrics in the case of \gls{acr:voip} services such as lost packets, reorderings, and jitter.
 \glspl{acr:as} and transit networks may make use of reports received from downstream networks, e.g., over the \gls{acr:dots} protocol~\parencite{ietf-dots-use-cases-17}.
-Even if such heuristics or perfect knowledge aren't available in deployment, a sufficiently well-trained agent needs only to greedily follow the policy it has learned from training, allowing pre-training by a simulated environment (with perfect knowledge) to transfer to reality.
+Even if such heuristics or perfect knowledge aren't available in deployment, a sufficiently well-trained agent needs only to greedily follow the policy it has learnt from training, allowing pre-training by a simulated environment (with perfect knowledge) to transfer to reality.
 
 If a network is believed to be vulnerable to indirect attacks, such as link-flooding attacks, we may use the following reward:
 \begin{equation}

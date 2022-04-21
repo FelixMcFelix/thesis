@@ -1436,7 +1436,8 @@ Detection and mitigation solutions must be aware of these eventualities to prote
 %?? Variability within protocols.
 
 \subsection{Defences}
-According to \textcite{DBLP:conf/imc/JonkerKKRSD17}, the most-used techniques in deployment are \emph{DDoS Protection Services}.\sidenote{?? Para before this. Mention one or two of the old-school ways brought up in the DDoS section like AIMD, Pushback...}
+According to \textcite{DBLP:conf/imc/JonkerKKRSD17}, the most-used techniques in deployment are \emph{DDoS Protection Services}.
+%\sidenote{?? Para before this. Mention one or two of the old-school ways brought up in the DDoS section like AIMD, Pushback...}
 While typically proprietary in nature, we see a split between \emph{cloud services}, \emph{in-line systems} (i.e., middleboxes) and hybrids thereof.
 Cloud services (traffic scrubbers) are known to be most appropriate for handling volumetric attacks and are externally hosted, analysing and filtering out malicious traffic by having services redirect all inbound communication for processing.
 The act of redirection is often made cheaper and/or feasible by the use of selective \gls{acr:bgp} advertisement or \gls{acr:dns} modification, aided by reverse proxy or \emph{generic routing encapsulation}.

@@ -219,7 +219,7 @@ Consider \cref{fig:state-slip}: the traditional formulation of an \gls{acr:mdp} 
 The reality is that state information takes time to traverse the network, service times are offset by how quickly hosts respond to interrupts and deserialise requests, and action preference lists are often computed via expensive policy approximations.
 Action installation also incurs costs in fields such as network administration, initially to contact the controller and then for those actions to be installed via the control plane.
 
-These delays (and variance thereof) add noise to the state-action mapping being learned, which has a potent reduction to learning rate and final accuracy, even for simple grid world tasks according to \textcite{DBLP:journals/firai/TravnikMSP18}.
+These delays (and variance thereof) add noise to the state-action mapping being learnt, which has a potent reduction to learning rate and final accuracy, even for simple grid world tasks according to \textcite{DBLP:journals/firai/TravnikMSP18}.
 They in turn show that reordering algorithmic steps can reduce these costs for online single-step algorithms, but that reducing this further requires detailed agent-environment co-design.
 %This principle has influenced the design of real network use cases, such RL-based congestion-control algorithms~\parencite{DBLP:journals/corr/abs-1910-04054}, showing that asynchrony is necessary for high-speed applications.
 Achieving this often requires that state measurements are combined or coalesced~\parencite{DBLP:journals/corr/abs-1910-04054,DBLP:journals/tnsm/SimpsonRP20} while expensive computations are ongoing.
@@ -237,7 +237,7 @@ For instance, `stopping the world' in the algorithmic sense causes significant p
 		\resizebox{0.75\linewidth}{!}{\input{diagrams/rl/sa-slip2}}
 		\caption{Reality: costs of measurement and action lead to \emph{state drift}---over a time delay $t_1+t_2+t_3$, inaction transforms state $S$ into $S'$.}
 	\end{subfigure}
-	\caption[Illustrating state slippage in an asynchronous RL agent.]{One issue which arises when we aim to introduce \gls{acr:rl} into temporally fine-grained environments is that the \gls{acr:mdp} formulation can fail to capture how state drifts during computation. Input states may take some time to acquire and transmit to an agent over the network ($t_1$), the function approximator itself has an associated computational cost for inference ($t_2$), and enacting said action can involve network latency \emph{and} expensive table preprocessing in the case of hardware P4 implementations ($t_3$). As a result, the system actually undergoes the transition $(S', A)\rightarrow(S'')$, introducing noise or variance into the value function being learned. \label{fig:state-slip}}
+	\caption[Illustrating state slippage in an asynchronous RL agent.]{One issue which arises when we aim to introduce \gls{acr:rl} into temporally fine-grained environments is that the \gls{acr:mdp} formulation can fail to capture how state drifts during computation. Input states may take some time to acquire and transmit to an agent over the network ($t_1$), the function approximator itself has an associated computational cost for inference ($t_2$), and enacting said action can involve network latency \emph{and} expensive table preprocessing in the case of hardware P4 implementations ($t_3$). As a result, the system actually undergoes the transition $(S', A)\rightarrow(S'')$, introducing noise or variance into the value function being learnt. \label{fig:state-slip}}
 \end{figure}
 
 \paragraph{Tooling}

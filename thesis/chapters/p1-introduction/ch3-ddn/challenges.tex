@@ -52,8 +52,8 @@ As a side effect, tweaking a model to correct, modify, or improve behaviour is a
 Interpretability in general \gls{acr:ml} has attracted attention as a research goal in its own right.
 Many classical \gls{acr:ml} approaches such as \glspl{acr:svm} or decision trees offer sensible rule sets or decision boundaries~\parencite{DBLP:conf/pkdd/MolnarCB20,interpretable-ml}, yet \gls{acr:nn}-based function approximation presents very particular challenges.
 These comprise repeated high-dimensional linear transforms of input data (e.g., by matrices containing thousands of values), interposed with non-linear activation functions.
-\glspl{acr:cnn} and \glspl{acr:lstm} complicate this logic further by introducing learned convolution filters and temporal relationships, respectively.
-On some data classes such as images, it is possible to visualise learned feature activations~\parencite{cnn-features-distil}, which typically manifest as shapes or patterns that make some degree of sense to a human observer.
+\glspl{acr:cnn} and \glspl{acr:lstm} complicate this logic further by introducing learnt convolution filters and temporal relationships, respectively.
+On some data classes such as images, it is possible to visualise learnt feature activations~\parencite{cnn-features-distil}, which typically manifest as shapes or patterns that make some degree of sense to a human observer.
 Network state spaces, however, are far less intuitive, so feature activations in NNs are less obviously meaningful and still fail to allow configurability.
 Tools such as \emph{LIME}~\parencite{DBLP:conf/kdd/Ribeiro0G16} can reveal the relative importance of each feature in such cases, but it can still require in-depth testing to realise that (and not \emph{why}) an agent never chooses some actions in spite of their optimality~\parencite{DBLP:conf/sigcomm/DethiseCK19}.
 %?? Interpretability, particularly for more powerful fn approxes

@@ -129,7 +129,7 @@ I conclude with some discussion on the significance of the results and wider sec
 \section{Summary}\label{sec:ddos-summary}
 Through this chapter, we have discussed reinforcement learning and how it can be used to approach the task of \gls{acr:ddos} prevention, lending credence to one of the claims in the initial thesis statement: \superrecallthesis{1}.
 The key to doing so was to study the dynamics of the network itself---its behaviours, and realistic recreations thereof---to detect operational flaws in existing \gls{acr:rl} and algorithmic works.
-In turn, I designed different action models built upon a shared (and justified) model: making decisions on a per-flow or per-source basis, and relying upon learned policies to differentiate congestion-aware and -unaware flows that methods like SPIFFY ignore.
+In turn, I designed different action models built upon a shared (and justified) model: making decisions on a per-flow or per-source basis, and relying upon learnt policies to differentiate congestion-aware and -unaware flows that methods like SPIFFY ignore.
 
 We identified weaknesses in past work, recommending an \gls{acr:rl} agent design which acts per flow, and have outlined the algorithmic and engineering choices needed to make its deployment feasible.
 Supporting this, we've examined the presented feature space in depth, offering quantitative and qualitative justification for each choice, while also expanding the global state in past Marl approaches to support arbitrary network topologies.
@@ -139,7 +139,7 @@ To make real-world deployment possible in the face of obviously adversarial inpu
 By empirical evaluation, we've seen that these new agent designs advance the state of the art in \gls{acr:rl}-based \gls{acr:ddos} prevention, with \emph{Guarded} agents showing the most promise for future evaluation.
 
 %We hope it is clear that reinforcement learning holds promise and can inspire further innovation.
-%It allows us to offer distinct advantages above existing works, such as protocol-agnostic DDoS flow detection, flexible deployment, and automatically learned low-overhead decision-making---without requiring many of the network resources or capabilities that other techniques rely upon.
+%It allows us to offer distinct advantages above existing works, such as protocol-agnostic DDoS flow detection, flexible deployment, and automatically learnt low-overhead decision-making---without requiring many of the network resources or capabilities that other techniques rely upon.
 %It's hoped that more research in this direction will open the door to works which \emph{respect the complexity of the network}; evolving topologies, natural change in traffic and protocol distributions, and the mutation of attacks.
 
 While this adds another positive note to the score of \gls{acr:ddn} use cases seen throughout \cref{sec:use-cases}, what I must stress is that this chapter emphasises the value of \emph{co-design} and true subject-matter expertise.
