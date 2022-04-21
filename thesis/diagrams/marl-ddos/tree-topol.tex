@@ -1,0 +1,42 @@
+\begin{tikzpicture}[
+	texts/.style = {text=black},
+	labeltexts/.style = {text=uofgsandstone},
+	treeline/.style = {draw=uofgburgundy},
+	treenode/.style = {texts, circle, centered, fill=white, treeline},
+	load/.style = {fill=uofgcobalt},
+	loadhide/.style = {fill=uofgcobalt!40!white},
+	external/.style = {fill=uofgrust},
+	externalhide/.style = {fill=uofgrust!40!white},
+	hideline/.style = {draw=uofgsandstone!40!white},
+	hidenode/.style = {treenode, hideline},
+	grow'=right
+]
+	\node[treenode, label={[texts]above:Server}] (root) {}
+	child [treeline] { node [treenode, label={[texts]above:Core}] (sswitch) {}
+		child [treeline] { node [treenode, label={[texts]above:Leader}] (teaml) {} 
+			child [treeline] { node [treenode, label={[texts]above:Intermediate}] (inter) {}
+				child [treeline] { node [treenode, load, label={[texts]above:Agent/Egress}] (agent) {}
+					child [treeline] { node [treenode, external] (extern) {}
+						child [treeline] { node [treenode, external, label={[texts]above:Host}] (host) {} }
+						child [hideline] { node [hidenode, externalhide] (endhost) {} }
+					}
+				}
+				child [hideline] { node [hidenode, loadhide] (endagent) {} }
+			}
+			child [hideline] { node [hidenode] (endinter) {} }
+		}
+		child [hideline] { node [hidenode] (endteaml) {} }
+		edge from parent
+		node[below, labeltexts] {$U_s$}
+	};
+	
+	%\draw[-] (teaml) -- (endteaml);
+	\node [labeltexts] (kdots) at ($(teaml)!0.5!(endteaml)$) {$\rvdots$};
+	\node [labeltexts, right = -0.1cm of kdots] {$k$};
+	\node [labeltexts] (ldots) at ($(inter)!0.5!(endinter)$) {$\rvdots$};
+	\node [labeltexts, right = -0.1cm of ldots] {$\ell$};
+	\node [labeltexts] (mdots) at ($(agent)!0.5!(endagent)$) {$\rvdots$};
+	\node [labeltexts, right = -0.1cm of mdots] {$m$};
+	\node [labeltexts] (ndots) at ($(host)!0.5!(endhost)$) {$\rvdots$};
+	\node [labeltexts, right = -0.1cm of ndots] {$n$};
+\end{tikzpicture}

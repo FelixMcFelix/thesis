@@ -1,7 +1,7 @@
-We now examine the performance of our two new models (\emph{Instant}, \emph{Guarded}) as compared against existing RL work (\emph{Marl}) and\emph{SPIFFY} under different traffic behaviour and topologies, varying the host-to-learner ratio $n$ and environment.
+We now examine the performance of our two new models (\emph{Instant}, \emph{Guarded}) as compared against existing \gls{acr:rl} work (\emph{Marl}) and\emph{SPIFFY} under different traffic behaviour and topologies, varying the host-to-learner ratio $n$ and environment.
 %?? Probably best just to look at top level stuff, and THEN a simplified comparison for each intended improvement (like banded rewards).
 %Additionally, we examine the performance effects of environmental characteristics and potential improvements: negative reinforcement, the case where one agent makes all decisions, and pre-training on individual features.
-We present the average rewards for all combinations of these factors in \crefrange{tab:av-vals}{tab:av-ecmp-vals}---providing a rough idea of expected performance, with the highest-performing model in bold and the best RL-based model underlined.
+We present the average rewards for all combinations of these factors in \crefrange{tab:av-vals}{tab:av-ecmp-vals}---providing a rough idea of expected performance, with the highest-performing model in bold and the best \gls{acr:rl}-based model underlined.
 Average rewards take into account any portions of time that an agent allows illegal system states.
 Several plots augment this, illustrating peak performance or the amount of time which an agent requires to learn.
 
@@ -9,17 +9,17 @@ Several plots augment this, illustrating peak performance or the amount of time 
 	\centering
 	\caption{Average reward for combinations of model, host density and traffic class with a single destination.\label{tab:av-vals}}
 	
-	\resizebox{0.8\linewidth}{!}{
+%	\resizebox{0.8\linewidth}{!}{
 		\expandableinput tables/marl/tnsm-tree-avg-reward-spiffy.tex
-	}
+%	}
 \end{table}
 \begin{table}
 	\centering
 	\caption{Average reward for combinations of model, host density and traffic class with multiple destinations.\label{tab:av-ecmp-vals}}
 	
-	\resizebox{0.8\linewidth}{!}{
+%	\resizebox{0.8\linewidth}{!}{
 		\expandableinput tables/marl/tnsm-ecmp-avg-reward-spiffy.tex
-	}
+%	}
 \end{table}
 
 \subsection{Congestion-unaware traffic}
@@ -48,8 +48,8 @@ Several plots augment this, illustrating peak performance or the amount of time 
 %\end{figure}
 \begin{figure}
 	\centering
-	\includegraphics[width=0.75\linewidth]{plots/marl/tnsm-udp-box-separate}
-	\caption{
+	\includegraphics[width=\linewidth]{plots/marl/tnsm-udp-box-separate}
+	\caption[Online performance for Opus benign traffic in a single-destination network, multi-agent mode.]{
 		Online performance for Opus benign traffic in a single-destination network, multi-agent mode.
 %		Marl++ offers a marked improvement (a peak $\sim$\SI{30}{\percent} more benign traffic arrives unimpeded) at small $n$, and remains marginally ahead of its predecessor by $n=16$, though both have undergone a significant drop in effectiveness.
 		\emph{Instant} outperforms Marl for $n \in \{4, 8\}$ (with higher variance), but performs similarly to Marl at $n\in \{2, 16\}$.
@@ -102,7 +102,7 @@ This trend reverses for the \emph{Guarded} model, which improves as $n$ increase
 %?? Discuss multi-dest topol once all results available.
 When defending multiple destinations, we see a sharp decrease in the effectiveness of all agent designs.
 Our new agent designs become more effective as $n$ increases, while Marl's effectiveness is roughly constant (aside from the outlier at $n=12$).
-Interestingly, SPIFFY is unable to effectively protect constant bitrate traffic.
+Interestingly, SPIFFY is unable to effectively protect \gls{acr:cbr} traffic.
 
 \subsection{Congestion-aware traffic}
 %\begin{figure}
@@ -118,9 +118,9 @@ Interestingly, SPIFFY is unable to effectively protect constant bitrate traffic.
 %\end{figure}
 \begin{figure}
 	\centering
-	\includegraphics[width=0.75\linewidth]{plots/marl/tnsm-tcp-box-single}
-	\caption{
-		Online performance for HTTP benign traffic in a single-destination network, single-agent mode.
+	\includegraphics[width=\linewidth]{plots/marl/tnsm-tcp-box-single}
+	\caption[Online performance for HTTP benign traffic in a single-destination network, single-agent mode.]{
+		Online performance for \gls{acr:http} benign traffic in a single-destination network, single-agent mode.
 		\emph{Instant} and \emph{Guarded} exhibit similar efficacy at $n=2$, protecting less traffic than Marl.
 		Only \emph{Guarded}'s performance rapidly increases with $n$, achieving a considerably better median and lower variance than the other models.
 		The longer tails of outliers typically indicate the longer training time the new models require---we observe that \emph{Guarded} typically has considerably lower variance once it has converged on a stable policy.
@@ -139,11 +139,11 @@ Interestingly, SPIFFY is unable to effectively protect constant bitrate traffic.
 %\end{figure}
 \begin{figure}
 	\centering
-	\includegraphics[width=0.75\linewidth]{plots/marl/tnsm-tcp-16-single}
-	\caption{
-		Online performance of standard and single-agent models in a single-destination network with $n=16$ hosts per egress point, HTTP traffic.
+	\includegraphics[width=\linewidth]{plots/marl/tnsm-tcp-16-single}
+	\caption[Online performance of standard and single-agent models in a single-destination network with $n=16$ hosts per egress point, HTTP traffic.]{
+		Online performance of standard and single-agent models in a single-destination network with $n=16$ hosts per egress point, \gls{acr:http} traffic.
 		At this level of host density, \emph{Guarded} reaches higher peak performance sooner and is considerably more consistent throughout the episode.
-		\emph{Guarded} benefits greatly from information sharing, converging to protect around \SI{75}{\percent} of TCP traffic within \SI{100}{\second}.
+		\emph{Guarded} benefits greatly from information sharing, converging to protect around \qty{75}{\percent} of \gls{acr:tcp} traffic within \qty{100}{\second}.
 		The \emph{Instant} model converges to Marl's level of performance.
 %		With a single agent, Marl++ shows worse performance, while SPF improves significantly and continues to learn well past annealing $\epsilon \rightarrow 0$.
 		\label{fig:tcp-tree-16}
@@ -182,14 +182,14 @@ Interestingly, SPIFFY is unable to effectively protect constant bitrate traffic.
 %	}
 %\end{figure}
 
-\Cref{tab:av-vals} shows that Marl offers a low (though fairly consistent) level of protection for TCP traffic, which the \emph{Instant} agent offers no substantial improvement over.
-However, \emph{Guarded} agents offer a remarkable improvement for this class of traffic, particularly when experience can be shared---offering a \SI{2.21}{$\!\times$} improvement over the state-of-the art during training, which is made clearer in \cref{fig:tcp-tree-box}.
-\Cref{fig:tcp-tree-16} shows that this model can protect a peak \SI{80}{\percent} of TCP traffic (\SI{2.5}{$\!\times$} improvement) after just \SI{100}{\second}, but also that all of the new models require considerably longer than Marl to learn their best-achieving policy.
+\Cref{tab:av-vals} shows that Marl offers a low (though fairly consistent) level of protection for \gls{acr:tcp} traffic, which the \emph{Instant} agent offers no substantial improvement over.
+However, \emph{Guarded} agents offer a remarkable improvement for this class of traffic, particularly when experience can be shared---offering a \qty{2.21}{\times} improvement over the state-of-the art during training, which is made clearer in \cref{fig:tcp-tree-box}.
+\Cref{fig:tcp-tree-16} shows that this model can protect a peak \qty{80}{\percent} of TCP traffic (\qty{2.5}{\times} improvement) after just \qty{100}{\second}, but also that all of the new models require considerably longer than Marl to learn their best-achieving policy.
 %SPF reaches a stronger plateau before \emph{both}, remaining more consistent and appearing to continue learning.
 %?? Discuss multi-dest topol once results available.
-We observe that the same trends present themselves in the multi-destination topology: \emph{Guarded} remains the best fit for TCP, in both training modes.
+We observe that the same trends present themselves in the multi-destination topology: \emph{Guarded} remains the best fit for \gls{acr:tcp}, in both training modes.
 Crucially, the rigid tree of learners and teams which define Marl, along with its lack of action granularity, seem to be a poor fit in this environment.
-{\color{revisiontext}In both cases, SPIFFY greatly outperforms the RL-based methods.}
+In both cases, SPIFFY greatly outperforms the \gls{acr:rl}-based methods.
 
 %\subsection{Single-agent performance}
 %Making all decisions with a single agent is roughly equivalent to having a zero-cost communication channel between each pair of agents, theoretically allowing faster training by giving each agent more experience.
@@ -197,14 +197,14 @@ Crucially, the rigid tree of learners and teams which define Marl, along with it
 %Single-agent SPF almost consistently outperforms Marl.
 %We discuss our conjectures for why this reversal occurs in \cref{sec:discussion}.
 
-\subsection{Increased Attack Volume}\label{sec:results-attack-volume}
-To assess the effect of larger volumes of attack traffic, we increase an attacker's output by various factors, supposing $n=16$ with HTTP traffic (\emph{Guarded}, Single); \cref{tab:atk-vol} records the expected rate of attack and average performance.
+\subsection{Increased attack volume}\label{sec:results-attack-volume}
+To assess the effect of larger volumes of attack traffic, we increase an attacker's output by various factors, supposing $n=16$ with \gls{acr:http} traffic (\emph{Guarded}, Single); \cref{tab:atk-vol} records the expected rate of attack and average performance.
 The initial increase in traffic volume causes the steepest reduction in performance (due to the increased cost of incorrect action), though performance levels out as attack traffic increases.
 
 \begin{table}
 	\centering
 	\caption{Average reward versus attack volume.\label{tab:atk-vol}}
-\resizebox{0.45\linewidth}{!}{
+%\resizebox{0.45\linewidth}{!}{
 \begin{tabular}{@{}SSS@{}}
 	\toprule\multicolumn{1}{c}{Factor} & \multicolumn{1}{c}{$\mathbb{E}\left[V_{\mathit{attack}}\right]$ (\si{\mega\bit\per\second})} & \multicolumn{1}{c}{Reward} \\ \midrule
 	1.5 & 633.6 & 0.671 \\
@@ -214,18 +214,18 @@ The initial increase in traffic volume causes the steepest reduction in performa
 	3.5 & 1478.4 & 0.600 \\
 	\bottomrule
 \end{tabular}
-}
+%}
 \end{table}
 
-\subsection{Computational Cost}
+\subsection{Computational cost}
 %?? Consider talking about the execution times of the old MARL approach here? They're real nice (as expected), so we have lots of room to play around with while (hopefully) remaining under the 1ms target time given by \textcite{DBLP:conf/sigcomm/ChenL0L18}.
 
 %Overall, each episode takes around \SI{10}{\minute} to run, while each set of \num{10} requires around \SI{2}{\hour} due to additional set-up/tear-down costs associated with mininet.
-Measurements from each of these experiments indicated that the cost of computing any action is typically within \SIrange{80}{100}{\micro\second} per flow.
+Measurements from each of these experiments indicated that the cost of computing any action is typically within \qtyrange{80}{100}{\micro\second} per flow.
 This is reassuring when measured alongside the insights from other work.
-\Textcite{DBLP:conf/sigcomm/ChenL0L18} observe that, ideally, actions must be computed and taken within \SI{1}{\milli\second} to have a meaningful affect on short flows.
+\Textcite{DBLP:conf/sigcomm/ChenL0L18} observe that, ideally, actions must be computed and taken within \qty{1}{\milli\second} to have a meaningful effect on short flows.
 %Most flows are short, and flow-size follows a heavy-tailed distribution.
 That our starting point falls significantly below this threshold allows us to safely consider more costly actions or larger state spaces, which would typically increase the computational cost.
 This cost is constant and independent of network size.
-As discussed in \cref{sec:systems-considerations}, we are able to judge 3 flows before this deadline: the difference is primarily accounted for by serialisation/communication delays and single-threaded processing in the Python language.
+As discussed in \cref{sec:systems-considerations}, we are able to judge \num{3} flows before this deadline: the difference is primarily accounted for by serialisation/communication delays, learning logic, and single-threaded processing in the Python language.
 %?? TODO: update with modern numbers...

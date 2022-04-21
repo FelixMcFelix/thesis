@@ -1,26 +1,26 @@
 %Traffic is played back from hosts via Tcpreplay at a bandwidth assigned uniformly from a `good' or `bad' distribution, each using the same pcap file with source and destination IP addresses rewritten.
 
-We compare our work most naturally against MARL, introduced by \textcite{DBLP:journals/eaai/MalialisK15}, the state-of-the-art in RL-based DDoS prevention.
-We are most interested in seeing how their approach contrasts with ours across different topologies and workloads.
-Different network environments will also impose different levels of host density, where popular web servers may have orders of magnitude more clients than egress points from their network---we aim to see how these characteristics affect performance and learning rate.
-Marl is known to outperform the AIMD \cite{DBLP:journals/ton/YauLLY05} strategy, yet the state of the art has long since moved on.
-To paint a more current picture, we compare our work against an effective modern approach, SPIFFY \cite{DBLP:conf/ndss/KangGS16}.
+This work is most naturally compared against Marl, introduced by \textcite{DBLP:journals/eaai/MalialisK15}, the state-of-the-art in \gls{acr:rl}-based \gls{acr:ddos} prevention.
+We are most interested in seeing how their approach contrasts with the new agent designs across different topologies and workloads.
+Different network environments will also impose different levels of host density, where popular web servers may have orders of magnitude more clients than egress points from their network---I aim to show how these characteristics affect performance and learning rate.
+Marl is known to outperform the AIMD~\parencite{DBLP:journals/ton/YauLLY05} strategy, yet the state of the art has long since moved on.
+To paint a more current picture, we compare our work against an effective modern approach, SPIFFY~\parencite{DBLP:conf/ndss/KangGS16}.
 SPIFFY tests a proportion of flows by routing them through an alternate path with higher bandwidth, observing how their speed changes some time later.
-This comparison lets us position our new agent designs against the state of the art, observing that SPIFFY has a similar mode of interaction to RL-based systems (taking action, observing an effect, and acting once again) and does not rely on protocol characteristics or signatures.
+This comparison lets us position our new agent designs against the state of the art, observing that SPIFFY has a similar mode of interaction to \gls{acr:rl}-based systems (taking action, observing an effect, and acting once again) and does not rely on protocol characteristics or signatures.
 We make the simplifying assumption that a suitable unused path exists (with identical bandwidth to the server's link).
-We test \SI{10}{\percent} of active flows at a time (according to the authors' observation that there is a factor of \num{10} difference between the ideal and achieved bandwidth expansion), excluding flows below \SI{50}{\kilo\bit\per\second} and requiring a \SI{3}{$\! \times$} expansion from legitimate flows, making a judgement after \SI{5}{\second}.
+We test \qty{10}{\percent} of active flows at a time (according to the authors' observation that there is a factor of \qty{10}{\times} difference between the ideal and achieved bandwidth expansion), excluding flows below \qty{50}{\kilo\bit\per\second} and requiring a \qty{3}{\times} expansion from legitimate flows, making a judgement after \qty{5}{\second}.
 
-To test this, we made use of both traffic models introduced in \cref{sec:a-new-normal} (OPUS and TCP), both topologies discussed below (1-dest vs Fat-Tree), and vary the amount of hosts typically communicating over each agent's ingress/egress node.
-Additionally, we evaluated our new models in multi-agent mode (\emph{separate}, no model sharing), and in single-agent mode (\emph{single}, 0-cost perfect information sharing).
+To test this, we made use of both traffic models introduced in \cref{sec:a-new-normal} (Opus and \gls{acr:tcp}), both topologies discussed below (1-dest vs.\ Fat-Tree), and vary the amount of hosts typically communicating over each agent's ingress/egress node.
+Additionally, we evaluated our new models in multi-agent mode (\emph{separate}, no model sharing), and in single-agent mode (\emph{single}, zero-cost perfect information sharing).
 In each case, the algorithm's performance was averaged over \num{10} episodes of length \num{10000} timesteps (setting each agent's $\wvec{}=\mathbf{0}$ between episodes).
-Host allocations at the beginning of each episode were generated pseudorandomly to ensure fairness between episodes---a host is malicious with probability $\operatorname{P}(\mathit{malicious})$, and is benign otherwise.
+Host allocations at the beginning of each episode were generated pseudorandomly to ensure fairness between episodes---a host is malicious with probability $\operatorname{P}\left(\mathit{malicious}\right)$, and is benign otherwise.
 Benign hosts generate traffic from either \cref{sec:tcp-http-traffic-model,sec:udp-opus-traffic-model} depending on the experiment, while malicious hosts generate traffic according to \cref{sec:attack-traffic-model} (both at experiment-dependent rates).
 
-All experiments were executed on Ubuntu 18.04.2 LTS (GNU/Linux 4.4.3-040403-generic x86\_64), using a 4-core Intel Core i7-6700K (clocked at \SI{4.2}{\giga\hertz}) and \SI{32}{\gibi\byte} of RAM.
-All code underpinning these findings is available on a public repository\footnote{\url{https://github.com/FelixMcFelix/rln-dc-ddos-paper}}.
+All experiments were executed on Ubuntu 18.04.2 LTS (GNU/Linux 4.4.3-040403-generic x86\_64), using an Intel Core i7-6700K (\qtyproduct[product-units=single]{4 x 4.2}{\giga\hertz}) which had \SI{32}{\gibi\byte} of \gls{acr:ram}.
+%All code underpinning these findings is available on a public repository\footnote{\url{https://github.com/FelixMcFelix/rln-dc-ddos-paper}}.
 %All code underpinning these findings is available on a public repository.\footnote{Private until publication.}
 
-\subsection{Single Destination}\label{sec:single-dest}
+\subsection{Single destination}\label{sec:single-dest}
 %?? Move description of tree topol to here.
 The network is tree-structured, where one server $s$ connects through a dedicated switch to $k$ team leader switches, each connected to $\ell$ intermediate switches, which in turn each connect to $m$ egress switches.
 We then have $N_{\mathit{hosts}} = k \ell m n$.
@@ -28,8 +28,8 @@ We then have $N_{\mathit{hosts}} = k \ell m n$.
 %Although \citeauthor{DBLP:journals/ccr/MahajanBFIPS02a}, the originators of this topology, make it clear that it exists as a fairly unrepresentative example \cite{DBLP:journals/ccr/MahajanBFIPS02a}, it remains the case that such a network topology allows for functional testing, and indeed is illustrative of one way in which attack traffic might aggregate in the network.
 %It is hard, however, to argue its relevance to specific classes of victim or to reason about the interactions it might have with dependent applications.
 %We aim to address this through \cref{sec:performance-in-an-emulated-environment}.
-We configured the network topology using $k=2$ teams, $\ell=3$ intermediate nodes per team, $m=2$ agents per intermediate node, and $n \in \{2, 4, 8, 16\}$ hosts per learner.
-This is a slight simplification of \citeauthor{DBLP:journals/eaai/MalialisK15}'s \textquote{online} experiment \cite{DBLP:journals/eaai/MalialisK15}, choosing fewer teams but remaining as a single server with a fan-out network.
+The network topology was configured using $k=2$ teams, $\ell=3$ intermediate nodes per team, $m=2$ agents per intermediate node, and $n \in \{2, 4, 8, 16\}$ hosts per learner.
+This is a slight simplification of \Textcite{DBLP:journals/eaai/MalialisK15}'s \textquote{online} experiment, choosing fewer teams but remaining as a single server with a fan-out network.
 %The algorithm parameters were set at $\gamma=0$ (leading to opportunistic behaviour), $\alpha=0.05$, having linearly annealed $\epsilon=0.2 \rightarrow 0$ by $t=3000$.
 %Benign and malicious hosts uploaded between \SIrange{0}{1}{\mega\bit\per\second} and \SIrange{2.5}{6}{\mega\bit\per\second} respectively, and hosts were redrawn at each episode's start with $\operatorname{P}(\mathit{malicious})=0.4$.
 %$U_s$  $k \ell mn+2$ \si{\mega\bit\per\second}.
@@ -39,63 +39,19 @@ This is a slight simplification of \citeauthor{DBLP:journals/eaai/MalialisK15}'s
 
 \begin{figure}
 	\centering
-	\resizebox{0.7\linewidth}{!}{
-		\begin{tikzpicture}[
-		texts/.style = {text=black},
-		labeltexts/.style = {text=uofgsandstone},
-		treeline/.style = {draw=uofgburgundy},
-		treenode/.style = {texts, circle, centered, fill=white, treeline},
-		load/.style = {fill=uofgcobalt},
-		loadhide/.style = {fill=uofgcobalt!40!white},
-		external/.style = {fill=uofgrust},
-		externalhide/.style = {fill=uofgrust!40!white},
-		hideline/.style = {draw=uofgsandstone!40!white},
-		hidenode/.style = {treenode, hideline},
-		grow'=right
-		]
-		\node[treenode, label={[texts]above:Server}] (root) {}
-		child [treeline] { node [treenode, label={[texts]above:Core}] (sswitch) {}
-			child [treeline] { node [treenode, label={[texts]above:Leader}] (teaml) {} 
-				child [treeline] { node [treenode, label={[texts]above:Intermediate}] (inter) {}
-					child [treeline] { node [treenode, load, label={[texts]above:Agent/Egress}] (agent) {}
-						child [treeline] { node [treenode, external] (extern) {}
-							child [treeline] { node [treenode, external, label={[texts]above:Host}] (host) {} }
-							child [hideline] { node [hidenode, externalhide] (endhost) {} }
-						}
-					}
-					child [hideline] { node [hidenode, loadhide] (endagent) {} }
-				}
-				child [hideline] { node [hidenode] (endinter) {} }
-			}
-			child [hideline] { node [hidenode] (endteaml) {} }
-			edge from parent
-			node[below, labeltexts] {$U_s$}
-		};
-		
-		%\draw[-] (teaml) -- (endteaml);
-		\node [labeltexts] (kdots) at ($(teaml)!0.5!(endteaml)$) {$\rvdots$};
-		\node [labeltexts, right = -0.1cm of kdots] {$k$};
-		\node [labeltexts] (ldots) at ($(inter)!0.5!(endinter)$) {$\rvdots$};
-		\node [labeltexts, right = -0.1cm of ldots] {$\ell$};
-		\node [labeltexts] (mdots) at ($(agent)!0.5!(endagent)$) {$\rvdots$};
-		\node [labeltexts, right = -0.1cm of mdots] {$m$};
-		\node [labeltexts] (ndots) at ($(host)!0.5!(endhost)$) {$\rvdots$};
-		\node [labeltexts, right = -0.1cm of ndots] {$n$};
-		\end{tikzpicture}
-	}
-	\caption{
+	\resizebox{0.9\linewidth}{!}{\input{diagrams/marl-ddos/tree-topol}}
+	\caption[Tree-structured network topology diagram for evaluating a single-destination network.]{
 		Network topology diagram, showing how the server and its core switch's $k$ teams are structured, with $\ell$ intermediate routers per team, connected to $m$ agents which each moderate $n$ hosts beyond a single external switch.
 		%	Empty nodes are considered to be internal.
 		Red nodes are external, and each blue node hosts an agent.
 		\label{fig:marl-topol}
 	}
-\vspace{-0.75cm}
 \end{figure}
 
-\subsection{Multiple Destinations}
+\subsection{Multiple destinations}
 The previous topology allows for direct comparison against the state-of-the-art, and indeed is illustrative of one way in which attack traffic might aggregate in the network.
 It is hard, however, to argue its relevance to specific classes of victim or to reason about the interactions it might have with dependent applications.
-In contrast, the fat-tree topology \cite{DBLP:conf/sigcomm/Al-FaresLV08} sees regular use in real-world datacentres and scales well horizontally.
+In contrast, the fat-tree topology~\parencite{DBLP:conf/sigcomm/Al-FaresLV08} sees regular use in real-world data centres and scales well horizontally.
 %?? Come up with description of fat-tree (multi-dest) topol.
 %?? Why fat tree? regularly appears in modern datacentres.
 %?? $k=4$ fat-tree , with one pod hosting two servers $s_0,s_1$.
@@ -107,19 +63,19 @@ We set $n \in \{6, 12, 24, 48\}$ hosts per learner (keeping $N_{\mathit{hosts}}$
 \subsection{Parameters}
 The algorithm parameters were set at $\alpha=0.05$, linearly annealing $\epsilon=0.2 \rightarrow 0$ by $t=3000$ in the case of Marl (\num{8000} actions per agent in the \emph{Instant/Guarded} models).
 
-Benign hosts each occupied \SIrange{0}{1}{\mega\bit\per\second}, and hosts were redrawn at each episode's start with $\operatorname{P}(\mathit{malicious})=0.4$.
+Benign hosts each occupied \qtyrange{0}{1}{\mega\bit\per\second}, and hosts were redrawn at each episode's start with $\operatorname{P}(\mathit{malicious})=0.4$.
 %The original introduction of this approach to direct-control reinforcement learning as introduced by \textcite{DBLP:journals/eaai/MalialisK15} fails to consider key cases: the absence of a suitable heuristic classifier $g(\cdot)$, disjoint ranges of traffic distribution (i.e., the presence of benign heavy-hitters), the accurate simulation of TCP-like behaviour (and its effects on collateral damage), and high densities of hosts at egress points.
 %?? Why? ...
 %Of these, the latter two are most deserving of a closer investigation, as they have stronger implications for wide-scale deployment.
 %These are important issues, particularly when we consider real-world deployment.
 %Heuristic estimates of traffic legitimacy come with computational cost and couple the reward function to the accuracy of the estimator, hosts often show diversity in their own traffic patterns (perhaps being multi-modal), and it is known that TCP is the most used transport protocol for Internet traffic \cite{DBLP:conf/saint/ZhangDJC09}.
 %?? NEED TO VERIFY VOLUME OF CONGESTION-AWARE PROTOCOLS
-Malicious hosts each sent \SIrange{2.5}{6}{\mega\bit\per\second} when attacking UDP traffic, though this was increased to \SIrange{4}{7}{\mega\bit\per\second} when using TCP-like traffic (to meaningfully impact benign flows).
+Malicious hosts each sent \qtyrange{2.5}{6}{\mega\bit\per\second} when attacking \gls{acr:udp} traffic, though this was increased to \qtyrange{4}{7}{\mega\bit\per\second} when using \gls{acr:tcp}-like traffic (to meaningfully impact benign flows).
 Given $n$ and $\operatorname{P}(\mathit{malicious})$, we see an expected malicious bandwidth \numrange{1.27}{1.87} and \qtyrange{2.03}{2.18}{\times} $U_s$ respectively.
 %The expected fraction of $U_s$ consumed by each host is \SI{21.5}{\percent} for $n=2$, and \SI{2.84}{\percent} for $n=16$.
-For our choices of $n$ in both topologies, we observe $N_{\mathit{hosts}} \in \left\{24, 48, 96, 192\right\}$, and an expected number of malicious hosts $\mathbb{E}\left[N_{\mathit{attackers}}\right] \in \left\{9.6, 19.2, 38.4, 76.8\right\}$.
-For the largest choice of $n$, we see an expected total attack traffic $\mathbb{E}\left[V_{\mathit{attack}}\right] = 334.05$ and \SI{422.4}{\mega\bit\per\second} for Opus and HTTP traffic respectively.
+For these choices of $n$ in both topologies, we observe $N_{\mathit{hosts}} \in \left\{24, 48, 96, 192\right\}$, and an expected number of malicious hosts $\mathbb{E}\left[N_{\mathit{attackers}}\right] \in \left\{9.6, 19.2, 38.4, 76.8\right\}$.
+For the largest choice of $n$, we see an expected total attack traffic $\mathbb{E}\left[V_{\mathit{attack}}\right] =$ \qtylist{334.05;422.4}{\mega\bit\per\second} for Opus and \gls{acr:http} traffic respectively.
 
-$U_s$ was fixed at $N_{\mathit{hosts}}+2$ \si{\mega\bit\per\second} (to account for burstiness), and each link had a delay of \SI{10}{\milli\second}.
+$U_s$ was fixed at $N_{\mathit{hosts}}+2$ \unit{\mega\bit\per\second} (to account for burstiness), and each link had a delay of \qty{10}{\milli\second}.
 All links had unbounded capacity, save for each server-switch.
-These parameters match those of the original study to enable direct comparison, and many are (to the best of our knowledge) arbitrary, but we justify our range of $n$ as capturing increasing scales of host activity.
+These parameters match those of the original study to enable direct comparison, and many are (to the best of our knowledge) arbitrary, but I justify the range of $n$ as capturing increasing scales of host activity.
