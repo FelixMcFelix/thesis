@@ -14,7 +14,7 @@
 
 \subsection{Limitations of Programmable Dataplanes}
 While dataplane programming promises easy reconfiguration of network devices, it poses some challenges.
-First, network devices support only a limited set of operations and control flows (no loops) without use of platform-specific \mintinline{rust}{extern}s, and restrict the user to specific primitive data types, \ie, no floating-point units due to tight hardware constraints.
+First, network devices support only a limited set of operations and control flows (no loops) without use of platform-specific \texttt{extern}s, and restrict the user to specific primitive data types, \ie, no floating-point units due to tight hardware constraints.
 Second, these devices have limited low-latency memory (on the order of a few tens of \si{\mega\byte}s~\parencite{DBLP:conf/sosp/JinLZSLFKS17}) and do not provide dynamic memory management.
 These limitations prohibit complex algorithms from being implemented, but allow certain restricted solutions, such as what is presented in DAPPER~\parencite{DBLP:conf/sosr/GhasemiBR17}, where the authors implement a TCP state machine purely in the dataplane.
 
@@ -22,13 +22,13 @@ These limitations prohibit complex algorithms from being implemented, but allow 
 
 \begin{figure}
     \centering
-    \resizebox{0.8\linewidth}{!}{\includegraphics{diagrams/seidr/dp-arch-diagram.pdf}}
-    \caption{\seidr{}'s integration with a PSA-compatible~\parencite{p4-psa} dataplane.}
+    \resizebox{\linewidth}{!}{\includegraphics{diagrams/seidr/dp-arch-diagram.pdf}}
+    \caption[\seidr{}'s integration with a PSA-compatible dataplane.]{\seidr{}'s integration with a \gls{acr:psa}-compatible dataplane. \seidr{} uses a register block to... When not using digests to emit packets... ?? must go through the above extended rigmarole}
     \label{fig:arch}
 \end{figure}
 
 % Let's show them a histogram datastructure would look like purely with registers and how would a P4 action populate it - pseudocode or P4 snippet would be nice.
-
+\sidenote{?? FIGURE::: Can I redo this diagram to show the possibility of digest?}
 Although packet timing information is useful in understanding network and flow behaviour, without volume or packet rate reduction it is prohibitively expensive for hosts to handle each packet.
 Histogramming acts as the \emph{aggregation step} which makes this class of analysis feasible in high-speed networks.
 \Cref{fig:arch} demonstrates how \seidr{}, installed as an additional table in any P4 program, records and transmits inter-arrival time histograms.
