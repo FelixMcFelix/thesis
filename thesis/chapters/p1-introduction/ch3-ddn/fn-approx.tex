@@ -154,7 +154,7 @@ Further modifications, e.g., Edge-GNNs~\parencite{Mirhoseini2021}, exist to incl
 %?? graph convolution~\parencite{DBLP:conf/iclr/KipfW17}
 %?? NN processes each vertex's feature vector, and then final vectors by aggregating vectors from neighbours.
 %\paragraph{Recurrent networks}
-In the case of variable length sequences of data (i.e., an obvious time-series use case such as audio transcoding), \glsxtrfullpl{acr:rnn}~\parencite{Rumelhart1986} capture temporal properties of the input.
+In the case of variable length sequences of data (i.e., an obvious time-series use case such as audio transcoding), \glspl{acr:rnn}~\parencite{Rumelhart1986} capture temporal properties of the input.
 The main way in which they differ is that they feed neuron state from the previous input into the calculation being applied to the current datum, similar to an infinite impulse response filter.
 \glsxtrfull{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97} units include extra gates to control how hidden state is held between timesteps element-wise (input, output and forget gates), whose parameters are also trainable.
 \glsxtrfullpl{acr:gru}~\parencite{DBLP:conf/emnlp/ChoMGBBSB14} remove the output gate (passing on only the hidden state), and as a result are competitive with fewer weights to learn.

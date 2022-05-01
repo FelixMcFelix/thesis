@@ -16,26 +16,50 @@
 % \subsection{Bandwidth Costs}
 % \subsection{CCA Detection Accuracy and Costs}
 
-?? Problem statement: damn, all this ML is cool
-?? We can do cool real-time analysis of operational Internet traffic
-?? What do we do if we need more complex ML models: i.e., need to use LSTMs, or complex CNNs because we need to make use of complex temporal or structural features of data? We still need to get it to host machonies.
-?? Okay... but in that case, how can we reduce data so that PPS and Gbps of data don't overwhelm the host, or that we lose lots of asid data and make poor decisions when we have many (or very fast) flows?
+%?? Problem statement: damn, all this ML is cool
+%?? We can do cool real-time analysis of operational Internet traffic
+%?? What do we do if we need more complex ML models: i.e., need to use LSTMs, or complex CNNs because we need to make use of complex temporal or structural features of data? We still need to get it to host machonies.
+%?? Okay... but in that case, how can we reduce data so that PPS and Gbps of data don't overwhelm the host, or that we lose lots of said data and make poor decisions when we have many (or very fast) flows?
+%
+%?? supposing we have analyses which cannot be offloaded: too long-reaching (needing LSTMs or CNNs w/ todays hardware)
+
+The \gls{acr:ml} techniques we have considered so far are powerful and effective, and with some amount of work many can be ported to fit quite neatly into \gls{acr:pdp} hardware.
+Between the existing literature and the novel additions demonstrated thus far, we have a toolkit of models and runtime techniques that neatly runs the gamut of \gls{acr:ddn} use cases' needs.
+Real-time analysis of operational Internet, \gls{acr:wan}, and data centre traffic using granular, device-local state is that much more feasible for their development.
+Accurate flow characterisation (or classification) can drive intrusion detection, detecting unusual or illegal patterns of network traffic, or to prioritize traffic for certain customers, to provide path-diversity as well as to mark the \gls{acr:qos} of various users and protocols~\parencite{DBLP:journals/ccr/BernailleTASS06,DBLP:conf/lisa/Roesch99}; and we can achieve some use cases even with the sampled, imprecise \unit{\micro\second} and \unit{\milli\second}-level data of sFlow, Netflow, and IPFIX~\parencite{rfc7011,rfc3954}.
+We have seen through \cref{sec:network-monitoring} the sorts of advances in dataplane monitoring which will allow us to innovate further, such as precise \unit{\nano\second}-level timestamping, \gls{acr:int}, and flow-state analysis.
+The catch is that the volume of per-packet or -flow data produced by such measurement imposes high packet-per-second and bandwidth constraints beyond the capabilities of host machines or even the routing fabric\sidenote{Moving this data outside of \gls{acr:pdp} devices naturally occupies its own share of bandwidth. To transport it to a host machine, we must either scale up the capacity of the control plane to carry telemetry, or move it in-band via the dataplane (where it will add a proportional overhead to actual traffic). In the latter case, we \emph{can} mark telemetry traffic as lower priority, but this would cause downstream collectors to make decisions on partial data due to losses (potentially having worse or less accurate outcomes).}---we \emph{must} process it locally in the \gls{acr:pdp} environment.
+Even the most sophisticated software solutions process packets orders of magnitude slower than current backbone traffic of large operators, making them unusable for large-scale operational analysis~\parencite{DBLP:journals/wpc/ParkA17}.
+
+%?? So better data and better approximators.
+Following the logic above (and throughout \cref{chap:ddn}), improvements to traffic classification and other \gls{acr:ddn} goals come from two directions: better data and more advanced \gls{acr:ml} techniques.
+While the community has come a long way in enabling in-network \gls{acr:ml}---enabling the in-situ processing that \gls{acr:pdp}-generated data can require---these nascent techniques still have their limits.
+Not all \gls{acr:ml} models are small enough be expressed in these devices.
+Equally, some operational tasks rely on detecting spatial or temporal properties in data which can only be captured by more complex function approximators like \glspl{acr:cnn}, \glspl{acr:rnn}, or \glspl{acr:lstm}.
+Barring the use of experimental architectures like \emph{Taurus}~\parencite{DBLP:conf/asplos/SwamyR0GO22}, we have no mechanism to express these primitives in the dataplane.
+
+What can be done to bridge this gap?
+This leaves an open question for when...
+
+?? bunch of below in \cref{sec:network-monitoring}
+
+?? either 
 
 ?? Relate some of this \emph{specifically} back to discussion of flow measurement in the dataplane in the INC use-cases? (i.e., considering all th below IPfix, sFLow, etc. etc.)
 ?? Try to relate some of the same problems.
 
-There has been significant research and development on real-time analysis of operational Internet traffic.
-Accurate flow characterisation (or \emph{classification}) can drive intrusion detection, detecting unusual or illegal patterns of network traffic, or to prioritize traffic for certain customers, to provide path-diversity as well as to mark Quality of Service (QoS) of various users and protocols~\parencite{DBLP:journals/ccr/BernailleTASS06,DBLP:conf/lisa/Roesch99}.
-However, flow classification solutions today can usually only rely on sampled data provided by routers, such as sFlow, Netflow, or IPFIX, along with imprecise timing (\si{\micro\second} and \si{\milli\second}-level)~\parencite{rfc7011,rfc3954}.
-While sampled, low-precision telemetry can be used to classify network traffic based on some flow properties (such as port and protocol numbers)~\parencite{DBLP:conf/iwcmc/RossiV10}, it cannot be used to classify based on fine temporal properties (\eg, identifying bursty flows and senders that can cause microbursts and buffer overflow on the network).
+%There has been significant research and development on real-time analysis of operational Internet traffic.
+%Accurate flow characterisation (or \emph{classification}) can drive intrusion detection, detecting unusual or illegal patterns of network traffic, or to prioritize traffic for certain customers, to provide path-diversity as well as to mark Quality of Service (QoS) of various users and protocols~\parencite{DBLP:journals/ccr/BernailleTASS06,DBLP:conf/lisa/Roesch99}.
+%However, flow classification solutions today can usually only rely on sampled data provided by routers, such as sFlow, Netflow, or IPFIX, along with imprecise timing (\si{\micro\second} and \si{\milli\second}-level)~\parencite{rfc7011,rfc3954}.
+%While sampled, low-precision telemetry can be used to classify network traffic based on some flow properties (such as port and protocol numbers)~\parencite{DBLP:conf/iwcmc/RossiV10}, it cannot be used to classify based on fine temporal properties (\eg, identifying bursty flows and senders that can cause microbursts and buffer overflow on the network).
 
-On the other hand, full-software solutions for traffic classification have been proposed by commercial vendors (\eg, Barracuda DPI\footnote{https://www.barracuda.com/glossary/deep-packet-inspection}), the open-source community (\eg, Snort~\parencite{DBLP:conf/lisa/Roesch99}, Zeek (formerly Bro)~\parencite{DBLP:conf/uss/Paxson98,zeek}), and the research community, with extensible feature sets and algorithms for classification~\parencite{DBLP:conf/icccn/HagosEYK18}.
-Unfortunately, these software solutions designed for commodity hardware do not provide accurate timing of packets, and therefore make certain time-critical events hard or impossible to detect (\eg, microbursts~\parencite{DBLP:conf/sigcomm/ChenFKRR18} or congestion control properties~\parencite{DBLP:conf/icccn/HagosEYK18}).
-Moreover, even the most sophisticated software solutions process packets orders of magnitude slower than current backbone traffic of large operators, making them unusable for large-scale operational analysis~\parencite{DBLP:journals/wpc/ParkA17}.
+%On the other hand, full-software solutions for traffic classification have been proposed by commercial vendors (\eg, Barracuda DPI\footnote{https://www.barracuda.com/glossary/deep-packet-inspection}), the open-source community (\eg, Snort~\parencite{DBLP:conf/lisa/Roesch99}, Zeek (formerly Bro)~\parencite{DBLP:conf/uss/Paxson98,zeek}), and the research community, with extensible feature sets and algorithms for classification~\parencite{DBLP:conf/icccn/HagosEYK18}.
+%Unfortunately, these software solutions designed for commodity hardware do not provide accurate timing of packets, and therefore make certain time-critical events hard or impossible to detect (\eg, microbursts~\parencite{DBLP:conf/sigcomm/ChenFKRR18} or congestion control properties~\parencite{DBLP:conf/icccn/HagosEYK18}).
+%Moreover, even the most sophisticated software solutions process packets orders of magnitude slower than current backbone traffic of large operators, making them unusable for large-scale operational analysis~\parencite{DBLP:journals/wpc/ParkA17}.
 
-At the same time, programming and fast reconfiguration of network devices is being explored in all types of networks: datacenter and cloud networks, CDNs and WANs.
-Specifically, with the recent developments of generalized dataplanes (\eg, the \emph{Portable Switch Architecture}~\parencite{p4-psa}), target devices (\eg, Barefoot Tofino and Netronome SmartNICs) along with the high-level programming languages presented for them (\eg, P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14}), operators can now express in-network functionality running on their devices, including accurate nanosecond-precision packet timing.
-However, programming in-network services has its own challenges (\eg, restricted instruction sets, data types and memory), prohibiting the implementation of a fully in-network classification solution.
+%At the same time, programming and fast reconfiguration of network devices is being explored in all types of networks: datacenter and cloud networks, CDNs and WANs.
+%Specifically, with the recent developments of generalized dataplanes (\eg, the \emph{Portable Switch Architecture}~\parencite{p4-psa}), target devices (\eg, Barefoot Tofino and Netronome SmartNICs) along with the high-level programming languages presented for them (\eg, P4~\parencite{DBLP:journals/ccr/BosshartDGIMRSTVVW14}), operators can now express in-network functionality running on their devices, including accurate nanosecond-precision packet timing.
+%However, programming in-network services has its own challenges (\eg, restricted instruction sets, data types and memory), prohibiting the implementation of a fully in-network classification solution.
 
 % To solve the aforementioned challenges, this paper presents an architecture that marries the precision timing and fast data aggregation capabilities of the dataplane with software classifiers that can run complex classification models due on a the reduced data rate.
 

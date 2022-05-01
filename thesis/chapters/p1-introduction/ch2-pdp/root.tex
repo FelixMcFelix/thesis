@@ -990,7 +990,7 @@ Interested readers should also examine dedicated surveys such as that of \Textci
 %?? The P4 ecosystem already presents novel, openly-available, fine-grained traffic measurement techniques that can be installed and controlled with ease~\parencite{DBLP:conf/sigcomm/GuptaHCFRW18,DBLP:conf/sigcomm/ChenFKRR18,DBLP:conf/sosr/GhasemiBR17}
 %?? Maybe explain them?
 Traffic monitoring solutions built on non-\gls{acr:pdp} fabrics can be imprecise or limited.
-Routers typically provide sampled data such as sFlow, Netflow, or IPFIX, along with imprecise timing at the \si{\micro\second} and \si{\milli\second}-level~\parencite{rfc7011,rfc3954}.
+Routers typically provide sampled data such as sFlow, Netflow, or IPFIX, along with imprecise timing at the \unit{\micro\second} and \unit{\milli\second}-level~\parencite{rfc7011,rfc3954}.
 While this offers useful insight at the aggregate or per-flow level, fine temporal or transient dynamics are lost, such as queue states or per-packet arrival timestamps which might help identify bursty flows or the culprits of microbursts on the network.
 Precision is not the sole culprit here, \unit{\micro\second}-level per-packet data simply has too much volume in both raw bytes and packets to meaningfully export beyond the device.
 \gls{acr:pdp} fabrics offer here new ways to gather, aggregate, and process per-packet, -device, and -port state in-situ.
