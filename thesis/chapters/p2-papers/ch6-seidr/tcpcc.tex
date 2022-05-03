@@ -110,57 +110,58 @@
 
 % Having assigned each packet in a flow with a nanosecond-accurate timestamp ?? tbc
 
-\Cref{fig:tcp-hist-app} suggests that a notable use-case for this type of measurement is \emph{congestion control algorithm} (CCA) detection.
-In a TCP connection, each machine is free to choose the CCA it uses to send bytes, and thus how it responds to network congestion signals.
-This choice is local, and so is invisible to the other machine (and the network).
-In datacentre networks, operators choose these to ensure optimal behaviour.
-In a transit network or large WAN however, these hosts (and thus the CCAs in use) are outside the control of network operators, which introduces difficulties when CCA interactions lead to \emph{unfairness}.
-Consider the recent (and widespread) introduction of \emph{TCP BBR}~\parencite{DBLP:journals/queue/CardwellCGYJ16}.
-\emph{BBR} is a delay/model-based CCA which converges on a fair share of bottleneck bandwidth by reducing its rate if the round-trip time increases, while periodically attempting to increase send rate to account for path/load changes.
-However, \emph{BBR} traffic can consume \SI{40}{\percent} of link capacity when multiplexed with loss-based CCAs, regardless of the number of competing flows~\parencite{DBLP:conf/imc/WareMSS19}. 
-When ensuring fair transit to all flows, this is hardly a desirable outcome; in fact, it's one which may frustrate clients or violate SLAs.
+\Cref{fig:tcp-hist-app} suggests that a notable use-case for this type of measurement is detecting \gls{acr:tcp} flows' choice of \gls{acr:cca}.
+In a \gls{acr:tcp} connection, each machine is free to choose the \gls{acr:cca} it uses to send bytes, and thus how it responds to network congestion signals.
+This choice is entirely local, and so is invisible to both the other machine and the network.
+In data centre networks, operators choose these ahead of time to ensure optimal behaviour, where the environment makes it easy to consistently deploy this choice across all nodes.
+This is not the case in most \glspl{acr:as}; in a transit network or large \gls{acr:wan}, these hosts (and thus the \glspl{acr:cca} in use) are outside the control of network operators, which introduces difficulties when \gls{acr:cca} interactions lead to \emph{unfairness}.
+Consider the recent (and widespread) introduction of \emph{\gls{acr:tcp} BBR}~\parencite{DBLP:journals/queue/CardwellCGYJ16}.
+\emph{BBR} is a delay/model-based \gls{acr:cca} which converges on a fair share of bottleneck bandwidth by reducing its rate if the round-trip time increases, while periodically attempting to increase send rate to account for path or load changes.
+However, \emph{BBR} traffic can consume \qty{40}{\percent} of link capacity when multiplexed with loss-based \glspl{acr:cca}, regardless of the number of competing flows~\parencite{DBLP:conf/imc/WareMSS19}. 
+When ensuring fair transit to all flows, this is hardly a desirable outcome; in fact, it's one which may frustrate clients or violate \glspl{acr:sla}.
 
 A curious property of \emph{BBR}'s algorithm which sets it apart from other variants is that packet transmission is \emph{timer-based}.
 \texttt{send(packet)}, as defined in the canonical algorithm, asks that on transmission of a packet, the sender should wait for the estimated time that packet would take to reach the recipient.
-For instance, at an estimated bottleneck bandwidth of \SI{8}{\mega\bit\per\second}, a \SI{1024}{\kilo\byte} packet would hold back the next packet in the flow until \SI{976.6}{\micro\second} had elapsed.
+For instance, at an estimated bottleneck bandwidth of \qty{8}{\mega\bit\per\second}, a \qty{1024}{\kilo\byte} packet would hold back the next packet in the flow until \qty{976.6}{\micro\second} had elapsed.
 When packet sizes remain similar this causes strongly periodic behaviour, while mode switches in the \emph{BBR} algorithm cause these periodic bands to shift up or down accordingly.
-This effect is stronger than in existing loss- and delay-based algorithms which remain intrinsically tied to the notion of a congestion window (where release of buffered packets follows the receipt of ACK messages).
-As a result, timing behaviour of past CCAs may be influenced by (the lack of) packet pacing, periodic components might be made noisier by jitter along the return path, or the behaviour of the receiver might add further noise.
+This effect is stronger than in existing loss- and delay-based algorithms which remain intrinsically tied to the notion of a congestion window (where release of buffered packets follows the receipt of \texttt{ACK} messages).
+As a result, timing behaviour of past \glspl{acr:cca} may be influenced by (the lack of) packet pacing, periodic components might be made noisier by jitter along the return path, or the behaviour of the receiver might add further noise.
 
-This high-level analysis of \emph{BBR} gives us a strong feature to use as the basis for classification: the \emph{inter-arrival times} (IATs) for each packet in a flow.
-We have two options for processing this for classification: we may use a compressed, fixed-size representation such as histograms to capture the aggregate distribution, or we may attempt to capture structural behaviour by using a variable-length stream of IATs.
+This high-level analysis of \emph{BBR} gives us a strong feature to use as the basis for classification: the \glspl{acr:iat} for each packet in a flow.
+We have two options for processing this for classification: we may use a compressed, fixed-size representation such as histograms to capture the aggregate distribution, or we may attempt to capture structural behaviour by using a variable-length stream of \glspl{acr:iat}.
 In many networks, the data and packet rate reduction offered by the former is required to make this possible.
-Indeed, in-switch aggregation has seen great success in aiding ML for training~\parencite{DBLP:conf/isca/LiLYCSH19}, and direct execution~\parencite{DBLP:conf/hotnets/XiongZ19}.
-We make use of the following standard classification algorithms on a fixed-size representation to attempt to single out the CCA in use:
+Indeed, as we've examined in greater detail through \cref{sec:inc-uses-pdp-ml}, in-switch aggregation has seen great success in aiding \gls{acr:ml} for training~\parencite{DBLP:conf/isca/LiLYCSH19}.
+We make use of the following standard classification algorithms on a fixed-size representation to attempt to single out the \gls{acr:cca} in use:
 
 \begin{itemize}
-    \item \emph{$k$-Nearest Neighbours ($k$-NN)}. A simple and well-understood classifier which assigns labels based on the closest members of the training corpus (\ie, by the $L_2$ metric). Linear memory cost in amount of training data, and no training cost other than loading all data points, but capable of learning complex decision boundaries on fixed-length input.
+    \item \glsxtrfull{acr:knn}. A simple and well-understood classifier which assigns labels based on the closest members of the training corpus (\ie, by the $\ell_2$ metric). They have a linear runtime memory cost in amount of training data, and no training cost other than loading all data points. However, they are surprisingly capable of learning complex decision boundaries on fixed-length inputs.
     
-    \item \emph{Convolutional Neural Networks (CNNs)}. A neural network approach which learns convolution kernels to classify fixed-length data, particularly when recognising spatial features. Memory cost is fixed for a given architecture irrespective of training data, with a high training cost.
+    \item \glsxtrfullpl{acr:cnn}. As discussed in \cref{sec:ddnlit-nns}, \glspl{acr:cnn} are a neural network approach which learns convolution kernels to classify fixed-length data, particularly when recognising spatial features. Runtime memory cost is fixed for a given architecture irrespective of the amount of training data used, with a high training cost in memory and computation time.
 \end{itemize}
 % \fakepara{Long Short-Term Memory~\parencite{DBLP:journals/neco/HochreiterS97} units (LSTMs)} A class of recurrent neural network used for stream classification, forecasting, and prediction of variable-length data. Memory cost is fixed, with longer training times (and more data required) than similarly sized CNNs.
 % Of these, we apply $k$-NN and CNNs to histograms of packet IATs, and LSTMS to raw IAT streams.
 
-When examining $k$-NN classifiers, we measured accuracy across choices of $k \in \left[2, 8\right]$.
-We found $k=2$ to be the most effective choice with our input data using the $L_2$ metric.
-Our CNN architecture is described in \cref{tab:cnn-arch}, using ReLu activation and $1 \times 1$ stride in convolutional layers unless stated otherwise.
+When examining \gls{acr:knn} classifiers, I measured accuracy across choices of $k \in \left[2, 8\right]$; I found $k=2$ to be the most effective choice with these input data using the $\ell_2$ metric.
+Our \gls{acr:cnn} architecture is described in \cref{tab:cnn-arch}, using ReLu activation and $1 \times 1$ stride in convolutional layers unless stated otherwise.
 Training occurred over 5 epochs using the Adam optimiser with categorical cross-entropy as a loss metric, and a batch size of \num{64} histograms (\num{8} for full sequences due to the smaller data volume).
-For \emph{BBR vs.\ Cubic}, the complete model consists of \num{104898} 32-bit floating-point parameters (\SI{409.76}{\kibi\byte}), while the full classification task adds a further \num{130} parameters (\SI{0.51}{\kibi\byte}).
+For \emph{BBR vs.\ Cubic}, the complete model consists of \qtyproduct{104898 x 32}{\bit} floating-point parameters (\qty{409.76}{\kibi\byte}), while the full classification task adds a further \num{130} parameters (\qty{0.51}{\kibi\byte}).
 
 \begin{table}
     \centering
-    \caption{CNN architecture for \num{100}-entry histograms.}
-    \resizebox{0.7\linewidth}{!}{\begin{tabular}{@{}cccc@{}}\toprule
+    \caption[CNN architecture for \num{100}-entry histograms.]{\gls{acr:cnn} architecture for \num{100}-entry histograms.}
+%    \resizebox{0.7\linewidth}{!}{
+    	\begin{tabular}{cccc}\toprule
         Layer & Nodes/Filters & Filter Size & Output Dimension \\ \midrule
-        Conv2D & 32 & $(3 \times 1)$ & $(98 \times 1 \times 32)$ \\
-        MaxPool & --- & $(2 \times 1)$ & $(49 \times 1 \times 32)$ \\
-        Conv2D & 64 & $(3 \times 1)$ & $(47 \times 1 \times 64)$ \\
-        MaxPool & --- & $(2 \times 1)$ & $(23 \times 1 \times 64)$ \\
-        Conv2D & 64 & $(3 \times 1)$ & $(21 \times 1 \times 64)$ \\
+        Conv2D & 32 & \numproduct{3 x 1} & \numproduct{98 x 1 x 32} \\
+        MaxPool & --- & \numproduct{2 x 1} & \numproduct{49 x 1 x 32} \\
+        Conv2D & 64 & \numproduct{3 x 1} & \numproduct{47 x 1 x 64} \\
+        MaxPool & --- & \numproduct{2 x 1} & \numproduct{23 x 1 x 64} \\
+        Conv2D & 64 & \numproduct{3 x 1} & \numproduct{21 x 1 x 64} \\
         Flatten & --- & --- & \num{1344} \\
         Dense & 64 & --- & \num{64} \\
         Dense (Softmax) & $n_\mathit{classes}$ & --- & $n_\mathit{classes}$ \\
         \bottomrule
-    \end{tabular}}
+    \end{tabular}
+%}
     \label{tab:cnn-arch}
 \end{table}

@@ -1,0 +1,14 @@
+\begin{tabular}{cccccc}\toprule
+     Family & Online & $n_\mathit{classes}$ & Train & Test & Memory \\
+     & (Subflow) & & & & \\ \midrule
+    \gls{acr:cnn} & \cmark & 2 & \qty{43 +- 2}{\minute} & \qty{49.1 +- 9.2}{\micro\second} & \qty{409.76}{\kibi\byte} \\
+      & \cmark & 4 & \qty{243 +- 2}{\minute} & \qty{50.5 +- 1.7}{\micro\second} & \qty{410.27}{\kibi\byte} \\
+      & \xmark & 2 & \qty{1.82 +- 0.47}{\second} & \qty{161.3 +- 3.9}{\micro\second} & \qty{409.76}{\kibi\byte} \\
+      & \xmark & 4 & \qty{7.94 +- 0.5}{\second} & \qty{137.7 +- 1.2}{\micro\second} & \qty{410.27}{\kibi\byte} \\
+
+    \gls{acr:knn} & \cmark & 2 & \qty{21.4 +- 1.2}{\minute} & \qty{323 +- 69}{\micro\second} & \qty{2.1}{\gibi\byte} \\
+      & \cmark & 4 & --- & --- & \qty{12.58}{\gibi\byte} \\
+      & \xmark & 2 & \qty{0.2 +- 0.006}{\second} & \qty{54.0 +- 0.3}{\micro\second} & \qty{332.8}{\kibi\byte} \\
+      & \xmark & 4 & \qty{2.2 +- 0.04}{\second} & \qty{517.0 +- 5.0}{\micro\second} & \qty{2.0}{\mebi\byte} \\
+     \bottomrule
+\end{tabular}

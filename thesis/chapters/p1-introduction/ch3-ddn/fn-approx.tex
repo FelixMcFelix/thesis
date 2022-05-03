@@ -120,7 +120,7 @@ If desired we may define a state space with an arbitrary number of tiles per dim
 Beyond this, we need not store action values for tiles which have not yet been visited, conserving memory.
 A caveat of tile coding remains, in that the value of $\alpha$ must be reduced according to the number of tilings to prevent divergence at the expense of slower learning ($\alpha \leftarrow \alpha / n_{\mathit{tilings}}$).
 
-\subsection{Neural Networks}
+\subsection{Neural Networks}\label{sec:ddnlit-nns}
 \glsxtrfullpl{acr:nn} map an input vector to an output vector via a mathematical graph of neurons.
 Each neuron takes a weighted sum over a set of inputs plus its own \emph{bias} value, and uses this as the input to a non-linear function, producing a single output value (\cref{fig:single-neuron}).
 This non-linear (or piecewise-linear) function, e.g., (leaky) ReLU~\parencite{DBLP:conf/icml/NairH10,leaky-relu}, $\tanh$, or the sigmoid function expresses the idea of a sufficiently large input `activating' the neuron, and prevents chains of neurons from being expressed as a single linear transformation (allowing greater model capacity).

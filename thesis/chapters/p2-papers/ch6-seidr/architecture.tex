@@ -130,7 +130,7 @@ owner $\leftarrow$ HistoOwner[h]\label{algline:prep-end}\;
 For now, we will leave aside \crefrange{algline:rewrite-start}{algline:rewrite-end} until \cref{sec:seidr-histo-tx}.
 When a flow is to be measured, we first hash its 5-tuple ($h$) and determine which flow is currently occupying slot $h$ (\crefrange{algline:prep-start}{algline:prep-end}).
 In the event of hash collision (\cref{algline:owner-check}), we ignore packets outside of the tracked flow to ensure that data is accurate.
-As later processing and classification directly affect what decisions are made by operators or automatically taken by a policy (possibly leading to incorrect flow limits, QoS, \emph{etc.}), avoiding corruption/cross-contamination of operational data is paramount.
+As later processing and classification directly affect what decisions are made by operators or automatically taken by a policy (possibly leading to incorrect flow limits or \gls{acr:qos} choices), avoiding corruption and cross-contamination of operational data is paramount.
 If the slot is unoccupied or belongs to the current flow, we compute the \gls{acr:iat} and assert ownership over the hash table slot (\crefrange{algline:iat-prep-start}{algline:iat-prep-end}).
 Assuming the computed \gls{acr:iat} is within bounds, we compute its bucket index in this interval and increment that bucket and a global counter (\crefrange{algline:bucket-start}{algline:bucket-end})---the global counter triggers a packet emission if it exceeds a known \emph{Len} (\cref{algline:emitcheck}).
 Finally, we update the flow's last timestamp (\cref{algline:update-ts}).
@@ -188,8 +188,8 @@ Increasing the bucket count requires new firmware installation, as many dataplan
 \end{figure}
 
 As a visual example of dataplane-generated histograms, \cref{fig:tcp-hist-app} shows the distribution of inter-arrival times between two \gls{acr:tcp} congestion control algorithms under otherwise identical conditions.
-While I cover the underlying causes for these stark differences in more detail later (\cref{sec:seidr-tcpcc}), it should be clear that there are variations in the \emph{distribution} of features that are visible to us (as humans) quite plainly.
-It stands to reasons that they should also be visible to a trained \gls{acr:ml} classifier.
+While I cover the underlying causes for these stark differences in more detail later (\cref{sec:seidr-tcpcc}), it should be clear that there are variations in the \emph{distribution} of features that are visible to us as humans quite plainly.
+It stands to reason that they should also be visible to a trained \gls{acr:ml} classifier.
 %The visible differences are programmatically identified later in \cref{sec:seidr-evaluation} using our \gls{acr:ml} algorithms.
 While these particular histograms are taken at the macro level---over the entire lifecycle of a flow---this also gives us cause to look into shorter measured windows.
 
@@ -210,7 +210,7 @@ There are tangible reasons to prefer emitting histograms to the dataplane in spi
 Although the data volume and packet-per-second reductions offered by \seidr{} histograms are strong, the former case pushes the steering of all generated packets onto a single controller per switch.
 Intuitively, this is expensive and may very well interfere with regular operation of the control plane.
 On the other hand, outputting histograms over the dataplane allows administrators to make use of existing \glspl{acr:asic}-backed infrastructure to load-balance classifications across typical host machines.
-Alternatively, we might forward packets directly to dedicated, network-connected accelerators like BrainWave whose outputs then inform control plane operation.
+Alternatively, we might forward packets directly to dedicated, network-connected accelerators like \emph{BrainWave}~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18} whose outputs then inform control plane operation\sidenote{We can connect to such accelerators using a dedicated out-port, or by relying on the existing routing infrastructure if we need more flexibility.}.
 Both of these cases spare the control plane of extra load, at modest additional bandwidth cost due to the reduction in telemetry volume.
 Digests of course have their own benefits: in some \gls{acr:psa} implementations they may be built in the egress pipeline, adding flexibility for how \seidr{} might be integrated with existing forwarding plane designs (rather than forcing its inclusion in the \emph{ingress} pipeline).
 
@@ -237,7 +237,7 @@ A key limitation, however, is that the histogram generation frequency and other 
 
 \subsection{Accurate, precise and high-resolution timestamping}
 
-Precise timestamps are critical when detecting temporal properties of flow behaviour, such as microbursts or inferring flow congestion control algorithms.
+Precise timestamps are critical when detecting temporal properties of flow behaviour, such as microbursts or inferring flow \glspl{acr:cca}.
 It is especially important in high speed (\qty{100}{\giga\bit\per\second}) networks, where there can be as little as \qty{6.7}{\nano\second} between packets that need to be analysed.
 With a Linux-based software solution (\eg, reading packets from a link with \emph{tcpdump}), the Linux kernel can only provide microsecond-level accuracy with precision in the order of \qty{100}{\micro\second}~\parencite{DBLP:conf/noms/KundelSBRK20}.
 \gls{acr:dpdk} improves on this, increasing the accuracy to \qty{100}{\nano\second} in the best case~\parencite{DBLP:journals/ccr/PrimoracBA17}.
