@@ -24,10 +24,11 @@
 %?? supposing we have analyses which cannot be offloaded: too long-reaching (needing LSTMs or CNNs w/ todays hardware)
 
 The \gls{acr:ml} techniques we have considered so far are powerful and effective, and with some amount of work many can be ported to fit quite neatly into \gls{acr:pdp} hardware.
-Between the existing literature and the novel additions demonstrated thus far, we have a toolkit of models and runtime techniques that neatly runs the gamut of \gls{acr:ddn} use cases' needs.
+Between the existing literature and the novel additions demonstrated 'til now, we have a toolkit of models and runtime techniques that neatly runs the gamut of \gls{acr:ddn} use cases' needs.
 Real-time analysis of operational Internet, \gls{acr:wan}, and data centre traffic using granular, device-local state is that much more feasible for their development.
-Accurate flow characterisation (or classification) can drive intrusion detection, detecting unusual or illegal patterns of network traffic, or to prioritize traffic for certain customers, to provide path-diversity as well as to mark the \gls{acr:qos} of various users and protocols~\parencite{DBLP:journals/ccr/BernailleTASS06,DBLP:conf/lisa/Roesch99}; and we can achieve some use cases even with the sampled, imprecise \unit{\micro\second} and \unit{\milli\second}-level data of sFlow, Netflow, and IPFIX~\parencite{rfc7011,rfc3954}.
-We have seen through \cref{sec:network-monitoring} the sorts of advances in dataplane monitoring which will allow us to innovate further, such as precise \unit{\nano\second}-level timestamping, \gls{acr:int}, and flow-state analysis.
+This can be through accurate flow characterisation (or classification), which can drive intrusion detection, prioritisation of traffic for certain customers, providing path-diversity, as well as marking the \gls{acr:qos} of various users and protocols~\parencite{DBLP:journals/ccr/BernailleTASS06,DBLP:conf/lisa/Roesch99}; and we can achieve some use cases even with the sampled, imprecise \unit{\micro\second} and \unit{\milli\second}-level data of sFlow, Netflow, and IPFIX~\parencite{rfc7011,rfc3954}.
+We have seen through \cref{sec:network-monitoring} the sorts of advances in dataplane monitoring which will allow us to further develop traffic analysis and classifiers, such as precise \unit{\nano\second}-level timestamping, \gls{acr:int}, and flow-state analysis.
+For instance, problems such as microburst detection rely on extremely fine temporal or queue-specific properties visible \emph{only} to \gls{acr:pdp} hardware.
 The catch is that the volume of per-packet or -flow data produced by such measurement imposes high packet-per-second and bandwidth constraints beyond the capabilities of host machines or even the routing fabric\sidenote{Moving this data outside of \gls{acr:pdp} devices naturally occupies its own share of bandwidth. To transport it to a host machine, we must either scale up the capacity of the control plane to carry telemetry, or move it in-band via the dataplane (where it will add a proportional overhead to actual traffic). In the latter case, we \emph{can} mark telemetry traffic as lower priority, but this would cause downstream collectors to make decisions on partial data due to losses (potentially having worse or less accurate outcomes).}---we \emph{must} process it locally in the \gls{acr:pdp} environment.
 Even the most sophisticated software solutions process packets orders of magnitude slower than current backbone traffic of large operators, making them unusable for large-scale operational analysis~\parencite{DBLP:journals/wpc/ParkA17}.
 
@@ -39,14 +40,18 @@ Equally, some operational tasks rely on detecting spatial or temporal properties
 Barring the use of experimental architectures like \emph{Taurus}~\parencite{DBLP:conf/asplos/SwamyR0GO22}, we have no mechanism to express these primitives in the dataplane.
 
 What can be done to bridge this gap?
-This leaves an open question for when...
+So far we've also seen that \gls{acr:pdp} hardware excels at aggregating and fusing both measurement data and the intermediate results of distributed computations (\cref{sec:network-monitoring,sec:ddn-service-accel,sec:inc-uses-pdp-ml}).
+It is plain that this line of thinking is what we need to help both the network and end-hosts scalably process telemetry data.
+This introduces its own set of challenges.
+In the case of timing information, we don't want to lose too much of the precision of individual measurements.
+The representation we choose must also preserve structural or temporal features pertinent to the traffic classes we detect.
 
-?? bunch of below in \cref{sec:network-monitoring}
-
-?? either 
-
-?? Relate some of this \emph{specifically} back to discussion of flow measurement in the dataplane in the INC use-cases? (i.e., considering all th below IPfix, sFLow, etc. etc.)
-?? Try to relate some of the same problems.
+%?? bunch of below in \cref{sec:network-monitoring}
+%
+%?? either 
+%
+%?? Relate some of this \emph{specifically} back to discussion of flow measurement in the dataplane in the INC use-cases? (i.e., considering all th below IPfix, sFLow, etc. etc.)
+%?? Try to relate some of the same problems.
 
 %There has been significant research and development on real-time analysis of operational Internet traffic.
 %Accurate flow characterisation (or \emph{classification}) can drive intrusion detection, detecting unusual or illegal patterns of network traffic, or to prioritize traffic for certain customers, to provide path-diversity as well as to mark Quality of Service (QoS) of various users and protocols~\parencite{DBLP:journals/ccr/BernailleTASS06,DBLP:conf/lisa/Roesch99}.
@@ -63,36 +68,31 @@ This leaves an open question for when...
 
 % To solve the aforementioned challenges, this paper presents an architecture that marries the precision timing and fast data aggregation capabilities of the dataplane with software classifiers that can run complex classification models due on a the reduced data rate.
 
-To solve the aforementioned challenges, we present \seidr{}\sidenote{Pronounced ``SAY-ther''. ?? Explain naming?}, a dataplane assisted flow classification solution.
-Our design philosophy of \seidr{} keeps functionality where it belongs: dataplane devices create accurately timestamped, aggregated data structures for our analysis, and we let a scalable software stack perform ML-based classification on commodity machines.\sidenote{?? Yeah this directly contradicts the main theme and line of reasoning of my thesis LMAO}
-As in-network aggregation reduces the data rate by a factor of $\sim$\num{740}, our solution can analyse aggregated data from a total rate of \SI{10}{\tera\bit\per\second} original traffic using a single commodity processing machine.
+To solve the aforementioned challenges, I present \seidr{}\sidenote{Pronounced ``SAY-ther'', \seidr{} (a \emph{cord}, \emph{string}, or \emph{snare}) is an old Norse form of divination magic focussed on the reading and weaving of threads to know or alter fate. The admittedly tenuous connection is that flows are these threads to be read.}, a dataplane assisted flow classification solution.
+The design philosophy of \seidr{} achieves the above goals: dataplane devices create accurately timestamped, aggregated histogram data structures for later analysis, while a scalable software stack performs more complex \gls{acr:ml}-based classification on commodity machines.
+%As in-network aggregation reduces the data rate by a factor of $\sim$\num{740}, our solution can analyse aggregated data from a total rate of \SI{10}{\tera\bit\per\second} original traffic using a single commodity processing machine.
+As a concrete use-case, we look at fine temporal dynamics of \gls{acr:tcp} \glspl{acr:cca}.
+Understanding and classifying them is important for network providers as inadequate choices have severe effects on transfer rates, especially in networks with high bandwidth-delay product~\parencite{DBLP:journals/queue/CardwellCGYJ16} and in networks where multiple \glspl{acr:cca} are used~\parencite{DBLP:conf/imc/WareMSS19}. 
+By using accurate congestion control diagnostics, operators will be able to infer sender problems (e.g., backlogged or application-limited senders), network inefficiencies (e.g., increased path latency and congestion), as well as receiver issues (e.g., delayed acknowledgements, small receiver windows) and fairness issues between delay-based and loss-based algorithms~\parencite{DBLP:conf/imc/WareMSS19}.
 
-As a concrete use-case, we look at fine dynamics of TCP congestion control algorithms.
-Understanding and classifying them is important for network providers as inadequate choices have severe effects on transfer rates, especially in networks with high bandwidth-delay product~\parencite{DBLP:journals/queue/CardwellCGYJ16} and in networks where multiple congestion control algorithms are used~\parencite{DBLP:conf/imc/WareMSS19}. 
-By using accurate congestion control diagnostics, operators will be able to infer sender problems (\eg, backlogged or application-limited senders), network inefficiencies (\eg, increased path latency and congestion), as well as receiver issues (\eg, delayed acknowledgements, small receiver windows) and fairness issues between delay-based and loss-based algorithms~\parencite{DBLP:conf/imc/WareMSS19}.
+%The contributions of this paper are summarized below:
+%\begin{itemize}
+%	\item A flexible dataplane-assisted architecture compatible with the \emph{Portable Switch Architecture} (PSA)~\parencite{p4-psa} that allows data aggregation in the form of histograms with nanosecond-accurate timing (\Cref{sec:architecture}),
+%	\item A high-accuracy method for telling apart timer-based (\eg, BBR) and cwnd-based TCP flavours using our system with machine learning algorithms (\Cref{sec:tcpcc}),
+%	\item An extensive evaluation of TCP congestion control classification using our solution (\Cref{sec:evaluation}).
+%\end{itemize}
 
-The contributions of this paper are summarized below:
-\begin{itemize}
-	\item A flexible dataplane-assisted architecture compatible with the \emph{Portable Switch Architecture} (PSA)~\parencite{p4-psa} that allows data aggregation in the form of histograms with nanosecond-accurate timing (\Cref{sec:architecture}),
-	\item A high-accuracy method for telling apart timer-based (\eg, BBR) and cwnd-based TCP flavours using our system with machine learning algorithms (\Cref{sec:tcpcc}),
-	\item An extensive evaluation of TCP congestion control classification using our solution (\Cref{sec:evaluation}).
-\end{itemize}
-
-The work presented in this chapter considers how \gls{acr:pdp} hardware can reduce input, though fine-grained, measurements into digests suitable for \gls{acr:ml} models running on host machines, and is based upon \citetitle{DBLP:conf/globecom/SimpsonCP20}~\parencite{DBLP:conf/globecom/SimpsonCP20}.
-?? Then summarise contents from here...
-
-?? Big open qs:
-?? relevance of PSA digests? These can emit packets, no? These can emit an arbitrary struct to the ctl plane over P4Runtime API. Might be good if no digest support, . Digests have a few extra benefits: In some dataplanes can be emitted in egress. Is message fusion a possible downside? (unpredictable)
-?? Maybe 2 options? Can be in-band or out-of-band. Digests are the out-of-band option, meanwhile in-band allows you to use dataplane to forward to accelerators like BrainWave (don't add extra load to ctl plane in this way?)
-
-?? Header size limits are the other main constraint.
-?? THis is probably not a problem with digests.
-?? WHen emitting to dataplane, however? Will have plat-dependent limits on output. Header size limits, PHV limits, register access reqs that could prevent digest access? Need to mark in-progress histo emissions, progress for each, and emit bitslices spread over multiple egress pkts. Logic: CLONE LOOP WHile still pkts to write, block updates to histo if progress (1 bit?). Limitation: Histo emission freq must be reduced to prevent massive traffic amp. slicing logic could be extended to include the digest case? Are there PHV limits in the digest case that make this really suck?
+The work presented in this chapter considers how \gls{acr:pdp} hardware can reduce fine-grained inputs and measurements into digests suitable for \gls{acr:ml} models running on host machines, and is based upon \citetitle{DBLP:conf/globecom/SimpsonCP20}~\parencite{DBLP:conf/globecom/SimpsonCP20}.
+I first consider and outline approaches and algorithms for generating and emitting histograms of packet- or flow-level statistics on \gls{acr:psa}-compliant dataplanes (\cref{sec:seidr-architecture}).
+Then in \cref{sec:seidr-tcpcc} we examine a use case to which both histograms \emph{and} precise packet timestamps are well-suited: the identification of \gls{acr:tcp} \glspl{acr:cca} from the distributions of \glspl{acr:iat}.
+This is explained from observations of raw data and analysis of the BBR algorithm.
+\Cref{sec:seidr-evaluation} examines the performance, scalability, and effectiveness of the classification use case on a variety of \gls{acr:ml} models and \seidr{} histograms.
+Finally, \cref{sec:seidr-conclusion} summarises the findings of this chapter.
 
 %\section{Introduction}\label{sec:seidr-introduction}
 %\input{chapters/p2-papers/ch6-seidr/introduction.tex}
 
-\section{Telemetry creation in the dataplane}\label{sec:seidr-architecture}
+\section{Telemetry aggregation in the dataplane}\label{sec:seidr-architecture}
 \input{chapters/p2-papers/ch6-seidr/architecture.tex}
 
 \section{TCP congestion control classification}\label{sec:seidr-tcpcc}
@@ -104,7 +104,13 @@ The work presented in this chapter considers how \gls{acr:pdp} hardware can redu
 % \section{Related Work}\label{sec:related}
 % \input{related.tex}
 
-\section{Summary}\label{sec:seidr-conclustion}
-\input{chapters/p2-papers/ch6-seidr/conclusion.tex}
+\section{Summary}\label{sec:seidr-conclusion}
+%\input{chapters/p2-papers/ch6-seidr/conclusion.tex}
 
-?? Through this chapter, we have discussed ..., lending credence to one of the claims in my thesis statement: \superrecallthesis{3}
+Through this chapter, we've considered how \gls{acr:pdp} hardware can reduce fine-grained inputs and measurements into digests suitable for \gls{acr:ml} models running on host machines, supporting one of this thesis's claims: \superrecallthesis{3}.
+In particular, I've shown \gls{acr:psa}-compliant ways to implement in-network data aggregation in the form of histograms, tailored towards tracking \unit{\nano\second}-precise timestamps.
+Histograms of per-flow packet \glspl{acr:iat} have been presented as the input for various \gls{acr:ml} algorithms, including \glspl{acr:cnn} and \gls{acr:knn} classifiers.
+We have seen empirically that \seidr{} can successfully tell apart \gls{acr:tcp} \glspl{acr:cca}, in particular, it identifies BBR from its predecessors with over \qtyrange{88}{96}{\percent} accuracy, while only consuming a maximum \qty{15.5}{\mebi\byte} of dataplane memory.
+We presented the trade-offs between training and inference times, memory requirements, and accuracy in the context of \gls{acr:cnn} and \gls{acr:knn} classifiers and shown that \seidr{} outperforms prior work by increasing classification accuracy on novel \gls{acr:tcp} \glspl{acr:cca}, providing the ability to classify at very high traffic rates.
+Furthermore, we have identified a key temporal property of \gls{acr:tcp} BBR which allows its easy detection among other flows.
+%In the future, we aim to examine the use of \seidr{} towards microburst detection and diagnosis~\parencite{DBLP:conf/sigcomm/ChenFKRR18} and for the identification of \emph{BBR}-like temporal properties of emerging UDP-based congestion-aware protocols, such as \emph{QUIC}~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}.

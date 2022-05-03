@@ -1,0 +1,12 @@
+\begin{tabular}{ccc}\toprule
+        Field & Datatype & Count \\ \midrule
+        Min & \mintinline{rust}{u16} & 1 \\
+        Max & \mintinline{rust}{u16} & 1 \\
+        Length & \mintinline{rust}{u16} & 1 \\
+        HistoSrc & \mintinline{rust}{u16 + u128} & 1 \\
+        HistoDest & \mintinline{rust}{u16 + u128} & 1 \\
+        BucketCount & \mintinline{rust}{u16} & $2^h$ \\
+        LastTimestamp & \mintinline{rust}{u64} & $2^h$ \\
+        HistoOwner & \mintinline{rust}{3 * u16 + 2 * u128} & $2^h$ \\
+        HistoData & \mintinline{rust}{BUCKETS * u16} & $2^h$ \\ \bottomrule
+\end{tabular}

@@ -1,0 +1,5 @@
+\begin{tabular}{@{}ccccccccc@{}}\toprule
+        Min & Max & Length & HistoSrc & HistoDest & BucketCount & LastTimestamp & HistoOwner & HistoData \\ \midrule
+        \mintinline{rust}{u16} & \mintinline{rust}{u16} & \mintinline{rust}{u16} & \mintinline{rust}{u16 + u128} & \mintinline{rust}{u16 + u128} & \mintinline{rust}{u16} & \mintinline{rust}{u64} & \mintinline{rust}{3 * u16 + 2 * u128} & \mintinline{rust}{BUCKETS * u16} \\
+        1 & 1 & 1 & 1 & 1 & $2^h$ & $2^h$ & $2^h$ & $2^h$ \\ \bottomrule
+\end{tabular}

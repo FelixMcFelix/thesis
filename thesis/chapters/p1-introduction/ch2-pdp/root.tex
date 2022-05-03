@@ -1042,7 +1042,7 @@ To detect \gls{acr:ddos} attack victims in pure P4, \emph{INDDoS}~\parencite{DBL
 To gather state, it maintains sketches of source/destination \glspl{acr:ip} and ports alongside counters, as well as useful primitives like native stateless P4 implementations of \texttt{SYN} cookie functions and approximate Bloom filter allow- and block-lists.
 State is polled by the control plane, which interprets sketches to perform higher-level logic (e.g., observing thresholds, significant changes) and installs detection and mitigation functions using a heuristic algorithm to ensure sufficient coverage.
 
-\subsection{Service acceleration and offloading}
+\subsection{Service acceleration and offloading}\label{sec:ddn-service-accel}
 Distributed data structures, such as key-value stores, are a foundational part of many data centre applications for process coordination and concurrency control.
 \emph{NetChain}~\parencite{DBLP:conf/nsdi/JinLZFLSKS18} and \emph{FLAIR}~\parencite{DBLP:conf/nsdi/TakruriKAA20} offer P4-based implementations of distributed key-value stores, routing and serving requests and updates subject to a chain replication protocol for reliability, achieving an order-of-manitude latency improvement for reads and writes.
 NetChain in particular uses a mixture of \glspl{acr:mat} and registers to accelerate index lookups and store data respectively, though both eliminate steering costs and host stack costs.
