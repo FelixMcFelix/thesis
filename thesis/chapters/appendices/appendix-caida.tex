@@ -12,7 +12,7 @@ Analysis of the these datasets shows that in an Internet backbone link belonging
 %Detail and explain the stuff in that repo here.\gls{acr:caida}~\parencite{caida-2018-passive}
 
 \section{Dataset description}
-The \gls{acr:caida} 2018 passive traces are a set of anonymised Pcap files captured over a \qty{1}{\hour} period each month from the \emph{equinix-nyc} monitor (observed March--December from 1300--1400 UTC\sidenote{Depending on daylight savings time, these endpoints fall in UTC-\{4,5\}$\leftrightarrow$UTC-3 respectively. For most data points at NYC, this corresponds to 0900--1000.}), subdivided into \qty{1}{\minute} traces.
+The \gls{acr:caida} 2018 passive traces are a set of anonymised Pcap files captured over a \qty{1}{\hour} period each month from the \emph{equinix-nyc} monitor (observed March--December from 1300--1400 UTC\sidenote{Depending on daylight savings time, these endpoints fall in UTC-\{4,5\}$\leftrightarrow$UTC-3 respectively. For most data points at NYC, this corresponds to 0900--1000 EDT.}), subdivided into \qty{1}{\minute} traces.
 Source and destination \gls{acr:ip} addresses are anonymised in a prefix-preserving manner.
 Captured packets have been stripped of their payload data, and remaining headers are accompanied by \unit{\micro\second}-precise timestamps.
 Traces are captured over both directions for a monitored Internet backbone link (\qty{9953}{\mega\bit\per\second}, Tier 1 \gls{acr:isp}) between New York and Sao Paulo: direction A runs from Sao Paulo to New York, while direction B is the reverse of this.
