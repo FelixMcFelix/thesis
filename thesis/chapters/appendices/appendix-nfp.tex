@@ -6,7 +6,7 @@ In concert with other SmartNIC designs, \gls{acr:nfp} SmartNICs are designed to 
 This appendix goes into greater detail on these particular SmartNIC devices due to their key role in \cref{chap:in-net-rl,chap:seidr}---primarily because going into meaningful depth concerning device particulars in those chapters would dilute their clarity.
 Specific quantities, particularly around memory sizes or core counts, refer to the Netronome Agilio LX \numproduct{1 x 40}GbE SmartNIC (containing the NFP-6480 chipset).
 
-\section{Execution Model}
+\section{Execution model}
 \paragraph{Core layout.}
 The Netronome NFP-6480 offers \num{112} cores, or \glsxtrfullpl{acr:me}, on which arbitrary programs may be run.
 Cores are clustered into physical groups, termed \emph{islands}, each containing 4 or 12 \glspl{acr:me}.

@@ -18,7 +18,7 @@ Through \cref{sec:intra-agent-communication}, I discuss and introduce the design
 Finally, I detail the scheduler used to partition tile coding tasks between available worker threads in \cref{sec:work-allocation}.
 
 
-\subsection{Policy Storage}\label{sec:policy-storage}
+\subsection{Policy storage}\label{sec:policy-storage}
 Taking advantage of the non-uniform memory architecture in \gls{acr:nfp} hardware, \approachshort{} splits its policy across the CLS, CTM and IMEM memory regions.
 This arises both from necessity, and in the pursuit of runtime performance.
 
@@ -46,7 +46,7 @@ Moreover, these memory regions are accessible to all \glspl{acr:me} on the same 
 This tiered division of policy regions applies to other device classes as well.
 For instance, \gls{acr:fpga} devices have a similar hierarchy between \glspl{acr:lut}, block \gls{acr:ram}, \gls{acr:sram} and \gls{acr:dram}.
 
-\subsection{Action and Update Computation}\label{sec:action-and-update-computation}
+\subsection{Action and update computation}\label{sec:action-and-update-computation}
 %\approachshort{} applies the insights of \textcite{DBLP:journals/firai/TravnikMSP18} to minimise action latency; an action is computed, sent out into the environment, and only then is the underlying policy updated.
 %Using one of the below strategies chosen at compile time, a state vector is tile coded, converted into action probabilities, and an action is chosen.
 %This is then written out to the environment as in \cref{sec:agent-environment-communication}.
@@ -97,7 +97,7 @@ If $\epsilon$ is reduced by an amount smaller in magnitude than the current numb
 %It transpired that cacheing this data placed a larger \texttt{memcpy} in the serial section, whose size did not scale at all with bit depth.
 %Additionally, we do not use bitshifts in place of division operations in our implementation, due to the strict limits that power-of-two tile widths place upon policy design.
 
-\subsection{Agent-Environment Communication}\label{sec:agent-environment-communication}
+\subsection{Agent-environment communication}\label{sec:agent-environment-communication}
 \approachshort{} uses \gls{acr:mpmc} messaging channels to communicate with other elements; be they P4 programs on the packet path, or other on-chip analysis and control modules.
 %Through these channels a system \emph{pushes} state vectors, reward measures, and setup packets as inputs, and \emph{pulls} a stream of state-action pairs as outputs.
 This allows decisions to be made asynchronously---preventing packet stalling---and allowing many RL agents to be used if desired.
@@ -120,7 +120,7 @@ This allows \approachshort{} to handle configuration packets from the environmen
 %These same mechanisms are used by other cores on the same device to \emph{pull} output actions from the RL system.
 %Both input and output can occur on any other core of the device, i.e., as part of P4 \texttt{extern} plugins or a dedicated flow state measurement subsystem, while the P4 control plane itself provides granular control over which flows are monitored or affected.
 
-\subsection{Intra-Agent Communication}\label{sec:intra-agent-communication}
+\subsection{Intra-agent communication}\label{sec:intra-agent-communication}
 Even with parallel problems such as \emph{ParSa}, optimising for latency requires meticulous care in how work is passed out and aggregated.
 This is truer still when moving from the moderately fine-grained control of classical \gls{acr:rl} ($\sim$\qty{1}{\milli\second}) to its logical limit (tens of \si{\micro\second}).
 Ordinarily, the marshalling of requests, responses, and shared data access can incur significant overheads.
@@ -288,7 +288,7 @@ The control packet generation library and evaluation frameworks which build upon
 %Runtime reconfiguration and interaction occur via the control and/or dataplane: the ease of use of the P4 pipeline's match-action tables and custom protocol parsers, combined with the dedicated input pipe to the NIC's controller (the host machine), allow these to be cleanly separated or combined as needed.
 %Bit depth of quantised measurements/preferences, maximum policy sizes, and parallelisation strategy may be configured at compile time.
 
-\subsection{Work Allocation}\label{sec:work-allocation}
+\subsection{Work allocation}\label{sec:work-allocation}
 \begin{algorithm}
 	\caption{Task scheduling for ParSa\label{alg:parsa-schedule}}
 	\tcc{Assume we have a list \emph{ME\_CTXS}, which contains one entry for each included \gls{acr:me} counting the number of its usable contexts, totalling \emph{N\_CTXS}. Also, assume we know the average cost of a task in each memory region, \emph{MEM\_COSTS}.}

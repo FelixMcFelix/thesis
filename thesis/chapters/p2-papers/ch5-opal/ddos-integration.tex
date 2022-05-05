@@ -4,7 +4,7 @@ I support this using other state-of-the-art P4/PDP developments, and discuss how
 
 %?? How do we move this intuition to the start? ELI5 as dimitris says, to get the full end-to-end pipeline across to the reader.
 
-\subsection{In-Network DDoS Defence}\label{sec:integ-1}
+\subsection{In-network DDoS defence}\label{sec:integ-1}
 Classical \gls{acr:rl} can enable real-time, adaptive DDoS mitigation, as I discuss through \cref{chap:ddos-rl}.
 The \emph{Guarded} agent design uses a mixture of global network state and local, per-flow state to monitor how flows respond to bandwidth changes and packet drop---applying the observations made by SPIFFY~\parencite{DBLP:conf/ndss/KangGS16} (observing how flow behaviour reacts to a change in rate limits) with more allowance for congestion-unaware protocols.
 Actions then move flows up or down in punishment levels according to a finite state machine.
@@ -52,7 +52,7 @@ The control plane can then use wildcards or specific matches to narrow down or e
 %\subsection{Something host-specific?}\label{sec:integ-2}
 %Accelerate something at an end-host... Flow control? Something datacentre-y? A novel CCA? What?
 
-\subsection{Network Deployment Considerations}
+\subsection{Network deployment considerations}
 The two compute models discussed above, \coopfw{} and \indfw{}, needn't be homogeneously deployed in a distributed installation.
 In a networked deployment, a subset of \approachshort{} nodes could be \coopfw{} agents, training online, while most other nodes run \indfw{} designs to meet throughput guarantees.
 The control plane would then combine, downsample, and distribute these improved policies between offline agents.

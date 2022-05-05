@@ -25,7 +25,7 @@ Bringing \approachshort{} to \gls{acr:pdp} \emph{switches} such as the Tofino wo
 Taking inspiration from real-time programming, a potential solution might be to divide \gls{acr:rl} processing across several packets (i.e., computing a portion of the preference list each time) until further work would delay outbound transmission.
 This would introduce new issues in concurrent access, work splitting, and altered timescales for learning: we leave their treatment to future work.
 
-\subsection{Interaction and System Model}\label{sec:opal-sys-model}
+\subsection{Interaction and system model}\label{sec:opal-sys-model}
 
 \begin{figure}
 	\centering
@@ -150,7 +150,7 @@ To provide the needed functionality and runtime configuration, \approachshort{}'
 %	\caption[Sourec deo]{text}
 %\end{figure}
 
-\subsection{Data Format}\label{sec:opal-data-format}
+\subsection{Data format}\label{sec:opal-data-format}
 %?? data format selection vs alternatives
 To implement online learning such as in \gls{acr:rl}, we require a data type which allows us to perform numerical computation without an \gls{acr:fpu}---principally, to compute the values in action preference lists.
 Moreover, to achieve online learning we require a format which is both fast to work with (to minimise processing latencies), and suited to represent gradients and temporal difference values i.e., incremental changes to stored policy weights.
