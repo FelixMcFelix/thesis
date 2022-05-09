@@ -206,11 +206,13 @@
 
 
 % Bibliography
-\addcontentsline{toc}{part}{References}
 \renewcommand*{\mkbibnamefamily}[1]{\textsc{#1}}
 \renewcommand*{\mkbibnameprefix}[1]{\textsc{#1}}
+\chapter*{References}
+\addcontentsline{toc}{chapter}{References}
 \sloppy
-\printbibliography[title={References}]
+%\printbibliography[title={References},]
+\printbibliography[heading=none]
 \fussy
 
 \end{document}
