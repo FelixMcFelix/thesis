@@ -21,6 +21,7 @@ On deployment, I demonstrate the bandwidth and memory requirements imposed by \s
 
 \subsection{Datasets}\label{sec:seidr-datasets}
 We examine synthetic flows modelling bulk data transfer at various speeds, generated using iPerf3~\parencite{iperf3}, and processed using custom P4 firmware for Netronome \gls{acr:nfp} SmartNICs.
+Packet captures and \gls{acr:iat} streams are publicly available~\parencite{ht-imc-data,ht-imc-poster}.
 % Inter-arrival time streams are extracted using custom P4 firmware installed on Netronome Agilio CX 2x40GbE SmartNICs.
 % Histograms are generated at classification time from these streams to ensure consistent input data and results between classification techniques and individual trials.
 For every pairwise interaction between \gls{acr:tcp} \emph{BBR}, \emph{Cubic}, \emph{Reno}, and \emph{Vegas}, we capture solo and multiplexed dynamics by running each flow for \qty{3}{\second}, with \qty{2}{\second} of overlap (\ie, the second flow begins at $t=$~\qty{1}{\second}).
@@ -57,7 +58,7 @@ Naturally, this is undesirable for many network deployments, where easy relocati
 
 \begin{figure}
     \centering
-    \resizebox{\linewidth}{!}{\includegraphics{plots/seidr/2class-results.pdf}}
+    \resizebox{\linewidth}{!}{\includegraphics{plots/seidr/2class-results-thesis.pdf}}
     \caption[Accuracy of $k$NN and CNN classifiers when classifying \emph{BBR} and \emph{Cubic} TCP traffic from IAT histograms, trained  over various sequence lengths.]{
     	Accuracy of \gls{acr:knn} and \gls{acr:cnn} classifiers when classifying \emph{BBR} and \emph{Cubic} \gls{acr:tcp} traffic from \gls{acr:iat} histograms, trained over various sequence lengths.
     	In both subsequences and complete flow histograms, accuracies are generally high (at least \qtylist{87; 72}{\percent} respectively).
@@ -68,7 +69,7 @@ Naturally, this is undesirable for many network deployments, where easy relocati
 
 \begin{figure}
     \centering
-    \resizebox{\linewidth}{!}{\includegraphics{plots/seidr/4class-results.pdf}}
+    \resizebox{\linewidth}{!}{\includegraphics{plots/seidr/4class-results-thesis.pdf}}
     \caption[Accuracy of $k$NN and CNN classifiers when classifying \emph{BBR}, \emph{Cubic}, \emph{Reno}, and \emph{Vegas} TCP traffic from IAT histograms, trained and tested on various sequence lengths.]{
     	Accuracy of \gls{acr:knn} and \gls{acr:cnn} classifiers when classifying \emph{BBR}, \emph{Cubic}, \emph{Reno}, and \emph{Vegas} \gls{acr:tcp} traffic from \gls{acr:iat} histograms, trained and tested on various sequence lengths.
     	\glspl{acr:knn} again achieve better performance here, but when handling subflows the entire corpus cannot fit into \gls{acr:ram}.
@@ -92,7 +93,7 @@ While full-sequence \glspl{acr:knn} outperform all examined \glspl{acr:cnn} on t
     \centering
     \begin{subfigure}[b]{\linewidth}
     \centering
-    \resizebox{1.0\linewidth}{!}{\includegraphics{plots/seidr/cnn-histo-app-confusion-2000.pdf}}
+    \resizebox{1.0\linewidth}{!}{\includegraphics{plots/seidr/cnn-histo-app-confusion-2000-thesis.pdf}}
     \subcaption{\emph{Application-limited}. $\mathit{F1}_\mathit{BBR}=$~\num{0.935}, $\mathit{F1}=$~\num{0.486}.
     \label{fig:4c-cnn-conf-app}
     }
@@ -100,7 +101,7 @@ While full-sequence \glspl{acr:knn} outperform all examined \glspl{acr:cnn} on t
 
     \begin{subfigure}[b]{\linewidth}
     \centering
-    \resizebox{1.0\linewidth}{!}{\includegraphics{plots/seidr/cnn-histo-tc-confusion-2000.pdf}}
+    \resizebox{1.0\linewidth}{!}{\includegraphics{plots/seidr/cnn-histo-tc-confusion-2000-thesis.pdf}}
     \caption{\emph{Wire-limited}. $\mathit{F1}_\mathit{BBR}=$~\num{0.893}, $\mathit{F1}=$~\num{0.573}. 
     Notably, $\mathit{F1}_\mathit{Cubic}=$~\num{0.625}.
     \label{fig:4c-cnn-conf-tc}
@@ -151,7 +152,7 @@ Otherwise, this requires pre-allocation of an entry for every possible hash valu
 
 \begin{figure}
     \centering
-    \resizebox{\linewidth}{!}{\includegraphics{plots/seidr/compression-v6.pdf}}
+    \resizebox{1\linewidth}{!}{\includegraphics[trim=14 0 0 0,clip,width=\textwidth]{plots/seidr/compression-v6-thesis.pdf}}
     \caption[Compression ratio of \num{100}-bucket histograms and timestamp streams from raw packets on an IPv6 network.]{Compression ratio of \num{100}-bucket histograms and timestamp streams from raw packets on an IPv6 network. As sequence length increases, histograms provide more of an advantage in compression rate, being \qty{736.8}{\times} smaller than timestamp streams when analysing \num{2000}-packet sequences.}
     \label{fig:histo-compression}
 \end{figure}
@@ -162,7 +163,9 @@ Otherwise, this requires pre-allocation of an entry for every possible hash valu
 %     \caption{Data volume of 100-bucket histograms and timestamp streams versus raw packets on an IPv6 network.}
 %     \label{fig:histo-sz}
 % \end{figure}
-
+To show data rate reductions, I compute the compression ratio of generated histograms against various other representations which can be used to move \glspl{acr:iat} (or the packets used to compute them) from the dataplane.
+Although it is more commonly a metric used for compression algorithms, it is simply:
+$$\mathit{Compression Ratio} = \frac{\mathit{Uncompressed Size}}{\mathit{Compressed Size}}$$
 \Cref{fig:histo-compression} demonstrates the reduction in data sent from raw mirrored packets, to a stream of measured timestamps or \glspl{acr:iat}, to \seidr{} histograms on an IPv6 network.
 Timing histograms naturally provide a larger data reduction as the amount of measured packets increases, while a per-packet \gls{acr:iat} or telemetry stream offers no reduction in packet rate.
 Due to this, 100-bucket histograms cause a greater data reduction than per-packet \glspl{acr:iat} after just 4 packets in a sequence, and consume \qty{736.8}{\times} less volume for \num{2000}-packet sequences.

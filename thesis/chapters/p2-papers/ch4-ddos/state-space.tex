@@ -1,8 +1,8 @@
 \begin{figure}
 	\centering
-	\includegraphics[width=\linewidth]{plots/marl/ftprep-cap-box}
-	\caption[Learned performance of \emph{Instant} agents when benign traffic is UDP-like, using only a single feature as a basis for decisions.]{
-		Learned performance of \emph{Instant} agents when benign traffic is \gls{acr:udp}-like, using only a single feature as a basis for decisions.
+	\includegraphics[width=\linewidth]{plots/marl/ftprep-cap-box-thesis}
+	\caption[Learnt performance of \emph{Instant} agents when benign traffic is UDP-like, using only a single feature as a basis for decisions.]{
+		Learnt performance of \emph{Instant} agents when benign traffic is \gls{acr:udp}-like, using only a single feature as a basis for decisions.
 		Mean \gls{acr:iat}, inbound packet sizes, and global state offer the best predictive performance, while most features offer marginal advantage over the unprotected baseline.
 		\label{fig:udp-feature-plots}
 	}
@@ -10,9 +10,9 @@
 
 \begin{figure}
 	\centering
-	\includegraphics[width=\linewidth]{plots/marl/ftprep-laf-cap-box}
-	\caption[Learned performance of \emph{Instant} agents when benign traffic is UDP-like, jointly tiling each feature with the last action taken.]{
-		Learned performance of \emph{Instant} agents when benign traffic is \gls{acr:udp}-like, combining each feature with the last action taken as a basis for decisions.
+	\includegraphics[width=\linewidth]{plots/marl/ftprep-laf-cap-box-thesis}
+	\caption[Learnt performance of \emph{Instant} agents when benign traffic is UDP-like, jointly tiling each feature with the last action taken.]{
+		Learnt performance of \emph{Instant} agents when benign traffic is \gls{acr:udp}-like, combining each feature with the last action taken as a basis for decisions.
 		Compared to \cref{fig:udp-feature-plots}, this combination causes a marked improvement in the packet count and per-window statistics, and leads to a tighter performance bound for Flow Size.
 		\label{fig:udp-laf-feature-plots}
 	}
@@ -20,9 +20,9 @@
 
 \begin{figure}
 	\centering
-	\includegraphics[width=\linewidth]{plots/marl/ftprep-tcp-cap-box}
-	\caption[Learned performance of \emph{Instant} agents when benign traffic is TCP-like, using only a single feature as a basis for decisions.]{
-		Learned performance of \emph{Instant} agents when benign traffic is \gls{acr:tcp}-like, using only a single feature as a basis for decisions.
+	\includegraphics[width=\linewidth]{plots/marl/ftprep-tcp-cap-box-thesis}
+	\caption[Learnt performance of \emph{Instant} agents when benign traffic is TCP-like, using only a single feature as a basis for decisions.]{
+		Learnt performance of \emph{Instant} agents when benign traffic is \gls{acr:tcp}-like, using only a single feature as a basis for decisions.
 		All of the chosen features can offer a marked improvement over no protection at all.
 		Global state and Mean \gls{acr:iat} still offer the greatest improvement above baseline, but packet-level statistics are considerably less effective for this class of traffic.
 		\label{fig:tcp-cap-feature-plots}
@@ -32,9 +32,9 @@
 \begin{figure}
 	\centering
 %	\vspace{-0.25cm}
-	\includegraphics[width=\linewidth]{plots/marl/ftprep-tcp-laf-cap-box}
-	\caption[Learned performance of \emph{Instant} agents when benign traffic is TCP-like, jointly tiling each feature with the last action taken.]{
-		Learned performance of \emph{Instant} agents when benign traffic is \gls{acr:tcp}-like, combining each feature with the last action taken as a basis for decisions.
+	\includegraphics[width=\linewidth]{plots/marl/ftprep-tcp-laf-cap-box-thesis}
+	\caption[Learnt performance of \emph{Instant} agents when benign traffic is TCP-like, jointly tiling each feature with the last action taken.]{
+		Learnt performance of \emph{Instant} agents when benign traffic is \gls{acr:tcp}-like, combining each feature with the last action taken as a basis for decisions.
 		This combination causes a significant improvement in the effectiveness of packet-level and per-window statistics.
 		\label{fig:tcp-laf-feature-plots}
 	}
