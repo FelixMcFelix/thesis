@@ -106,6 +106,32 @@ We have, at last, the tools to learn complex decision boundaries and effective c
 %?? closed loop, feedback loop whatever.
 The beauty is that, even as our networks evolve, we should be able to learn adjustments and corrections to account for new protocols, behaviours, and topology changes by learning from (always-available) performance and \gls{acr:qos} metrics.
 
+Handling this evolution---particularly at local scales---requires also that we can learn these properties \emph{online}.
+Pre-trained models to solve a task or implement some control mechanism such as a \gls{acr:cca} are likely to be trained in a `one size fits all' manner from a vast amount of data.
+This works well in the general case, of course; functions can be trained to handle a wide variety of scenarios and behave well in response.
+In reality we may very well know that some specific local characteristic (like protocol distribution, or network structure) gives us a property that we could otherwise exploit for per-network, per-switch, or per-machine models.
+In the event of either this scenario or (as above) some gradual change in the underlying problem, it's reasonable to want to tailor an existing policy to suit our current needs.
+Alternatively, we might aim to prevent performance degradation arising from complex dynamics we don't yet know how to model, but can see in live networks.
+Online learning techniques, such as \gls{acr:rl} and federated versions of unsupervised and semi-supervised algorithms, allow us to adaptively train policies to consider local tailoring and global evolution.
+Standard \gls{acr:ml} approaches, on the other hand, require significant caveats to achieve the same effect; labelling data is expensive (either by hand or by constructing and running relevant simulations), datasets are too large to readily provide, and training datasets may have privacy or ownership concerns attached.
+%?? cost of having all data
+%?? privacy and data ownership concerns
+\gls{acr:rl} in particular avoids this by using incremental performance metrics which should be easily observable at runtime.
+%?? Online learning not easy either
+However, online learning adds concrete difficulties beyond simple \gls{acr:ml} inference.
+Even complex functions like \glspl{acr:dnn} can be made efficient on weaker hardware using specialised representations or data formats, but their training relies on holding high volumes of data in memory, alongside costly procedures for computing the gradient estimates needed to update them.
+ 
+%?? make case for online -- like \gls{acr:rl} algorithms
+%?? unsupervised and \gls{acr:rl} -- else data labelling tricky
+%%?? Downsides of a `one size fits all'
+%We can be sure 
+%
+%%?? Upsides: tailor for deployment
+%Online learning techniques 
+%?? maybe: adapt to change?
+%But this is not always easy to achieve.
+%?? What does this require? Not all algos suitable? data / compute reqs?
+
 %\gls{acr:ddos}
 
 %?? Trim down, recast.
@@ -114,7 +140,7 @@ The beauty is that, even as our networks evolve, we should be able to learn adju
 %Nokia's FP5~\parencite{nokia-fp5} similarly promises full programmability for high-density switching and routing at \qty{800}{\giga\bit\per\second} Ethernet (\qty{14.4}{\tera\bit\per\second} total), while Intel's \emph{infrastructure processing units}~\parencite{intel-ipu} present a combined \gls{acr:fpga}- and Xeon-based series of SmartNICs for accelerating datacentre applications.
 
 %?? SOLUTION
-While these developments enable \gls{acr:ddn} and network programmability, it is at their intersection that the field of networking is truly on the cusp of something promising.
+While these developments enable (online) \gls{acr:ddn} and network programmability, it is at their intersection that the field of networking is truly on the cusp of something promising.
 %This thesis explores and chronicles how these angles benefit the network and one another, as well as the challenges introduced by the limited capabilities of a \gls{acr:pdp} environment.
 %?? The intersection
 %?? new data to play with
@@ -125,9 +151,11 @@ Although this data is evidently too much for any one host machine to process---p
 The first way we could achieve this is by aggregating and reducing data in \gls{acr:pdp} hardware to make it feasible to export (at lower volumes and rates), or to apply early statistical processing to ease the workload on process machines.
 The second is by \emph{moving \gls{acr:ml} and \gls{acr:rl} logic directly into \gls{acr:pdp} hardware}.
 \gls{acr:ddn} decisions may then be instantly factored into the routing and processing of typical dataplane \glspl{acr:mat}, at minimal latency cost.
+In concert with online learning techniques such as \gls{acr:rl}, we may also tailor this behaviour to suit the deployment device or location---either by tweaking a known-good base policy, or learning from scratch.
 %?? in-situ processing
 However, programming in-network services has its own challenges: the hardware offers restricted instruction sets, program lengths, data types, \glspl{acr:fu} which would have provided floating-point support, and memory.
 Each limits the kinds of processing we aim to perform, but nowhere is this felt more keenly than the mismatch between the needs of \gls{acr:ml} algorithms and capabilities of network hardware.
+This grows greater still with our desire for online learning in the \gls{acr:pdp} context, which requires us to compute and represent incremental and optimal changes to a learned policy.
 While this logic could also be pushed to host machines, there are significant drawbacks in decision latency and throughput.
 This thesis explores and chronicles how these approaches benefit the network and one another, as well as the challenges introduced by the limited capabilities of a \gls{acr:pdp} environment.
 To that end, I show through the community's advances and my own additions to the state of the art how these approaches can offer meaningful benefit to network operators, as well as how we might enable both online and offline learning in the \gls{acr:pdp} networks of tomorrow.
@@ -159,7 +187,7 @@ This thesis asserts that:
 	\noindent
 	\remembertextnonum{stmt}{\remembertext{0}{Data-driven networking---enhancing networks with \gls{acr:ml}---and dataplane programmability are key tools in aiding the control and measurement of future networks}.
 	\remembertext{1}{Data-driven methods such as reinforcement learning can lead to improved performance in network optimisation and control problems, such as \gls{acr:ddos} prevention}.
-	\remembertext{2}{In-network compute can make data-driven networking more efficient, effective, and responsive}.
+	\remembertext{2}{In-network compute can make data-driven networking more efficient, effective, and responsive---enabling online learning to tailor policies to their deployment environment}.
 	Finally, \remembertext{3}{dataplane programmability will allow the precise measurement \emph{and} data aggregation that can enable fine-grained data-driven analyses to scale to high flow rates or large networks}.
 	Applied together, programmable data-driven networks can improve computer network operation beyond the sum of its parts.}
 %	?? Modern programmable network hardware will allow these key parts of data-driven or RL systems to run within the network fabric, improving performance and response times.
@@ -174,6 +202,7 @@ Claim \stmtno{2} may be somewhat surprising, if we think only of the massive $\m
 By considering changes to algorithms and numerical formats, smaller models can be executed in the limited resources of \gls{acr:pdp} hardware.
 The architecture of these devices is specialised around processing high rates of packet events---by parallelism or pipelining---which can allow line-rate operation of models transformed as above.
 If such decisions can be made \emph{at the same time and location as input data arrive}, then the network can (re-)act faster.
+This also affords us more time to compute gradients and the like without impacting per-packet behaviour, making online learning feasible.
 %-- dplane more eff: reduced time for decisions to be acted upon, possibly reduced time to make said decisions. local state... line rate. architecture of these devices? Smaller models
 Claim \stmtno{3} arises due to the scale and volume of data which \gls{acr:pdp} hardware can produce.
 Consider a single \qty{100}{\giga\bit\per\second} port on a switch, operating at line rate with a mean packet size of \qty{500}{\byte}, from which we want to make some \gls{acr:ddn} decision based on \gls{acr:pdp}-only state such as \unit{\nano\second}-level timestamps and queue occupancies.
