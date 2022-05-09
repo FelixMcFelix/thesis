@@ -11,10 +11,10 @@
 	\node (w0) at ($(in0) + (1, 0.5)$) {$\mathbf{w}$};
 	\node (b0) at ($(w0) + (1, 0)$) {$b$};
 	
-	\draw[->] (in0) -- (out) node[text=uofgrust, midway, font=\small, above] {$+w_0\times{}a_0$};
-	\draw[->] (in1) -- (out) node[text=uofgrust, midway, font=\small, above] {$+w_1\times{}a_1$};
-	\draw[->] (in2) -- (out) node[text=uofgrust, midway, font=\small, below] {$+w_2\times{}a_2$};
-	\draw[->] (in3) -- (out) node[text=uofgrust, midway, font=\small, below] {$+w_3\times{}a_3$};
+	\draw[->] (in0) -- (out) node[sloped, text=uofgrust, midway, font=\footnotesize, above] {$+w_0\times{}a_0$};
+	\draw[->] (in1) -- (out) node[sloped, text=uofgrust, pos=0.4, font=\footnotesize, above] {$+w_1\times{}a_1$};
+	\draw[->] (in3) -- (out) node[sloped, text=uofgrust, midway, font=\footnotesize, below] {$+w_3\times{}a_3$};
+	\draw[->] (in2) -- (out) node[sloped, text=uofgrust, pos=0.4, font=\footnotesize, below] {$+w_2\times{}a_2$};
 
 	% \node (tw0) at ($(w0) + (-1.25, 0)$) {$\wvec{}=\operatorname{concat}\{$};
 	% \node (tw1) at ($(b0) + (0.3, 0)$) {$\}$};
