@@ -217,38 +217,29 @@ On average, this produces \qty[per-symbol=p,sticky-per=true]{25}{\mega\packet\pe
 Grouped according to the claims (\stmtno{\numrange{0}{3}}) in the thesis statement:
 \begin{itemize}
 	\item \emph{A thorough summary of the literature on modern, programmable computer networks (including recent hardware trends) (\cref{chap:nets}), and of machine learning techniques suitable for their control (\cref{chap:ddn})}. This includes the history of a spectrum of tools developed to optimise dataplane processing---both automatically and by bespoke design. Not just how \gls{acr:ml} benefits networks, but how creative networking can benefit \gls{acr:ml} use cases (\stmtno{0,2}).
+	
 	\item \emph{A novel synthesis of best practices, design decisions, and environmental tradeoffs to consider in the design of \gls{acr:ml}-led system control (\cref{sec:ddn-use-takeaways}, \stmtno{1})}.
-	\item \emph{An improved \gls{acr:rl}-based \gls{acr:ddos} prevention scheme (\cref{chap:ddos-rl}, \stmtno{1})}
-	\begin{itemize}
-		\item Two protocol-agnostic, flow-granularity \gls{acr:rl} agent designs (\emph{Instant} and \emph{Guarded} action models),
-		\item Algorithmic modifications to Sarsa to enable better concurrent learning from many in-progress \gls{acr:rl} trajectories,
-		\item Reward functions tailored to detecting the negative impacts of amplification \gls{acr:ddos} and \glspl{acr:lfa},
-		\item A quantitative investigation of suitable flow features for attack traffic detection via \gls{acr:rl},
-		\item Deadline-aware action planning and state fusion to shield agents from being overloaded,
-		\item The architecture and design of a \gls{acr:vnf}- and \gls{acr:sdn}-based installation of this anti-\gls{acr:ddos} solution,
-		\item Procedures and trace data for modelling and generating traffic similar to modern Opus-based \gls{acr:voip} flows,
-		\item An empirical evaluation of these models against the prior state-of-the-art in \gls{acr:rl}-based \gls{acr:ddos} mitigation, and a  non-\gls{acr:ml} algorithm tailored towards \glspl{acr:lfa}.
-	\end{itemize}
+	
+	\item \emph{An improved \gls{acr:rl}-based \gls{acr:ddos} prevention scheme (\cref{chap:ddos-rl}, \stmtno{1})}.
+	This relies on two protocol-agnostic, flow-granularity \gls{acr:rl} agent designs (\emph{Instant} and \emph{Guarded} action models), alongside algorithmic modifications to Sarsa to enable better concurrent learning from many in-progress \gls{acr:rl} trajectories, and reward functions tailored to detecting the negative impacts of amplification \gls{acr:ddos} and \glspl{acr:lfa}.
+	This is supported by a quantitative investigation of suitable flow features for attack traffic detection via \gls{acr:rl}, deadline-aware action planning and state fusion to shield agents from being overloaded, and a concrete architecture and design of a \gls{acr:vnf}- and \gls{acr:sdn}-based installation of this anti-\gls{acr:ddos} solution.
+	To assess this work, I introduce procedures and trace data for modelling and generating traffic similar to modern Opus-based \gls{acr:voip} flows
+	This is then used in an empirical evaluation of these models against the prior state-of-the-art in \gls{acr:rl}-based \gls{acr:ddos} mitigation and a  non-\gls{acr:ml} algorithm tailored towards \glspl{acr:lfa}.
+		
 	\item \emph{\approachshort---the first implementation of in-network, online \gls{acr:rl} (\cref{chap:in-net-rl}, \stmtno{2})}.
-	\begin{itemize}
-		\item An analysis of why \gls{acr:rl} in \gls{acr:pdp} hardware is needed and best-placed to interact with the network, made feasible by classical \gls{acr:rl} methods and quantisation,
-		\item An \gls{acr:rl} interaction model based on path-adjacent compute to protect carried traffic,
-		\item Analysis of suitable data formats for online \gls{acr:ddn} in resource-constrained hardware,
-		\item A proof that 1-step temporal-difference \gls{acr:rl} algorithms admit a parallelisable, map-reduce form with tile-coded policies,
-		\item \emph{ParSa}, a wait-free, parallel, online \gls{acr:rl} algorithm to accelerate tile-coded policy inference and updates,
-		\item Parallel \gls{acr:rl} strategies tailored to provide either maximum offline throughput, or optimal state-action latencies and online throughput,
-		\item Work allocation algorithms and communication tailored to SmartNIC devices with an explicitly tiered memory model,
-		\item In-depth evaluation of how \approachshort{} affects carried dataplane traffic, performs in latency and throughput under different policy sizes (simple/complex state), and improves on host machines,
-		\item A description of how \approachshort{} would integrate with state-of-the-art \gls{acr:pdp} applications to perform fully in-\gls{acr:nic}, fast, automated \gls{acr:ddos} mitigation based on \cref{chap:ddos-rl}.
-	\end{itemize}
+	I present an analysis of why \gls{acr:rl} in \gls{acr:pdp} hardware is needed and best-placed to interact with the network, made feasible by classical \gls{acr:rl} methods and quantisation.
+	To make this task feasible, I design an \gls{acr:rl} interaction model based on path-adjacent compute to protect carried traffic, offer an analysis of suitable data formats for online \gls{acr:ddn} in resource-constrained hardware.
+	I then provide a proof that 1-step temporal-difference \gls{acr:rl} algorithms admit a parallelisable, map-reduce form with tile-coded policies, culminating in \emph{ParSa}, a wait-free, parallel, online \gls{acr:rl} algorithm to accelerate tile-coded policy inference and updates.
+	Exploring the design space, I present parallel \gls{acr:rl} strategies tailored to provide either maximum offline throughput, or optimal state-action latencies and online throughput, and work allocation algorithms and communication tailored to SmartNIC devices with an explicitly tiered memory model.
+	I show \approachshort{}'s effectiveness via in-depth evaluation of how it affects carried dataplane traffic, performs in latency and throughput under different policy sizes (simple and complex state), and improves on host machines.
+	Finally, I describe how \approachshort{} would integrate with state-of-the-art \gls{acr:pdp} applications to perform fully in-\gls{acr:nic}, fast, automated \gls{acr:ddos} mitigation.
+		
 	\item \emph{\seidr{} histograms for aggregation of precise flow telemetry (\cref{chap:seidr}, \stmtno{3})}.
-	\begin{itemize}
-		\item A flexible dataplane-assisted architecture and algorithm compatible with the \gls{acr:psa} that allows data aggregation in the form of histograms,
-		\item A measurement study of \gls{acr:iat} microstructure between \gls{acr:tcp} \gls{acr:cca} variants, and analysis which establishes the algorithmic cause for these differences,
-		\item A high-accuracy method for using the \seidr{} procedure to track \glspl{acr:iat} with nanosecond-accurate timing to tell apart timer-based (\eg, BBR) and \texttt{cwnd}-based \gls{acr:tcp} \glspl{acr:cca},
-		\item An extensive evaluation of \gls{acr:tcp} congestion control classification using \gls{acr:iat} histograms using different \gls{acr:ml} models,
-		\item Analysis of \seidr's scalability compression ratio relative to input sequence length.
-	\end{itemize}
+	This is a flexible dataplane-assisted architecture and algorithm compatible with the \gls{acr:psa} that allows data aggregation in the form of histograms.
+	The use of histograms is supported by a measurement study of \gls{acr:iat} microstructure between \gls{acr:tcp} \gls{acr:cca} variants, and analysis which establishes the algorithmic cause for these differences.
+	Using \gls{acr:ml} methods, I present a high-accuracy method for using the \seidr{} procedure to track \glspl{acr:iat} with nanosecond-accurate timing to tell apart timer-based (\eg, BBR) and \texttt{cwnd}-based \gls{acr:tcp} \glspl{acr:cca} using host machines.
+	Its effectiveness is shown by an extensive evaluation of \gls{acr:tcp} congestion control classification using \gls{acr:iat} histograms in different \gls{acr:ml} models, as well as analysis of \seidr's scalability compression ratio relative to input sequence length.
+	
 \end{itemize}
 
 A contribution I can't claim to offer, but hope sincerely to have done, is to collect together enough of the literature and intuition on \gls{acr:ddn} and \glspl{acr:pdp} to serve as a comfortable introduction to a newer researcher in the field.
