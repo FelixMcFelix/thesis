@@ -178,10 +178,10 @@ The main way in which they differ is that they feed neuron state from the previo
 \glsxtrfull{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97} units include extra gates to control how hidden state is held between timesteps element-wise (input, output and forget gates), whose parameters are also trainable.
 \glsxtrfullpl{acr:gru}~\parencite{DBLP:conf/emnlp/ChoMGBBSB14} remove the output gate (passing on only the hidden state), and as a result are competitive with fewer weights to learn.
 
-Returning again to the \gls{acr:pdp} context, \glspl{acr:nn} are useful because they have both a high model capacity and are quite compactly represented by all parameters in $\wvec{}$.
+Returning again to the \gls{acr:pdp} context, \glspl{acr:nn} are useful because they have both a high model capacity and are quite compactly represented by all parameters in $\wvec{}$---they encode a \emph{transformation} of input data rather than a lookup table.
 They can thus require less memory to store a policy than tiles might need, at the same count of input dimensions.
-As we have
-However, not only is their gradient computation more expensive than the forward pass, ---likely ruling out their use in \emph{online} learning in \gls{acr:pdp} hardware.
+%As we have ??
+However, not only is their gradient computation more expensive than the forward pass, their training requires many passes (or epochs) over a large training corpus which should be held at or near the agent under training---likely ruling out their use in \emph{online} learning in \gls{acr:pdp} hardware.
 They can be well-represented in \gls{acr:rmt} hardware and SmartNICs (\cref{sec:inc-uses-pdp-ml}), depending on data format (\cref{sec:numerical-representations-for-embedded-ml}), but at the extremes of making inference quick we lose the ability to even modify the policy incrementally.
 It should be obvious that more complex methods outlined here (\glspl{acr:gnn}, \glspl{acr:lstm}, \glspl{acr:rnn}) are more broadly unsuitable due to their iterative compute models, outside of the specialised architectures we've discussed earlier in \cref{sec:frontiers-in-programmable-networks}.
 Similarly, they are generally understood to be more costly still to train, again ruling out online learning in \gls{acr:pdp} hardware.

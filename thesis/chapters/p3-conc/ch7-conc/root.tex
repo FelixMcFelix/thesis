@@ -164,5 +164,8 @@ This continues to make use of the many cores or \glspl{acr:fu} that we might exp
 \glspl{acr:bnn} are not, however, suited for this purpose, given that training requires incremental real-valued adjustments to the model parameters.
 As such, online \gls{acr:nn} training in the \gls{acr:pdp} would likely mandate \emph{at least} fixed-point arithmetic, ruling out the strong performance benefits of \glspl{acr:bnn}.
 
+?? haha great idea
+?? \gls{acr:es} methods, devoid of \emph{any} gradient computation, may instead be a comfortable fit for policies with fewer parameters---which require fewer noise values to add and track over $\wvec{}$ for all live traces.
+
 %\emph{N3IC}~\parencite{DBLP:journals/corr/abs-2009-02353} offers a model-parallel \gls{acr:nfp} implementation of the \gls{acr:nn} forward pass---this execution model 
 %?? Insights from distributed model-training? Gradient calculation still tricky. Wait-free backpropagation as in \cref{sec:distributed-training} might work with non-\glspl{acr:bnn} to divide gradient compute across agents (again, exploiting multi-core or many \glspl{acr:fu} that we might get out of \glspl{acr:fpga})
