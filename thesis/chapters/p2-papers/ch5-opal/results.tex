@@ -161,7 +161,9 @@ Referring to \cref{fig:state-slip}, we take $t_2$ from \cref{tab:lats} for host 
 	\item[\gls{acr:vnf} Offload.] \Textcite{DBLP:journals/cm/CzivaP17} show that  lightweight \gls{acr:vnf} frameworks like GNF~\parencite{DBLP:journals/cm/CzivaP17} and ClickOS~\parencite{DBLP:conf/nsdi/MartinsAROHBH14} add \qtyrange{45}{55}{\micro\second} \emph{additional} \gls{acr:rtt} latency above \gls{acr:pcie} costs, which remain an estimated \qty{1}{\micro\second} as above.
 	\emph{This gives an end-to-end inference latency of \qty{572.9}{\micro\second}}.
 \end{description}
-Using these estimates, in-\gls{acr:nic} classical \gls{acr:rl} inference offers \qtylist{14.96;16.54}{\times} speedups in latency over collector and \gls{acr:vnf} deployments respectively (assuming no steering cost in either case).
+Using these estimates, in-\gls{acr:nic} \gls{acr:rl} inference offers \qtylist{14.96;16.54}{\times} speedups in latency over collector and \gls{acr:vnf} deployments respectively (assuming no steering cost in either case).
+The \glspl{acr:rtt} in our earlier microbenchmark---\cref{fig:xdp-microbench}---are slightly more complex to compare against; they include the wire times and send-side costs of an additional host machine (a minor form of steering).
+What is clear, however, is that raw \approachshort{} inference costs are very similar to those required to reach a host machine via \gls{acr:xdp} and its related technologies\sidenote{To reiterate, the median \glspl{acr:rtt} were around \qty{19}{\micro\second} for \gls{acr:dpdk}, \qty{30.25}{\micro\second} for Native \gls{acr:xdp}, and \qty{32.5}{\micro\second} for \texttt{AF\_XDP}.} which have sprung up in more recent years.
 We also contrast these against \gls{acr:drl} policies on network tasks, which can take \qty{3}{\milli\second} to compute~\parencite{DBLP:journals/corr/abs-1910-04054}---2 orders of magnitude above \approachshort{} with identically sized (20-dim) input vectors.
 %In the name of fairness, we assume that rule installation uses same mechanism we recommend, but show how bad it can get? I.e. with rule installation costs etc.
 
