@@ -1,0 +1,284 @@
+\section{A large-scale problem in modern networks: distributed denial of service}\label{sec:problems-in-modern-networks}
+While computer networks are prone to all manner of operational problems on account of their gradual, continued construction via many complex interlocking systems, we train our focus here on \glsxtrfull{acr:dos} and \glsxtrfull{acr:ddos} attacks.\sidenote{A vast array of other, keenly relevant problems are briefly explained while motivating the \gls{acr:ddn} use cases presented throughout \cref{sec:use-cases}.}
+\gls{acr:ddos} attacks are concentrated efforts by many hosts to reduce the availability of a service, typically to inflict financial harm or as an act of vandalism.
+Attackers achieve this by either exploiting peculiarities of \gls{acr:os} or application behaviour in \emph{semantic attacks} (e.g., \emph{\texttt{SYN} flooding attacks}), or overwhelming their target through sheer volume of requests or inbound packets (\emph{volume-based attacks})~\parencite{DBLP:conf/imc/JonkerKKRSD17}.
+Hosts often participate unwillingly, typically having been recruited into a \emph{botnet} by malware infection to be orchestrated from elsewhere~\parencite{DBLP:conf/uss/AntonakakisABBB17}.
+
+Why focus on this problem in particular?
+The primary reason is that their scale and impact presents a constant threat to any Internet service.
+Exhausting all of a server's resources (or those of the infrastructure providing a path to it) ensures that it cannot be accessed---causing financial losses, silencing information sources, or creating downstream service breakages.
+Some services, such as those associated with game hosting, are likely to be targeted simply for competitive advantage or reputation~\parencite{aws-shield-review-2020}.
+Accordingly, \gls{acr:ddos} attacks are often nicknamed an `800-pound gorilla'~\parencite{DBLP:conf/imc/CzyzKGPBK14} on the wider Internet.
+Their reach is, however, made all that much greater by the centralisation of many websites and servers to cloud and hypergiant infrastructure.
+Consider volumetric attacks on Dyn (\qty{1.2}{\tera\bit\per\second}), who at that time hosted key resources for Twitter, Spotify, and Netflix~\parencite{dyn-ddos-2016}, the web host OVH (\qty{1}{\tera\bit\per\second})~\parencite{ovh-ddos-2016}, and the Github code hosting platform (\qty{1.35}{\tera\bit\per\second})~\parencite{github-ddos-2018}.
+Amazon's own services have been an attractive target on several occasions: S3's \gls{acr:dns} servers were hit by an attack of unknown size in October 2019 which was unmitigated~\parencite{amazon-s3-2019-ddos}, while AWS successfully resisted \qty{2.3}{\tera\bit\per\second} of traffic mere months later~\parencite{aws-shield-2020-q1}.
+Even individuals' blogs such as KrebsOnSecurity (\qty{665}{\giga\bit\per\second})~\parencite{krebs-ddos-2016} have been high-profile targets.
+The more solutions and insight the research community can provide, the better.
+
+The second reason is that \gls{acr:ddos} defence scenarios may be a representative example of the kinds of closed loop control that \gls{acr:ddn} is exceptionally well-suited to.
+Target servers and infrastructure expose useful state such as link utilisations, queue depths, and service metrics; an influx of attack traffic has noticeable effects on this state, and taking the `right' control plane actions (e.g., blackholing specific traffic sources or protocols, filtering out attack packets) should move the network's state closer to some degree of normality.
+At the same time, \gls{acr:ddos} strategies evolve over the course of a single attack~\parencite{DBLP:conf/spw/KangGS16}, potentially leading to a nuanced (and difficult) measure$\rightarrow$infer$\rightarrow$act loop.
+%?? natural choice for the problems and services of future networks
+An ideal, human-designed solution to this control loop is made tricky by the complex interplay of attack dynamics with many existing elements of the network: protocol distribution and behaviour, application behaviour, and the gradual evolution of benign traffic.
+For this reason, I focus on \gls{acr:ddos} attacks as a particular use case in this thesis---in turn, \cref{chap:ddos-rl} is dedicated to improving automated, data-driven means for their solution.
+
+%?? Attacks nowadays present on the order of \si{\tera\bit\per\second}~\parencite{github-ddos-2018,dyn-ddos-2016,krebs-ddos-2016,ovh-ddos-2016,aws-shield-2020-q1}, and attack strategies vary from direct volume-based attacks~\cite{DBLP:conf/ndss/Rossow14, DBLP:conf/uss/KuhrerHRH14} to those which a victim cannot directly observe~\cite{DBLP:conf/sp/KangLG13, DBLP:conf/esorics/StuderP09}.
+
+
+
+%?? ----------------
+%?? IDEA: 2022. How to present:
+%?? Problem at big scale: DoS attacks
+%?? Problem at small scale: Measurement, microburst, fairness etc.
+%?? ----------------
+
+%\subsection{Attack classes}
+%?? Big survey \cite{DBLP:conf/imc/JonkerKKRSD17}?
+\Textcite{DBLP:conf/imc/JonkerKKRSD17} offer an in-depth analysis and taxonomy of the landscape of \gls{acr:dos} attacks.
+They observe that Denial-of-Service is most commonly achieved through \emph{resource exhaustion}---either at the target server or the infrastructure serving it.
+Attacks may then be classified on two orthogonal axes: \emph{Direct vs.~Reflection} and \emph{Volumetric vs.~Semantic}.
+\begin{description}
+	\item[Direct] Attackers send packets directly towards their target. Random \gls{acr:ip} spoofing is often used to make blocklisting more difficult, but leaves evidence of an attack and its characteristics due to \emph{backscatter}, visible to network telescopes~\parencite{DBLP:conf/lisa/Moore03,DBLP:conf/imc/RichterB19}.
+	\item[Reflection] Attackers send traffic to a \emph{reflector}, spoofing the source \gls{acr:ip} of packets to match that of the target. The reflector sends replies to the target, often \emph{amplifying} them in the process.
+	\item[Volumetric] \gls{acr:dos} is achieved by \emph{resource exhaustion}---\gls{acr:cpu} or \gls{acr:ram} usage at a target host, or occupying and overflowing transmission buffers along key traffic routes. These can be service agnostic, but in some cases rely on buggy behaviour of other software as their main mechanism.
+	\item[Semantic] \gls{acr:dos} is achieved by \emph{exploiting program logic}, for instance to crash a target application server. These are often tailor-made for a particular service or its deployment environment, such as \emph{teardrop attacks} against a host's \gls{acr:tcp} stack.
+\end{description}
+We'll focus mainly on volumetric attacks (direct and reflection), as these are the attack vectors applied in the listed, real-world attacks.
+
+%?? How to fit in w/ rest?
+%They find that TCP tends to be the leading transport for direct random-spoofing attacks, while reflection and amplification attacks are dominated by UDP-like protocols (NTP$>$DNS$>$CharGen).
+%Randomly spoofed direct attacks are found to last longer, and are most intense around ``web ports'' (HTTP, SSH, etc.), evidence is seen to support the existence of ``joint attacks''.
+%The scale of all attacks is immense, by their measurements: at least a third of the internet is under attack at any one point in time, with at least \num{30000} attacks \emph{visible} each day.
+
+\subsection{Volumetric attacks}
+
+\paragraph{Amplification attacks}
+Amplification attacks abuse network services with small request bodies and large responses, causing a typically benign service to forward traffic on an attacker's behalf by \emph{reflection}---spoofing the source \gls{acr:ip} of requests to that of the intended victim.
+An attacker requires that their \gls{acr:as} doesn't prevent \gls{acr:ip} spoofing at egress.
+In exchange, they are able to split their upstream bandwidth across many reflectors to gain higher volumes of attack traffic from multiple sources without revealing their own \gls{acr:ip} to the victim.
+\gls{acr:udp}-based protocols are the typical basis for such attacks, as the transport is connectionless.
+
+While \gls{acr:dns} is the most well-known vector for amplification, \textcite{DBLP:conf/ndss/Rossow14} presents an in-depth survey of a wide variety of other vulnerable protocols alongside a rough census of abusable servers.
+He examines network services (SNMPv2, \gls{acr:ntp}, \gls{acr:dns}, NetBIOS, SSDP), legacy services (CharGen, QoTD), peer-to-peer networks (BitTorrent, Kad), online games (Steam, Quake 3) and externally abusable botnets (ZAv2, Sality, Gameover).
+Scanning for \num{e5} amplifiers of a popular service can be done in minutes, making \gls{acr:ntp} particularly dangerous due to its prevalence and high amplification rate.
+Furthermore, he notes that DNSSEC can exacerbate the problem by its addition of large signatures to message payloads.
+
+\textcite{DBLP:conf/uss/KuhrerHRH14} build further upon this census; they find significant overlap between servers who expose different vulnerable services, connect these services to \gls{acr:os} fingerprints, and use \gls{acr:dns} proxies to enumerate the \glspl{acr:as} who allow \gls{acr:ip} spoofing.
+They find that many eligible reflectors tend to lie behind dynamic \gls{acr:ip} addresses and so undergo significant churn (meaning an attacker must often re-scan every few days/weeks).
+This is not the case for certain protocols like \gls{acr:ntp}, where the server list remains far more stable.
+The authors also explore the amplification potential of all \gls{acr:tcp}-based services---given that well-known protocols like \gls{acr:http} cannot be blocked in most infrastructures, an attacker can abuse retransmissions of the handshake (\texttt{SYN-ACK}) to achieve an amplification factor up to \qty{20}{\times} if the receiver doesn't send \texttt{RST} responses.
+%Differing TCP stacks have varying quirks, so the behaviour of the victim and all reflectors can be hard to predict without prior fingerprinting.
+%It can be observed that choosing amplifiers of larger geographic distance might increase the amount of \texttt{SYN-ACK} packets in flight before the well-meaning reflector can receive a \texttt{RST}.
+
+\gls{acr:ntp} quickly became the attack vector of choice, according to \Textcite{DBLP:conf/imc/CzyzKGPBK14}.
+They find that most vulnerable amplifiers are \emph{end-hosts}, typically offering \qty{4}{\times} amplification.
+At the time of publication, they observed that \gls{acr:ntp} amplification attacks had risen in volume by $\sim$\qty{1000}{\times}, though were slowly declining; \qty{85}{\percent} of attacks over \qty{100}{\giga\bit\per\second} relied upon \gls{acr:ntp} reflection.
+The decrease, they posit, stems mostly from vulnerable servers being patched in response to recent bulletins making the risk clear to server operators.
+%How are these patched servers distributed?
+They observe that, after the patch period, many of the remaining vulnerable servers are sparsely distributed (rather, the patched servers are clustered under \gls{acr:ip} blocks).
+This is in line with the (un)cleanliness hypothesis put forth by \textcite{DBLP:conf/imc/CollinsSFJWSK07}.
+Of greatest concern was the presence of `mega-amplifiers' offering \qtyrange{e3}{e9}{\times} amplification due to the presence of network loops.
+%Over the duration of their study, they observed a \SI{92}{\percent} reduction in abusable IPs, though the uncleanliness observation recurs as the reduction is smaller when considering /24 prefixes (\SI{72}{\percent}).
+%Regardless, this drop is \emph{far} more significant than any seen in the availability of Open DNS resolvers.
+%A large part of the remaining vulnerable machines are identified as end hosts, implying that quick fixes are unlikely.
+%They make it clear that it is hard to reason about who the attackers are (bots, organisers or botmasters), and for what reasons they launch attacks (although ancillary evidence suggests that a remarkably common motivation me be rivalry through, e.g., games).
+
+%\Textcite{DBLP:conf/imc/KuhrerHBRH15} investigate the landscape of \emph{open recursive DNS resolvers}, one of the major enabling factors for DNS amplification attacks.
+%Specifically, a DNS server is said to be \emph{open} if it does not filter requests by source IP address.
+%The existence of such servers is, they claim, paradoxical: rare is the need to publicly expose recursive DNS resolution when the servers should operate in a well-structured (hierarchical) manner.
+%By scanning across all IPv4 addresses (according to the methodology of \textcite{DBLP:conf/uss/DurumericWH13}), they discover a downward trend in abusable servers (from \num{26.8e6} to \num{17.8e6} over the year) due to blocked requests/DNS filtering/shutdown/IP churn.
+%As it turns out, many of these DNS servers run old and vulnerable software, and are very highly represented (\SI{67}{\percent}) by consumer routers linked to dynamic IPs.
+%Curiously, cache snooping reveals that \SI{61}{\percent} of all open DNS resolvers see active use---many of these resolvers are legit (\SIrange{85}{92}{\percent}), with some even filtering out malicious domains.
+%The illegitimate set corresponded to censorship in Iran and China, and to malicious redirection to snooping proxies or outright malware.
+
+\Textcite{DBLP:conf/imc/KuhrerHBRH15} investigate the landscape of \emph{open recursive DNS resolvers}, one of the major enabling factors for \gls{acr:dns} amplification attacks.
+Many of these \gls{acr:dns} servers run old and vulnerable software, and are very highly represented (\qty{67}{\percent}) by consumer routers linked to dynamic \glspl{acr:ip}.
+%Curiously, cache snooping reveals that \SI{61}{\percent} of all open DNS resolvers see active use---many of these resolvers are legit (\SIrange{85}{92}{\percent}), with some even filtering out malicious domains.
+%The illegitimate set corresponded to censorship in Iran and China, and to malicious redirection to snooping proxies or outright malware.
+
+As of \citeyear{DBLP:conf/imc/JonkerKKRSD17}, the distribution of amplification attacks over \gls{acr:udp} protocols was observed to roughly have the pattern \gls{acr:ntp}$>$\gls{acr:dns}$>$CharGen.
+This is in spite of the evidence put forth by \textcite{DBLP:conf/imc/CzyzKGPBK14}, which suggested a decline of \gls{acr:ntp}-based amplification attacks.
+%Perhaps the effort to patch up many servers simply hit a (metaphorical) wall of operators who actually cared, thus leaving many viable NTP amplifiers in the wild?
+
+%?? Any observations from \textcite{DBLP:conf/raid/KramerKMNKYR15}?
+
+It must be reiterated that new amplification \gls{acr:ddos} vectors arise due to software bugs and misconfigurations even today.
+\emph{TsuNAME}~\parencite{Moura21a} is a recent example, where the presence of recursive \gls{acr:dns} dependencies causes traffic amplification toward authoritative name servers.
+While this cannot be directed to an arbitrary target \emph{per se}, this presents another vulnerability in critical infrastructure that administrators must be aware of.
+
+%?? Mirai used as DDoS vector \cite{DBLP:conf/uss/AntonakakisABBB17}.
+
+\paragraph{Link-flooding attacks}
+\glsxtrfullpl{acr:lfa} or \emph{transit-link} attacks are another volumetric \gls{acr:ddos} vector which has come to light~\parencite{DBLP:conf/esorics/StuderP09,DBLP:conf/sp/KangLG13}.
+In contrast with typical direct and reflection-based attacks, malicious actors here do not forward traffic directly to their intended victim.
+Instead, they use their bandwidth to communicate with as many legitimate or dummy servers as they can such that the outbound traffic of all participating clients aggregates at a common point in the Internet.
+This exhausts the resources of a target \gls{acr:as} or set of bottleneck links needed to reach their intended victim, and traffic appears for all intents and purposes as a completely uncorrelated set of source and destination pairs.
+Since the traffic only ever aggregates in, e.g., \gls{acr:isp} networks, target servers never see any attack traffic themselves.
+The need for many source nodes means that attackers practically require botnets for \glspl{acr:lfa} to be feasible~\parencite{DBLP:conf/sp/SmithS18}; however, Internet-of-Things devices and other insecure machines are often recruited for this purpose via malware like \emph{Mirai}~\parencite{DBLP:conf/uss/AntonakakisABBB17}.
+
+%do some stuff according to these guys \cite{DBLP:conf/sp/SmithS18} (who defend against it), and these guys (who predicted it)---Crossfire \cite{DBLP:conf/sp/KangLG13}, Coremelt \cite{DBLP:conf/esorics/StuderP09}.
+%?? botnet traffic. ?? Mirai used as DDoS vector \cite{DBLP:conf/uss/AntonakakisABBB17}.
+
+%\paragraph{Characteristics}
+%
+%?? Botnet C\&C communication \cite{DBLP:conf/sac/ZandVYK14}? NOT READ
+%
+%?? \SI{69}{\percent} of targets are web servers \cite{DBLP:conf/imc/JonkerKKRSD17}.
+%
+%DDoS attacks evolve over timescales of seconds to months.
+%\Textcite{DBLP:conf/spw/KangGS16} investigate this, and consider the implications and considerations necessary to deal with such occurrences.
+%Why might attackers desire this?
+%The authors posit that a diverse attack portfolio makes for more effective attacks, so long as there is \emph{variation}---a single suite or pattern of evolution makes defence (and discovery of the attacker) far simpler.
+%We see such evolution in:
+%\begin{description}
+%	\item[Volume and Capabilities] Peak \SI{300}{\gibi\bit\per\second}$\rightarrow$\SI{600}{\gibi\bit\per\second} over the last 4 years from date of publication.
+%	\item[Attack targets] E.g., Spamhaus---attackers moved from targeting endpoint servers to targeting the routers in \emph{internet exchange points} (IXPs) once the former was detected.
+%	\item[Strategy] E.g., semantic attacks $\rightarrow$ volumetric (TCP \texttt{SYN} flood) $\rightarrow$ volumetric (NTP amplification) $\rightarrow$ LFA.
+%\end{description}
+%They find that evolution in capabilities occurs over longer timescales, as these typically require resource acquisition (knowledge, bots, etc.).
+%\emph{Strategies}, however, are easily poised to evolve over short time horizons, typically ``[adapting] to the target's (observed) defensive posture''.
+%This behaviour was observed in both the cases of SpamHaus and ProtonMail.
+%In light of this, they suggest a two-tier approach to defence.
+%To thwart rational adversaries, they suggest the use of \emph{deterrents}---mechanisms located at e.g., a single network point, which can detect attacks and thus increase the cost of maintenance.
+%Most defences fit this description.
+%To handle cost-insensitive attackers, they suggest collaborative approaches (such as SENSS \cite{DBLP:conf/acsac/RamanathanMYZ18}).
+%Unfortunately, the work makes little attempt to describe or study the patterns of short-term evolution which might be expected in a real-world attack.
+%
+%?? I think we need some other sources to reason about things from a game theoretic perspective---it seems to me that evolution is the name of the game \cite{DBLP:conf/atal/SinhaKT16} (not read this, but seemed relevant at the time).
+%
+%\paragraph{Amplification}
+%\textcite{DBLP:conf/ndss/Rossow14}.
+%?? Inbound/outbound traffic ratios at victim (above a certain bw thres).
+%?? At the amp, scan activity in surrounding darknets can be an indicator.
+%?? At the amp, similar ratio analysis (scaled to account for benign activity and real clients who require high bandwidth: lower amp, higher bw).
+%
+%\textcite{DBLP:conf/imc/CzyzKGPBK14} observe some further hallmarks specific to NTP attacks.
+%The \texttt{monlist} command principally used as the basis for such attacks can often reveal the list of recent targets after the fact, offering external investigators a means to determine which open NTP servers see active use as amplifiers (and their unwilling victims).
+%An interesting observation stemming from these records is that the sets of amplifiers and victims are both highly clustered across ASes---individually, that is.
+%Furthermore, it is observed that attackers choose a selection of target ports on the victim machine (in order of popularity): HTTP, NTP, SSH, gaming services and DNS.
+%Noting that many of thes services run on \emph{TCP}, it seems likely that attackers are hoping for firewalls to blindly allow through both TCP and UDP on these ports.
+%Their randomised scanning techniques imply that the culprits behind similar scans could be detected via network telescopes (although it is unclear whether this would reveal the bots, the organiser or the botmaster).
+%
+%As an aside, the NTP \texttt{monlist} command fragments its $\sim$\SI{50}{\kibi\byte} payload into \SI{482}{\byte} chunks.
+
+
+\subsection{Contributing factors in the detection problem}\label{sec:ddos-contributing-factors}
+\paragraph{Variation in normality}
+Benign traffic is in no way `normal', and is often composed of a variety of heterogeneous traffic classes acting in different ways.
+Protocol families respond differently to both administrator actions \emph{and} the presence of attack traffic; mainly, this difference is seen between congestion-aware and -unaware flows.
+At a high level, congestion-aware traffic tends to scale its rate up to its maximum fair share and scales down in response to congestion signals such as packet losses (e.g., \gls{acr:tcp}), while congestion unaware traffic ignores these requirements (e.g., most \gls{acr:udp} flows).\sidenote{This distinction is not quite as simple as `\gls{acr:tcp} \& \gls{acr:udp}'. Due to middlebox-driven Internet ossification, \emph{QUIC}~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17} and \emph{\gls{acr:sctp}}~\parencite{rfc4960} are carried over \gls{acr:udp}. Respectively, they are and can be congestion-aware. BitTorrent's \emph{\textmu{}TP}~\parencite{DBLP:conf/icccn/RossiTVM10} builds on \gls{acr:udp} to offer a lower-latency congestion-aware transport. Finally, adversarial replayed \gls{acr:tcp} traffic (e.g., \texttt{SYN} floods) is of course congestion-unaware.}
+Consider probabilistic packet drop at a rate $p\in\left(0,1\right]$---pushback~\parencite{DBLP:journals/ccr/MahajanBFIPS02a}.
+Loss-ignoring and \gls{acr:cbr} traffic's send rate will scale in proportion to $1 - p$.
+\gls{acr:tcp} Reno and the like exhibit greater falloff proportional to $1/\sqrt{p}$ courtesy of the Mathis equation~\parencite{DBLP:journals/ccr/MathisSMO97}, with a kinder $1/p^{0.75}$ for \gls{acr:tcp} Cubic~\parencite{rfc8312}, inflicting greater collateral damage than expected on misclassified but legitimate flows.
+Even then, congestion-aware traffic's precise response depends on \gls{acr:cca} design, protocol implementation details, and the nature of the carried traffic (e.g., bulk transfer vs.~\glspl{acr:rpc}).
+
+Attack traffic may well share a feature with a non-dominant family of protocols, at which point basing a defence on that mechanism will result in harming or blocking that legitimate traffic---\emph{collateral damage}.
+For instance, \gls{acr:cbr} traffic such as \gls{acr:voip} flows are unlikely to respond in a meaningful way to a change in their bandwidth allocation, short of recording and reporting packet loss statistics.
+In contrast, most congestion-aware flows (including \gls{acr:lfa} sources) will respond to bandwidth expansion and contraction, with \glspl{acr:lfa} having little to no response compared to legitimate traffic~\parencite{DBLP:conf/ndss/KangGS16}.
+
+Finally, the exact proportions of this heterogeneous mixture vary over time and between \gls{acr:as} classes.
+%?? it depends on ?? environment
+%?? Heterogeneirty of traffic classes
+%?? Classes respond in different ways to different actions.
+Consider a point estimate of sorts obtained by analysing the 2018 \gls{acr:caida} traces~\parencite{caida-2018-passive}, shown in \cref{adx:caida-traffic}.
+On this tap of \gls{acr:isp} traffic, congestion-aware traffic makes up at least \qtyrange{73}{82}{\percent} of packets; varying over time and the link's direction.
+The corollary is that congestion-unaware \gls{acr:udp} traffic makes up at most \qtyrange{27}{18}{\percent}---a significant fraction of collateral damage, if we are careless around our defence and detection model in the above example.
+%?? Describe all my CAIDA analysis here
+%?? analysis of CAIDA datasets~\parencite{caida-2018-passive}
+%?? congestion-aware traffic makes up at least \qtyrange{73}{82}{\percent} of packets
+%?? Also talk about QUIC's prevalence here
+The first figure includes some peak \qty{3.26}{\percent} of QUIC traffic in the \emph{Sao Paulo to New York} direction.
+Variability extends also to the behaviour of flows \emph{within} a protocol.
+This presents in some cases as long-tailed distribution between more numerous, shorter \emph{mice} flows and longer \emph{elephant} flows~\parencite{DBLP:journals/ccr/PanBPS03}.
+A consequence is that punishing actions can have a greater relative impact on some flow classes over others (in this case, packet losses would have the greatest impact on mice \glspl{acr:fct}).
+
+%Our mode of action means that each agent is in control of pushback \cite{DBLP:journals/ccr/MahajanBFIPS02a}, and so carries a risk of introducing collateral damage into the network.
+%This is particularly severe when handling TCP traffic: the Mathis equation \cite{DBLP:journals/ccr/MathisSMO97} states that TCP bandwidth is proportional to $1/\sqrt{p}$ (noting that $p$ is nonzero in any real network) while constant bitrate (CBR) UDP traffic is proportional to $1 - p$.
+%%It's worth noting that there are various ways that this could be implemented, and that the application of \emph{programmable data planes} to this end are suggested as future work.
+%This weakness is still present in modern TCP flavours, such as TCP Cubic which in turn has bandwidth proportional to $1/p^{0.75}$ \cite{rfc8312}.
+
+\paragraph{Evolution}
+Just as new attacks and attack vectors arise over time, so too does the rest of the network evolve.
+New protocols such as \emph{QUIC}~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17} come into use in the Internet at large, and can achieve near-instantaneous widespread adoption via the backing of hypergiant networks.
+New \glspl{acr:cca} such as \emph{BBR}~\parencite{DBLP:journals/queue/CardwellCGYJ16} are deployed to improve flow bandwidth utilisation, but lead to observable changes in flow-level behaviour.
+%?? Why? Protos, traffic kinds (e.g. web video)
+%?? Discussion of evolution of traffic: what's come before, what's coming next.
+At the aggregate level, heavy hitter flows have seen noteworthy increases in duration and rates over a 13-year time horizon, as has the mice-elephant balance~\parencite{DBLP:conf/anrw/BauerJHBC21}.
+%?? Look for older in my old notes, but recent cite here~\parencite{DBLP:conf/anrw/BauerJHBC21}.
+Detection and mitigation solutions must be aware of these eventualities to protect legitimate traffic over longer timescales.
+
+%?? Evolution of protocols.
+%?? QUIC~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}
+%
+%?? QUIC carries \gls{acr:http} traffic, mostly...
+
+%?? Can (and should probably) discuss different traffic classes here: congestion-aware, -unaware...
+
+%?? Implications? Past works pushback collateral bad.
+%
+%?? Note, explain that this is NOT just TCP vs UDP due to existence of SCTP over UDP (See: DTLS in WebRTC), QUIC over UDP, ...
+
+%?? Explain `UDP makes up a sizeable proportion of network traffic'
+
+%?? Variability within protocols.
+
+\subsection{Defences}
+According to \textcite{DBLP:conf/imc/JonkerKKRSD17}, the most-used techniques in deployment are \emph{DDoS Protection Services}.
+%\sidenote{?? Para before this. Mention one or two of the old-school ways brought up in the DDoS section like AIMD, Pushback...}
+While typically proprietary in nature, we see a split between \emph{cloud services}, \emph{in-line systems} (i.e., middleboxes) and hybrids thereof.
+Cloud services (traffic scrubbers) are known to be most appropriate for handling volumetric attacks and are externally hosted, analysing and filtering out malicious traffic by having services redirect all inbound communication for processing.
+The act of redirection is often made cheaper and/or feasible by the use of selective \gls{acr:bgp} advertisement or \gls{acr:dns} modification, aided by reverse proxy or \emph{generic routing encapsulation}.
+Amongst these, \gls{acr:bgp}-based diversion is most effective where many hosts must be protected, and \gls{acr:dns} works most reliably for single-host installations.
+In-line systems, hosted within a service's domain of control, are most useful for handling semantic attacks as these often admit \emph{attack signatures} (since they must exploit a particular bug in the server).
+Similarly, such attacks tend not to exhibit long-term characteristics that cloud scrubbers might use to aid detection, as many of these attacks present themselves as a single packet.
+%These authors further find that being attacked does not necessarily increase the likelihood of moving to a DPS---what is an effective indicator is the \emph{strength} of attack targeting a particular service.
+%To explain, around a fifth of targets already had a DPS prior to an attack, and only \SI{4}{\percent} of victims without a DPS migrate to one.
+
+\gls{acr:ddn} solutions to \gls{acr:ddos} attacks have been examined through the literature, such as \Textcite{DBLP:conf/lcn/BragaMP10}, \emph{Marl}~\parencite{DBLP:conf/iaai/MalialisK13,DBLP:journals/eaai/MalialisK15}, and \emph{Athena}~\parencite{DBLP:conf/dsn/LeeKSPY17}.
+\Cref{sec:ddn-uses-security} explains these, alongside their drawbacks and experimental shortcomings, in detail.
+Marl in particular has design flaws which are placed under great scrutiny, motivating the improved \gls{acr:rl} work I develop in \cref{chap:ddos-rl}.
+%\Textcite{DBLP:conf/lcn/BragaMP10} have examined the detection of ongoing (flooding-based) DDoS attacks through \emph{self-organising maps}, making use of SDN to gather statistics effectively.
+%Many of their features aren't overly relevant, as their focus is not active defence or discovering \emph{which} hosts are contributing to an attack.
+
+\textcite{DBLP:conf/ndss/Rossow14}'s suggestions are mostly prophylactic.
+At the \gls{acr:as}-level, \gls{acr:ip} spoofing by internal clients must be prevented.
+Protocol designs should be hardened with session handling \emph{\`{a} la} QUIC or Datagram \gls{acr:tls} at the expense of latency, enforcing greater symmetry of request and response sizes, and rate limiting the frequency of per-client responses.
+%?? ISP-level---packet filtering on port, len, substring.
+
+Honeypots such as \emph{AmpPot}~\parencite{DBLP:conf/raid/KramerKMNKYR15} can play a key role in the detection and mitigation of volumetric attacks.
+Fake amplifier services hosted by legitimate authorities, which appear to be useful amplifier nodes to malicious actors, may be included in the set of reflector nodes when attacks are launched.
+As a result, infrastructure providers can receive early notification of attack targets and the protocols which must be blackholed.
+
+\emph{SPIFFY}~\parencite{DBLP:conf/ndss/KangGS16} aims to remedy \glspl{acr:lfa} by observing how flows from each source respond to a sudden increase in available bandwidth.
+\Citeauthor{DBLP:conf/ndss/KangGS16} realise that bots participating in an attack are often unable to match this bandwidth expansion due to having already saturated the capacity of their outbound links, while legitimate flows typically speed up to match the new fair-share rate.
+%Attackers must either be detected or reduce the throughput of each bot, increasing the cost of launching an attack.
+Due to the class of attacks it is designed to defend against, SPIFFY is intended to be deployed within \gls{acr:isp} networks.
+However, they find that computing per-flow routes to offer this expansion is expensive on real networks (\qty{14}{\second} in the Cogent topology), and achieve only low expansion factors which require more rounds of filtering.
+Finally, by definition their assumptions cannot extend to \gls{acr:cbr} traffic (e.g., \gls{acr:udp} \gls{acr:voip} traffic), which as we know from \cref{sec:ddos-contributing-factors,adx:caida-traffic} makes up a sizeable proportion of network traffic.
+Only congestion-aware traffic will correctly alter its behaviour under this action and response model.
+
+%\emph{Athena}~\parencite{DBLP:conf/dsn/LeeKSPY17} is a more generalised SDN framework for intrusion detection, but has shown the use of a \emph{k-nearest neighbours} classifier to detect individual attack flows.
+%Although heavyweight (and proven to be effective compared with \textcite{DBLP:conf/lcn/BragaMP10}), their comparison against SPIFFY lacks the quantitative evidence required to understand how the system compares.
+
+\Textcite{DBLP:conf/sp/SmithS18} present techniques based on \gls{acr:as}-level routing to tackle both transit-link and flooding-based attacks.
+This view is taken due to the perceived cost of per-stream classification and inherent sensitivity to adversarial examples or crafted input.
+The approach is creative, relying upon \gls{acr:bgp} \emph{fraudulent route reverse poisoning} to preserve traffic to a target \gls{acr:as}, but unlike SPIFFY the approach doesn't actually \emph{remove} the congestion.
+Because of this, traditional flooding-based attacks aren't fully alleviated.
+
+\emph{SENSS}~\parencite{DBLP:conf/acsac/RamanathanMYZ18} aims to help hosts and \emph{endpoint-servers} communicate upstream with \glspl{acr:isp}.
+The rationale is that although \gls{acr:ddos} traffic can be filtered at any point along its path, it will impact less of the network if it is filtered \emph{close to its source}---this observation holds true in all attack classes (direct, reflection, \gls{acr:lfa}), which exhibit a tree-like pattern of traffic.
+This information currently propagates through human channels, eventually leading to traffic blackholing being performed by key \glspl{acr:as}.
+The core idea is that the \emph{victim} should be given responsibility for intelligence and decision-making, who pass on their requests to \glspl{acr:isp} (alongside ample payment).
+They are able to show that this approach functions for multiple algorithms---including using \gls{acr:nat} for true outbound requests as a mechanism for reflector filtering close to the source, similar techniques to others to ``route around'' the congestion added by \glspl{acr:lfa}, and location-based filtering for signature-free attacks.
+%The need for payment does seem odd at the outset, but it becomes clear that this is a necessary mechanism to enable ``remote networks to collaborate on demand, without prior trust''.
+%The mitigation strategies they propose do hold water, and strike me as interesting---using NAT for true outbound requests as a mechanism for reflector filtering close-to-source, similar techniques to others to ``route around'' the congestion added by LFAs, and location-based filtering for signature-free attacks.
+%What I'm concerned about is the degree of collaboration required; it seems likely to me that there may exist e.g., amplifiers who are difficult to block in such a manner due to non-cooperative ASes on their path, with geography and network uncleanliness as contributing factors...
+%Their evaluation is convincing---a mixture of a testbed experiment over a small-scale environment (Iperf + ``custom UDP flood'') and an AS-level simulation recreating the DDoS attack on Dyn (gravity model \cite{DBLP:journals/ccr/Roughan05}, cogent topology from Topology Zoo \cite{topology-zoo}).
+
+\Textcite{DBLP:journals/tnsm/SimpsonSMJPH18} propose the \emph{Antidose} collaborative solution.
+\glspl{acr:as} ask one another to install allow- and block-list filters to represent the interests of their own transit traffic while disallowing known-bad sources and \glspl{acr:as}.
+Hosts and agents must perform proof-of-work challenges attached to flow cookies to become eligible for allowlisting (which is verifiable by any other node)---however, this requires some degree of re-architecting the network stacks of all hosts.
+
+Some collaborative solutions appear to hinge on the condition that \gls{acr:http} and \gls{acr:tcp} sessions can be reliably held over the saturation zone between high-priority endpoints.
+Alternative channels may be possible through elected proxies or \gls{acr:udp}-based mechanisms like \gls{acr:dots}~\parencite{ietf-dots-use-cases-17}.
+\gls{acr:dots} provides an architecture for network operators to enumerate, discover, and communicate with \gls{acr:ddos} mitigation services, with who they can exchange telemetry information and explicit mitigation requests.

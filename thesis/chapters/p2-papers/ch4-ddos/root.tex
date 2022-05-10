@@ -1,6 +1,6 @@
 \chapter{DDoS Prevention by Multi-agent Reinforcement Learning}\label{chap:ddos-rl}
 Network anomaly detection and intrusion detection/prevention are continually evolving problems, compounded by the partial, non-\gls{acr:iid} view of data at each point in the network.
-Hearkening back to our discussion of \gls{acr:ddos} attacks in \cref{sec:problems-in-modern-networks}, attacks and anomalous behaviours evolve, becoming more sophisticated or employing new vectors to harm a network or system's confidentiality, integrity, and availability without being detected~\parencite{DBLP:journals/comsur/BhuyanBK14}.
+Looking ahead to our discussion of \gls{acr:ddos} attacks in \cref{sec:problems-in-modern-networks}, attacks and anomalous behaviours evolve, becoming more sophisticated or employing new vectors to harm a network or system's confidentiality, integrity, and availability without being detected~\parencite{DBLP:journals/comsur/BhuyanBK14}.
 These attacks and anomalies have measurable consequences and symptoms which allow a skilled analyst to infer new signatures for detection by signature-based classifiers, but unseen attacks may only be defended against after-the-fact.
 %This issue is inherent to \emph{misuse-} or \emph{signature-based} intrusion detectors, and it has been long-hoped that \emph{anomaly-based} detectors would surpass this by making effective use of statistical measures \cite{DBLP:journals/comsur/BhuyanBK14}.
 
@@ -62,7 +62,7 @@ However, there are limits to how we should infer these properties given network 
 %We additionally compare our work against SPIFFY \cite{DBLP:conf/ndss/KangGS16}, reuniting two divergent strands of research and grounding the study of RL-based DDoS defences.
 
 The work presented in this chapter considers how online \gls{acr:rl} can be used to defend networks from volumetric \gls{acr:ddos} attacks, agnostic of the protocols of carried traffic, and is based upon \citetitle{DBLP:journals/tnsm/SimpsonRP20}~\parencite{DBLP:journals/tnsm/SimpsonRP20}.
-I first reiterate the motivation for the task and \gls{acr:rl} as a solution (\cref{sec:ddos-motivation}), and define the threat model for attackers with respect to known \gls{acr:ddos} attack methods and the security context of \gls{acr:ml} (\cref{sec:ddos-threat}).
+I first explain the existing threat and defence landscape such attacks (\cref{sec:problems-in-modern-networks}), then reiterate the motivation for \gls{acr:rl} as a solution (\cref{sec:ddos-motivation}), before defining the threat model for attackers with respect to known \gls{acr:ddos} attack methods and the security context of \gls{acr:ml} (\cref{sec:ddos-threat}).
 \Cref{sec:ddos-mitigation-with-per-flow-reinforcement-learning} then outlines the design and rationale behind new agent designs built to improve on the failings of past \gls{acr:rl} works, by making decisions on a per-flow or per-source basis.
 This includes algorithmic modifications to learn from and control many traces simultaneously, achieve faster convergence by per-tile updates, and to better learn form individual features.
 I describe a feature space built on a mixture of global and local state, reward functions tailored to different attack classes, and contribute two action models and their risks (\emph{Instant} and \emph{Guarded}).
@@ -98,6 +98,8 @@ I conclude with some discussion on the significance of the results and wider sec
 %\section{Introduction}
 %\input{chapters/p2-papers/ch4-ddos/introduction.tex}
 
+\input{chapters/p2-papers/ch4-ddos/ddos-bg.tex}
+
 %\section{Background and Threat Model}
 \input{chapters/p2-papers/ch4-ddos/bg-threat.tex}
 
@@ -131,7 +133,8 @@ Through this chapter, we have discussed reinforcement learning and how it can be
 The key to doing so was to study the dynamics of the network itself---its behaviours, and realistic recreations thereof---to detect operational flaws in existing \gls{acr:rl} and algorithmic works.
 In turn, I designed different action models built upon a shared (and justified) model: making decisions on a per-flow or per-source basis, and relying upon learnt policies to differentiate congestion-aware and -unaware flows that methods like SPIFFY ignore.
 
-We identified weaknesses in past work, recommending an \gls{acr:rl} agent design which acts per flow, and have outlined the algorithmic and engineering choices needed to make its deployment feasible.
+First, we covered a large problem in modern networks: the ever-present threat of \gls{acr:ddos} attacks---and how Internet traffic characteristics make its solution more difficult.
+We identified weaknesses in past remedies offered by the community, recommending instead an \gls{acr:rl} agent design which acts per flow, and have outlined the algorithmic and engineering choices needed to make its deployment feasible.
 Supporting this, we've examined the presented feature space in depth, offering quantitative and qualitative justification for each choice, while also expanding the global state in past Marl approaches to support arbitrary network topologies.
 Using simpler tile-coded policies, we have also covered how decision narrowings and per-tile updates allowed faster convergence---and independently developed methods for coalescing state which have become more common in tasks with long inference times as the field has bloomed.
 We have examined the \emph{Instant} and \emph{Guarded} action models, integrating various degrees of domain expertise with \gls{acr:rl} agents.
