@@ -11,7 +11,20 @@ This is not the only reason to be interested in alternative data formats; by red
 This reduces the range of numbers we can express (in both magnitude and precision), but can reduce inference latency and memory cost for the benefit of both commodity machines and dedicated accelerators.
 Luckily, the task of bringing \gls{acr:ml} models to resource-constrained environments without these capabilities is well-studied, and in general the effect on accuracy is small in spite of the introduced quantisation noise.
 
+To deploy \gls{acr:ml} models to \gls{acr:pdp} hardware, the question of what data format to use is one we \emph{must} ask ourselves.
+Simply put, this is a necessity due to the general (and expected!) lack of floating-point support in \gls{acr:pdp} hardware of all sizes.
+%?? necessity, question we \emph{must} ask ourself
+What might be less obvious is that we have different needs depending on whether the main task we're interested in is inference---i.e., per-packet application of a learned flow---or in-situ learning of a function or policy.
+%?? different needs based on inference and learning
+%?? different optim capability depending on target env?
+The speedup and memory savings we can gain from any choice are dependent on the target environment (e.g., between \gls{acr:pdp} switches, \glspl{acr:npu}, or host machines), while our ability to compute and manipulate policy gradients depends similarly on this.
+We consider here the value and use of many fixed-point, floating-point, and binarised representations for online and offline \gls{acr:ml} in different execution environments across the network.
+
 \subsection{Floating-point}
+Floating-point formats are the \emph{de facto} way to represent real numbers, but for the reasons discussed above cannot be included in most \gls{acr:pdp} use cases.
+However, they may be readily used on host machines (i.e., in longer-term control plane inference tasks), in some environments such as \glspl{acr:fpga} where we can deliberately include the needed \glspl{acr:fpu}, or dedicated accelerators such as \emph{BrainWave}~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18}.
+Finally, they are most obviously suited to the actual task of learning a function---their dynamic range trivially allows us to represent input values and capture small gradient values in each parameter.
+
 While there are standardised floating-point forms designed to target mobile and weaker hardware, such as \emph{half-precision} (FP16, \qty{16}{\bit}, 1-5-10) and \emph{minifloat} (FP8, \qty{8}{\bit}, 1-4-3), these fail to be effective in some \gls{acr:ml} use cases.
 At the same time, a key factor in \gls{acr:fpu} chip cost is the size of the \emph{mantissa}---which has been observed to have a quadratic scaling effect on area in \gls{acr:tpu} development~\parencite{bfloat16-blog}.
 Accordingly, allocating more bits to the \emph{exponent} can allow for more cores and \glspl{acr:fu} in the same area, or reduce power draw.
@@ -19,12 +32,12 @@ Accordingly, allocating more bits to the \emph{exponent} can allow for more core
 It matches the dynamic range of \qty{32}{\bit} floats (1-8-7), better expressing the smaller end of the dynamic range (for e.g., gradients) while having identical failure modes (subnormal numbers, edge cases) to FP32.
 \emph{hfp8}~\parencite{DBLP:conf/nips/SunCCWVSCZG19}, as an \qty{8}{\bit} format, uses different layouts for the forward (1-4-3) and backward (1-5-2) passes, applying a downward bias of \num{4} to the exponent in both cases.
 This allows better expression of small values in general, and even smaller values during gradient computation, at an extra \qty{5}{\percent} hardware area cost to support both formats.
-While this is an indicative summary , it must be said that there are more formats beyond the scope of this introduction~\parencite{DBLP:journals/corr/abs-2007-01530}.
+While this is a fairly indicative summary of high-profile floating-point variants today, it must be said that there are more formats beyond the scope of this introduction~\parencite{DBLP:journals/corr/abs-2007-01530}.
 
 \subsection{Fixed-point and binary}\label{sec:fixed-point-and-binary}
 While the above techniques are promising and effective, deployment on environments such as \gls{acr:pdp} hardware requires further ingenuity.
 \emph{Fixed-point arithmetic} is an approach which makes it possible to represent real numbers as integers, losing dynamic range as a consequence.
-$Qm.n$ expresses a real number using an $m$~\unit{\bit} integer part alongside an $n$~\unit{bit} fractional part, which allows us to evaluate and update policies using only integer arithmetic on $k=1+m+n$~\unit{\bit} numbers, assuming the presence of a sign bit.
+The $Qm.n$ format expresses a real number using an $m$~\unit{\bit} integer part alongside an $n$~\unit{bit} fractional part, which allows us to evaluate and update policies using only integer arithmetic on $k=1+m+n$~\unit{\bit} numbers, assuming the presence of a sign bit.
 For instance, the \qty{8}{\bit} number \mintinline{rust}|0b0010_1000| in $Q3.4$ represents the real number \num{2.5}---we can view this as two separate parts ($2 + 8\times2^{-4}$), or as one whole in the fractional base ($40\times2^{-4}$).
 In practice, the entirety of the number is stored as a two's complement number in place of a sign bit, and base conversion (i.e., changing $n$) requires only bitshifts.
 When $k$ is known, we can simply refer to the representation as $Qn$.
@@ -40,6 +53,8 @@ To some extent, these can also enable in-\gls{acr:nic} \gls{acr:dnn} inference~\
 
 Binary representations are used to great effect in \glsxtrfullpl{acr:bnn}~\parencite{DBLP:journals/corr/MiyashitaLM16,DBLP:conf/eccv/RastegariORF16,DBLP:journals/corr/KimS16,DBLP:conf/nips/HubaraCSEB16}; by using 0 to represent to \num{-1}, and 1 to represent $+$\num{1}, we may replace Hadamard product operations between tensors with \textsc{Xnor} operations, and when combined with \textsc{Popcnt} instructions we can easily compute the dot product between vectors.
 This offers bit-parallel execution compatible with almost all \glspl{acr:alu}, including \gls{acr:pdp} hardware.
-This enables in-\gls{acr:nic} execution of \glspl{acr:nn}: either offloading small portions of fully-connected layers to accelerate inference~\parencite{DBLP:conf/sigcomm/SanvitoSB18} or to enable line-rate packet processing~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:journals/corr/abs-1801-05731}.
+This enables in-\gls{acr:nic} execution of \glspl{acr:nn}: either offloading small portions of fully-connected layers to accelerate inference~\parencite{DBLP:conf/sigcomm/SanvitoSB18} or to enable line-rate packet processing in P4-capable \gls{acr:pdp} hardware~\parencite{DBLP:journals/corr/abs-2009-02353,DBLP:journals/corr/abs-1801-05731}.
+This is achieved by converting the trained model into \glspl{acr:mat}---as such, their execution is accelerated by dataplane specific primitives such as \gls{acr:tcam}.
 While there is vested interested in running these complex function approximators in \glspl{acr:nic} and switches, they are at present trained on commodity x86 machines using real-valued weights and gradients clamped to $\left[-1, 1\right]$ (i.e., using $\tanh$).
-As such, online in-\gls{acr:nic} training remains out of reach.
+While very effective (and portable) in inference, we cannot represent gradients or partial adjustments of learned parameters.
+As such, online training with binarised formats remains out of reach, in spite of their in-\gls{acr:nic} suitability.

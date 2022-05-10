@@ -4,6 +4,19 @@ Of course, given that we lack \emph{a priori} knowledge of the function's true s
 Such a learnt function is then defined by a fixed structure (e.g., an \gls{acr:nn}'s architecture) and a \emph{parameter set} $\wvec{}$, which is typically a collection of real numbers.
 Of particular importance is that the function approximations presented here (and in general) are differentiable with respect to their parameters, which allows for $\wvec{}$ to be trained as we discuss through \cref{sec:learning-an-approximation}.
 
+Considering the deployment environment we're mainly interested in---\gls{acr:pdp} hardware---making the right choice is important both here and in the used data format (\cref{sec:numerical-representations-for-embedded-ml}).
+For instance, more complex functions (deeper \glspl{acr:nn}) have higher \emph{model capacity}, and are capable of learning more complex transformations, but often have a higher cost to use in inference: in either the number of required parameters, or the amount of arithmetic operations needed to produce an output.
+This also correlates with the cost of computing the gradient we'd use to move $\wvec{}$ to a more optimal set of values---in \glspl{acr:nn} this is more expensive than inference alone, while with simpler linear schemes like tile coding the gradient is acquired for free during the forward pass.
+Model capacity, inference cost, and learning cost then weigh against the finite resources of \gls{acr:pdp} hardware.
+We must then consider several function approximations according to how we want to integrate the \gls{acr:ml} component of a larger \gls{acr:ddn} system: online or offline, and in-\gls{acr:nic}/\gls{acr:pdp} or on commodity hardware.
+
+%?? do have the advantage that if the policy family can be expressed, then it's valid
+
+
+%importance of fn approx wrt networks? compact representation, ability to be encoded as or into a format suited to env?
+%?? runtime tradeoffs -- in inference and online suitability?
+%?? complexity of gradient compute affects suitability for online learning.
+
 I discuss here some forms of function approximation which are pertinent to this thesis, and to \gls{acr:ddn} and \gls{acr:ml}/\gls{acr:rl} in general.
 I introduce and explain \emph{linear tile coding}, a simple and rather interpretable scheme which appears throughout more classical \gls{acr:rl} research, as well as providing an overview of common variations on \glspl{acr:nn}.
 While tile coding has been superseded in modern \gls{acr:rl} works by \glspl{acr:dnn}, I use it as the main function approximation scheme in \cref{chap:ddos-rl} for its computational simplicity for both inference and training.
@@ -45,7 +58,7 @@ Moreover, the parameter gradient ($\nabla_{\wvec{}}$) at any point is \emph{comp
 \begin{equation}
 	\nabla_{\wvec{}}{f_\mathit{tile}(s, \wvec{})} = \operatorname{\mathbf{x}}(s)
 \end{equation}
-As a result, \gls{acr:rl} policy updates are simple to perform---i.e., no extra work is required to compute a policy gradient---so long as it is feasible to cache $\operatorname{\mathbf{x}}(s)$.
+As a result, \gls{acr:rl} policy updates are simple to perform---i.e., no extra work is required to compute a policy gradient---so long as it is feasible to cache $\operatorname{\mathbf{x}}(s)$, then online updates may be made fairly cheaply, perhaps suiting SmartNICs or similar devices.
 
 \Cref{alg:tile-code} describes the basic procedure for a single tiling.
 Generally, tile sets cover overlapping areas by varying the maxima and minima of the tiling to model offsets applied to a fixed-size grid.
@@ -120,6 +133,11 @@ If desired we may define a state space with an arbitrary number of tiles per dim
 Beyond this, we need not store action values for tiles which have not yet been visited, conserving memory.
 A caveat of tile coding remains, in that the value of $\alpha$ must be reduced according to the number of tilings to prevent divergence at the expense of slower learning ($\alpha \leftarrow \alpha / n_{\mathit{tilings}}$).
 
+In the wider \gls{acr:pdp} context, the basic tile coding algorithm is simple enough that it is a worthwhile candidate for representing policies in some classes of \gls{acr:pdp} hardware, as I investigate in \cref{chap:in-net-rl}.
+In particular, the fact that gradients are acquired \emph{during inference} might be used to make online learning in resource-constrained \gls{acr:pdp} environments more feasible by saving on valuable compute.
+A downside is that we store one model parameter per tile, which can scale poorly to larger models---in exchange, we use no non-linear operations.
+Although I don't examine it in this thesis, it should be possible to implement or even accelerate their forward pass using \glspl{acr:mat} by mapping `stripes' of tiles in each dimension to a range match---although it's unlikely that we could extract any online learning capability in \gls{acr:rmt}-like architectures.
+
 \subsection{Neural Networks}\label{sec:ddnlit-nns}
 \glsxtrfullpl{acr:nn} map an input vector to an output vector via a mathematical graph of neurons.
 Each neuron takes a weighted sum over a set of inputs plus its own \emph{bias} value, and uses this as the input to a non-linear function, producing a single output value (\cref{fig:single-neuron}).
@@ -128,6 +146,7 @@ As in \cref{fig:fcnn}, this graph of neurons then progresses from transformation
 The parameter set $\wvec{}$ is then the concatenation of all edge weights and biases which describe the network.
 This compute graph can contain other, non-neuron operations so long as they are differentiable: it is typical that in classifiers or \gls{acr:rl} systems the last layer of neurons goes through a softmax function to be converted into a valid probability distribution.
 Crucially, any individual neuron is differentiable in $\wvec{}$, and by applying the chain rule over the full graph we can compute the entire \gls{acr:nn}'s parameter gradient through the backpropagation algorithm~\parencite[pp.~\numrange{197}{217}]{DBLP:books/daglib/0040158}.
+This includes a forward pass as in inference, coupled with a more expensive (by a factor of $\sim$\qty{2}{\times}) backward pass.
 Some input data, such as images or fixed-length time-series sequences, often contain clear structural features that must be exploited to learn a function.
 \glsxtrfullpl{acr:cnn}~\parencite{LeCun89} capture these dynamics between adjacent values in a layer by learning a convolution filter.
 
@@ -159,8 +178,13 @@ The main way in which they differ is that they feed neuron state from the previo
 \glsxtrfull{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97} units include extra gates to control how hidden state is held between timesteps element-wise (input, output and forget gates), whose parameters are also trainable.
 \glsxtrfullpl{acr:gru}~\parencite{DBLP:conf/emnlp/ChoMGBBSB14} remove the output gate (passing on only the hidden state), and as a result are competitive with fewer weights to learn.
 
-\section{Learning an approximation}\label{sec:learning-an-approximation}%
-\input{chapters/p1-introduction/ch3-ddn/learning-approx.tex}
+Returning again to the \gls{acr:pdp} context, \glspl{acr:nn} are useful because they have both a high model capacity and are quite compactly represented by all parameters in $\wvec{}$.
+They can thus require less memory to store a policy than tiles might need, at the same count of input dimensions.
+As we have
+However, not only is their gradient computation more expensive than the forward pass, ---likely ruling out their use in \emph{online} learning in \gls{acr:pdp} hardware.
+They can be well-represented in \gls{acr:rmt} hardware and SmartNICs (\cref{sec:inc-uses-pdp-ml}), depending on data format (\cref{sec:numerical-representations-for-embedded-ml}), but at the extremes of making inference quick we lose the ability to even modify the policy incrementally.
+It should be obvious that more complex methods outlined here (\glspl{acr:gnn}, \glspl{acr:lstm}, \glspl{acr:rnn}) are more broadly unsuitable due to their iterative compute models, outside of the specialised architectures we've discussed earlier in \cref{sec:frontiers-in-programmable-networks}.
+Similarly, they are generally understood to be more costly still to train, again ruling out online learning in \gls{acr:pdp} hardware.
 
 %?? Find some cites citing the relevance of this problem wrt. self-driving cars, robotics, etc.
 
