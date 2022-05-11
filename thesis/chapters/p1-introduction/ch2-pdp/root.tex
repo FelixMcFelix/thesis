@@ -109,7 +109,7 @@ Ahead-of-time fixed subprograms like these were key here to achieve performance 
 From a more practical perspective, \Textcite{DBLP:journals/jsac/WolfT01} examine the design requirements of a programmable switch in contrast with emerging \glspl{acr:npu} of the time.
 They propose a \gls{acr:soc} design built around a large array of general-purpose \gls{acr:risc} \glspl{acr:cpu}, each having their own cache and memory.
 A first stage \gls{acr:asic} would route packets to an output port over a shared interconnect, where these \glspl{acr:cpu} would either count as their own port or be attached to a physical egress and conditionally used.\sidenote{Curiously, this design more closely matches modern SmartNIC devices, while today's programmable switches favour \gls{acr:asic} designs. We'll return to this point in \cref{sec:pdp-specd-hw}.}
-The inclusion of complete \gls{acr:risc} \glspl{acr:cpu} is quite deliberate: early \glspl{acr:npu} such as the Intel IXP1200~\parencite{intel-ixp} and Lucent's Fast Packet Processor~\parencite{lucent-fpp} had unusual instruction sets suited to stateless processing of headers~\parencite{DBLP:conf/pldi/GeorgeB03}, limiting their general expressiveness.
+The use of complete \gls{acr:risc} \glspl{acr:cpu} is quite deliberate: early \glspl{acr:npu} such as the Intel IXP1200~\parencite{intel-ixp} and Lucent's Fast Packet Processor~\parencite{lucent-fpp} had unusual instruction sets suited to stateless processing of headers~\parencite{DBLP:conf/pldi/GeorgeB03}, limiting their general expressiveness.
 A fuller \gls{acr:isa} was recognised as being necessary for more capable, general, useful, and stateful dataplane programming; particularly of the kind envisioned by active networking.
 
 %, which is where perf-router cite succeeds. ?? stateless etc.
@@ -577,7 +577,7 @@ Although \gls{acr:ml} can be made feasible in \gls{acr:pdp} hardware as I show i
 The proposal has the ingress \gls{acr:rmt} pipeline now perform feature extraction from packet header data among its standard duties.
 In particular, it demonstrates that efficient line-rate inference can be achieved using a \gls{acr:cgra} of map-reduce units between the ingress and egress pipelines---implementing \glspl{acr:nn}, \gls{acr:lstm} networks, or \glspl{acr:svm} which process every packet header vector.
 This \gls{acr:cgra} implements a large grid of replicated fixed-point compute and memory units, allowing higher throughput by what the authors describe as `spatial \gls{acr:simd}'.
-This achieves line-rate throughput while reducing latencies from the $\mathcal{O}\left(\unit{\milli\second}\right)$ \gls{acr:cpu} and \gls{acr:gpu} inference to around $\mathcal{O}$(\qty{e2}{\nano\second}), dependent on the target application.
+This achieves line-rate throughput while reducing latencies from the $\mathcal{O}\left(\unit{\milli\second}\right)$ \gls{acr:cpu} and \gls{acr:gpu} inference to $\mathcal{O}$(\qty{e2}{\nano\second}), dependent on the target application.
 In turn, the outputs of any classifiers in this block become available to later pipeline stages, which are able to act upon packets accordingly.
 Training \gls{acr:ml} models online using Taurus requires that input packets are sampled alongside local signals such as per-flow \gls{acr:qos} metrics to be directed towards a cooperating host machine in the control plane, and cannot be performed unassisted (i.e., purely on-device).
 
