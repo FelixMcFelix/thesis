@@ -1,5 +1,11 @@
 \chapter{Conclusion}\label{chap:conclusion}
-This thesis has made online \gls{acr:rl} in \gls{acr:pdp} hardware possible, while also meaningfully advancing the state of the art in data-driven, programmable networks.
+This thesis has shown how to use the advanced capabilities of modern \gls{acr:pdp} hardware to make online learning---particularly classical \gls{acr:rl}---and other \gls{acr:ddn} use cases feasible in the dataplane.
+In spite of how far this hardware has come, this has required many design caveats---we have examined various \gls{acr:ml} and \gls{acr:rl} primitives alongside the architectures of modern \gls{acr:pdp} hardware to pick out the considerations of running in these resource-limited yet high-speed environments.
+At the same time, I have also argued the case for the unity of \gls{acr:ddn} and dataplane programmability: by mitigating amplification \gls{acr:ddos} attacks using an online multi-agent \gls{acr:rl} system, and by showing one way in which \gls{acr:pdp} hardware can support data-driven classifications for network management.
+%made online \gls{acr:rl} in \gls{acr:pdp} hardware possible, while also meaningfully advancing the state of the art in data-driven, programmable networks.
+%?? focus learning -- in particular rl B)
+%?? how have we supported online learning at large?
+%?? not made possible, shown how the advanced capabilities of modern \glspl{acr:pdp} made feasible and considerations of running in high-speed env
 %?? collected literature
 %
 %?? Say all we've shown
@@ -31,7 +37,7 @@ While we can train successful policies, \gls{acr:ddn} cannot itself derive the \
 Learnt policies and parameters operate as well as they can \emph{within the framework we give them}, and generally succeed at so doing.
 Yet as we've seen already, by designing \gls{acr:ddn} solutions without deep, cross-disciplinary human expertise on the controlled system we can easily introduce catastrophic impact in critical scenarios.
 This extends even to testing and training environments; capturing every real interaction is crucial if one has any hope of generalising to production networks.
-At the compute scales of interest e.g., small and fast models with lower sample complexity, factoring in human expertise ahead of time can be useful in accelerating inference and training as opposed to completely `clean-slate' approaches.
+At the compute scales of interest, namely small and fast models with lower sample complexity, factoring in human expertise ahead of time can be useful in accelerating inference and training as opposed to completely `clean-slate' approaches.
 There is an argument to be made about to what degree we \emph{should} be integrating our own intuition---biasing models away from potentially better solutions, i.e., that reward is all you need~\parencite{DBLP:journals/ai/SilverSPS21}---but we must often perform our own feature engineering regardless.
 Temporal properties of state are one such example: we \emph{could} make use of \glspl{acr:lstm} and similar constructs to capture them automatically, but the price paid in complexity is less than appealing.
 %Moreover, temporal properties can't be derived by fully-connected layers, requiring the 
@@ -44,12 +50,15 @@ Temporal properties of state are one such example: we \emph{could} make use of \
 Easily taking advantage of \gls{acr:pdp} hardware requires less thought.
 Automatic offload tools are already very promising for (mostly) cutting host machines out of the packet processing loop, and extracting data and pipeline parallelism when they cannot.
 I expect this tooling will only improve further.
-For novel in-network compute uses or latency-optimal solutions, I have less confidence.
+For novel in-network compute uses or latency-optimal solutions, we should not expect any automatic wins.
+More than anywhere else, these demand dedicated co-design, deep integration with hardware-specific communication primitives, and retooling to account for parallelism and heterogeneous compute models.
 Today's---and likely tomorrow's---diversity of device designs and programming models is a blessing and a curse.
 It is necessary that we have such variation to achieve a balance of performance, price, and capability across market silicon.
 The downside is that this lack of unity demands insight and expertise on the devices themselves, rather than a single network-compute model, but making best use of them is intensely rewarding.
-This is not the only field where integrating device parallelism is difficult.
-Quoting an observation on combinatorics that aligns with the development of \approachshort:
+%This is not the only field where integrating device parallelism is difficult.
+This is no surprise---taking advantage of parallelism alone is difficult~\parencite{sutter-freelunch}, but is itself necessary nowadays.
+In combinatorics for instance, automated fork-join frameworks produced subpar results, necessitating similarly ``intrusive'' co-design to \approachshort{} which ``[increased] the amount of code needed by as much as an order of magnitude''~\parencite[p.~214]{ciaran-phd}.
+%that aligns with the development of \approachshort,
 %?? no such thing as zero-touch ddn, more likely zero-touch for pdp with offload texh. INC still needs all the thought (probably can't auto-derive many data structure transforms)
 %?? ddn cannot derive mechanisms, and at scales of interest (i.e., small model capacity) need to integrate human expertise -- even if ``reward is all you need''~\parencite{DBLP:journals/ai/SilverSPS21}, still need to design actions.
 %
@@ -61,21 +70,27 @@ Quoting an observation on combinatorics that aligns with the development of \app
 %?? Diversity of device designs and programming models requires insight, expertise... but rewarding.
 %
 %?? Downside:
-\begin{quotation}
-	\noindent
-	Our experience from this thesis has been that implementing parallelism properly is hard. It requires deep and intrusive coupling with the algorithm, and can increase the amount of code needed by as much as an order of magnitude.
-	
-	\hfill\parencite[p.~214]{ciaran-phd}
-\end{quotation}
+%\begin{quotation}
+%	\noindent
+%	Our experience from this thesis has been that implementing parallelism properly is hard. It requires deep and intrusive coupling with the algorithm, and can increase the amount of code needed by as much as an order of magnitude.
+%	
+%	\hfill\parencite[p.~214]{ciaran-phd}
+%\end{quotation}
 %?? Accouing for exec model similarly intrusive: pipeline YES, data parallel YES (barring shared state), but latency is HARD
-This refers to commodity multicore \gls{acr:cpu} programming, but as we've explored SmartNICs impose a similar blowup in complexity.
-The intrusiveness extends in our case to the memory model, specialised capabilities like \gls{acr:tcam}-backed \glspl{acr:mat}, and missing \glspl{acr:fu} we might otherwise have taken for granted such as \glspl{acr:fpu}.
+SmartNICs and \gls{acr:pdp} hardware impose a stronger blowup in complexity.
+The intrusiveness extends in our case beyond parallelism: to the memory model, to specialised capabilities like \gls{acr:tcam}-backed \glspl{acr:mat}, and to missing \glspl{acr:fu} we might otherwise have taken for granted such as \glspl{acr:fpu}.
 Many of the required data structure transformations cannot be automatically derived, and the best algorithms for in-network compute take advantage of tightly coupling these elements together.
-One might also argue that this makes in-network solutions fragile against future hardware.
+Weighing these against one another requires real trade-offs to be consciously made at all levels of our design---one might also argue that this makes in-network solutions fragile against future hardware.
 %?? This is made worse by the ... little unification? between what? Compute models?
 %
 %?? Heterogeneity great and useful, (necessary, some might say  to hit perf, if not price points) but also a curse: see above.
 %?? Even so, needs great awareness.
+This is not to say however that we won't (or shouldn't) have further developments here.
+The ingenuity of engineers, novel \gls{acr:pdp} architectures, and economic drivers in data centre-scale applications will see to it that this is a long-lived wellspring of research.
+It is simply the case that, as in parallel computing, there is no free lunch~\parencite{sutter-freelunch}.
+
+%?? Test~\parencite{sutter-freelunch}
+%?? Our problem is like parallelism, but stronger still due to MATs, NPUs, ... Must make tradeoffs at all levels
 
 %?? the ghost of hardware yet to come.
 %Ooooo
@@ -90,13 +105,13 @@ Attacks and defences still appear to be rapidly iterating against one another, a
 I argue that \gls{acr:ddn} deployment can be safe so long as there is a reasonable degree of isolation between a hypothetical attacker (or self-serving client) and the model.
 %?? spec. attacks: evasion, poisoning, data extraction.
 What isolation means then depends on the attacks we concern ourselves with.
-For instance, destructive steps in processing, true isolation as in many resource placement problems (i.e., \gls{acr:ddn} applied at design-time), or aggregation of input data may aid against evasion, poisoning and adversarial behaviour.
+For instance, destructive steps in processing, true isolation as in many resource placement problems (i.e., \gls{acr:ddn} applied at design-time), or aggregation of input data may aid against evasion, poisoning, and adversarial behaviour.
 The network itself offers some degree of isolation of many outputs, which might make model stealing and evasion more difficult.
 Transient network conditions make flow statistics noisier, pushing them away from the intended perturbation, while routing and \gls{acr:qos} decisions might only be inferred indirectly with added noise and delay.
 %Hiding outputs as appropriate to prevent model stealing and similar attacks [probably can't even see most of the time, but might be able to infer approx later?]).
 In closed loop circumstances, isolation is less clear.
 This is purely intuitive reasoning, and likely unsatisfactory, but they are the best I can offer barring further research tailored to the network problem-space.
-What the field needs instead is a set of quantitative bounds on how an attacker's input can affect learnt models in reasonable scenarios.
+What the field needs instead is a set of quantitative bounds on how an attacker's input can affect learnt models in reasonable scenarios, measured specifically on network tasks.
 
 %\section{The ghost of hardware yet to come}
 %Ooooo
@@ -120,7 +135,7 @@ To respond to such change, we simply need to either scale up gradient contributi
 Yet we are left with two key challenges.
 The first is that we need robust means of detecting the kinds of problem-space evolution we're interested in.
 There are tricky tuning factors to consider: chief among them are handling seasonality, and the timescales and magnitudes of evolution worth adapting to.
-Suppose traffic varies diurnally, in which case choosing the wrong timescales would likely cause an online learner to oscillate between policies---meanwhile, the expected behaviour would be to learn to handle these modes in the \emph{same policy}.
+Suppose traffic varies diurnally, in which case choosing the wrong timescales would likely cause an online learner to oscillate between policies---meanwhile, the desired behaviour would be to learn to handle these modes in the \emph{same policy}.
 The techniques discussed in \cref{sec:ddn-rl-design-considerations} may be useful to this end, such as adaptive exploration, changepoint detection, or signal processing methods (whose intersection with \gls{acr:rl} seems as-yet unexplored).
 The second challenge is that we must understand and model what problem-space evolution \emph{really} looks like.
 While it is known that \gls{acr:ddos} attack strategies evolve in real time~\parencite{DBLP:conf/spw/KangGS16}, to my knowledge no works detail what patterns such evolution might take.
@@ -163,9 +178,39 @@ Here though, we would constrain the scope of such algorithms to a single device,
 This continues to make use of the many cores or \glspl{acr:fu} that we might expect on SmartNICs or \gls{acr:fpga} devices---\emph{N3IC}~\parencite{DBLP:journals/corr/abs-2009-02353} offers a model-parallel \gls{acr:nfp} implementation of the \gls{acr:nn} forward pass which might be compatible in theory.
 \glspl{acr:bnn} are not, however, suited for this purpose, given that training requires incremental real-valued adjustments to the model parameters.
 As such, online \gls{acr:nn} training in the \gls{acr:pdp} would likely mandate \emph{at least} fixed-point arithmetic, ruling out the strong performance benefits of \glspl{acr:bnn}.
-
-?? haha great idea
-?? \gls{acr:es} methods, devoid of \emph{any} gradient computation, may instead be a comfortable fit for policies with fewer parameters---which require fewer noise values to add and track over $\wvec{}$ for all live traces.
+\gls{acr:es} methods may be an exciting avenue here---devoid of \emph{any} gradient computation, they instead add uniform noise over the entire parameter set $\wvec{}$, making it computationally cheaper to train a policy than the use of backpropagation.
 
 %\emph{N3IC}~\parencite{DBLP:journals/corr/abs-2009-02353} offers a model-parallel \gls{acr:nfp} implementation of the \gls{acr:nn} forward pass---this execution model 
 %?? Insights from distributed model-training? Gradient calculation still tricky. Wait-free backpropagation as in \cref{sec:distributed-training} might work with non-\glspl{acr:bnn} to divide gradient compute across agents (again, exploiting multi-core or many \glspl{acr:fu} that we might get out of \glspl{acr:fpga})
+
+%?? Future of networks??
+%Future networks themselves...
+%?? blurring the lines between compute classes (see cpu-nic co-designs)
+%?? hybridisation, 
+
+Future networks and \gls{acr:pdp} hardware designs will become only more varied and vibrant as time goes on.
+Hearkening back to my earlier thoughts in \cref{sec:pdp-summary}, the hardware advances we've examined the wider impact of are only the first wave of truly programmable solutions.
+I expect that we will see many more points along the capacity-capability Pareto front---blurring the lines between compute classes as \gls{acr:cpu}-\gls{acr:nic} co-designs are beginning to do.
+Currently, the solution is to mix and match devices as a hybrid \gls{acr:soc} board (as in Intel's IPUs), but we should hope for a radical shake up in much the same vein as \gls{acr:rmt} sooner or later.
+%?? Faster adaptability and installation?
+Perhaps this will bowl over some of the roadblocks which make online (and otherwise in-\gls{acr:pdp}) \gls{acr:ml} difficult today---such as on-device state modification, or even piece-wise replacement of tables and logic (e.g., encoded as smaller P4 of \gls{acr:ebpf} subprograms).
+%?? blurring the lines between compute classes (see cpu-nic co-designs)
+%?? hybridisation,
+%?? OS level changes?
+Beyond hardware-based dataplane programmability, the rearchitecture and accelerated packet processing stacks we've seen from \glspl{acr:os} in the last few years alone bode well for software dataplanes.
+While there will of course be iterative improvements to \gls{acr:xdp} and the like to make them more capable, user-friendly, or better exposed to applications, more specialised kernel and network stack designs will likely arise.
+After all, the commodity \glspl{acr:cpu} which will inevitably be co-hosted with our SmartNICs and \glspl{acr:fpga} will need an accelerated and predictable stack for processing packets and flows.
+%?? Proliferation throughout the wider Internet: maybe we'll never get to where active networks wanted to be, but .
+%?? COntingent on lower cost and or more energy efficient? Maybe this couldbe a good thing?
+In time I expect that while `dumb' routing hardware will still make up much of the Internet's backbone and capacity, if \gls{acr:pdp} becomes lower cost and more energy-efficient then we will see greater proliferation of programmable network infrastructure from the core to the edge.
+It may be the case that we'll never reach the original \emph{active networking} vision of a fully cooperative and user-controlled routing fabric---perhaps this shouldn't be the case---but I think that this will enable a new kind of evolution in vendors, \glspl{acr:isp}, and host networking stacks.
+%?? And new use cases in turn
+Networking, as a field, is on the cusp of some truly interesting developments---and I'm excited to see where it all leads.
+
+%My concluding thought is that \gls{acr:pdp} and its use cases present a vibrant, ongoing line of research---particularly when we consider how it can be combined with \gls{acr:ddn}.
+%It offers today a source of raw device data which we would have never been able to feasibly use or export, as well as the necessary tools to perform complex data analysis at line-rate and switches' scale.
+%At the same time it provides ways of helping host machines scale further via aggregation, and a promising location to perform complex, data-driven logic and reaction.
+%I am of the opinion, however, that it is still a field in its adolescence.
+%The hardware solutions and designs which have arisen and entered widespread market adoption (e.g., \gls{acr:rmt}$\rightarrow$Tofino) are impressive, powerful and capable---but they are the first wave of fully programmable devices at this scale and this form-factor, and we should expect even more innovation in hardware and languages as the field evolves.
+%This may well take the form of incoming heterogeneity, as device manufacturers produce \gls{acr:pdp} devices tailored to different use cases in much the same way as \emph{Taurus}.
+%Projects like \emph{BrainWave} reiterate that network hypergiants already hold the means and motivation to do just this.

@@ -1,4 +1,4 @@
-\section{A large-scale problem in modern networks: distributed denial of service}\label{sec:problems-in-modern-networks}
+\section{Distributed denial of service}\label{sec:problems-in-modern-networks}
 While computer networks are prone to all manner of operational problems on account of their gradual, continued construction via many complex interlocking systems, we train our focus here on \glsxtrfull{acr:dos} and \glsxtrfull{acr:ddos} attacks.\sidenote{A vast array of other, keenly relevant problems are briefly explained while motivating the \gls{acr:ddn} use cases presented throughout \cref{sec:use-cases}.}
 \gls{acr:ddos} attacks are concentrated efforts by many hosts to reduce the availability of a service, typically to inflict financial harm or as an act of vandalism.
 Attackers achieve this by either exploiting peculiarities of \gls{acr:os} or application behaviour in \emph{semantic attacks} (e.g., \emph{\texttt{SYN} flooding attacks}), or overwhelming their target through sheer volume of requests or inbound packets (\emph{volume-based attacks})~\parencite{DBLP:conf/imc/JonkerKKRSD17}.
@@ -111,7 +111,7 @@ While this cannot be directed to an arbitrary target \emph{per se}, this present
 \paragraph{Link-flooding attacks}
 \glsxtrfullpl{acr:lfa} or \emph{transit-link} attacks are another volumetric \gls{acr:ddos} vector which has come to light~\parencite{DBLP:conf/esorics/StuderP09,DBLP:conf/sp/KangLG13}.
 In contrast with typical direct and reflection-based attacks, malicious actors here do not forward traffic directly to their intended victim.
-Instead, they use their bandwidth to communicate with as many legitimate or dummy servers as they can such that the outbound traffic of all participating clients aggregates at a common point in the Internet.
+Instead, they use their bandwidth to communicate with as many legitimate or dummy servers as they can such that the outbound traffic of all attacking clients aggregates at a common point in the Internet.
 This exhausts the resources of a target \gls{acr:as} or set of bottleneck links needed to reach their intended victim, and traffic appears for all intents and purposes as a completely uncorrelated set of source and destination pairs.
 Since the traffic only ever aggregates in, e.g., \gls{acr:isp} networks, target servers never see any attack traffic themselves.
 The need for many source nodes means that attackers practically require botnets for \glspl{acr:lfa} to be feasible~\parencite{DBLP:conf/sp/SmithS18}; however, Internet-of-Things devices and other insecure machines are often recruited for this purpose via malware like \emph{Mirai}~\parencite{DBLP:conf/uss/AntonakakisABBB17}.
