@@ -17,7 +17,7 @@ Both of these servers ran Ubuntu 18.04.5 LTS (4.15.0-140-generic).
 This also enables the estimation of host performance when directed to a virtualised network function.
 \emph{Collector} ran Ubuntu 18.04.4 LTS (4.15.0-96-generic)
 
-\approachshort{} and its firmwares were evaluated on server blade configurations (\emph{MidServer} and \emph{HighServer}), each hosting a single Netronome Agilio LX \numproduct{1 x 40}GbE SmartNIC (NFP-6480, \qty{1.2}{\giga\hertz}).
+\approachshort{} and its firmwares were evaluated on server blade configurations (\emph{MidServer} and \emph{HighServer}), each with a single Netronome Agilio LX \numproduct{1 x 40}GbE SmartNIC (NFP-6480, \qty{1.2}{\giga\hertz}).
 Firmwares were built to include a P4 toolchain using the default \gls{acr:me}, context, and island assignment.
 Control programs were built using \texttt{rustc} version 1.52.1.
 \approachshort{}'s firmware is built to run its \gls{acr:rl} logic on a \num{4}-\gls{acr:me} island of the NFP-6480, totalling \num{32} contexts.
