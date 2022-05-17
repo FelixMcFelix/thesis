@@ -1,5 +1,8 @@
 \chapter{Conclusion}\label{chap:conclusion}
-This thesis has shown how to use the advanced capabilities of modern \gls{acr:pdp} hardware to make online learning---particularly classical \gls{acr:rl}---and other \gls{acr:ddn} use cases feasible in the dataplane.
+This thesis has demonstrated how the advanced capabilities of modern \gls{acr:pdp} hardware can be used to make online learning---particularly classical \gls{acr:rl}---and other \gls{acr:ddn} use cases feasible in the dataplane.
+?? Say, once again, why this is a good idea in the first place
+?? automatically learn complex heuristics/dynamics?
+?? make management decisions faster and from more precise data.
 In spite of how far this hardware has come, this has required many design caveats---we have examined various \gls{acr:ml} and \gls{acr:rl} primitives alongside the architectures of modern \gls{acr:pdp} hardware to pick out the considerations of running in these resource-limited yet high-speed environments.
 At the same time, I have also argued the case for the unity of \gls{acr:ddn} and dataplane programmability: by mitigating amplification \gls{acr:ddos} attacks using an online multi-agent \gls{acr:rl} system, and by showing one way in which \gls{acr:pdp} hardware can support data-driven classifications for network management.
 %made online \gls{acr:rl} in \gls{acr:pdp} hardware possible, while also meaningfully advancing the state of the art in data-driven, programmable networks.
@@ -97,7 +100,7 @@ It is simply the case that, as in parallel computing, there is no free lunch~\pa
 %What will this mean for programmability? Abstractions?
 %?? increasing fallback to IRs from commodity languages the `right move'... probably.
 
-\section{A difficult security context}
+\section{A challenging security context}
 %?? Uncomfortable security context
 %?? Try to establish when good/bad, wrt opsec?
 At present, \gls{acr:ml} and \glspl{acr:dnn} have a wide variety of viable attacks at runtime and during training, which raises questions about whether their use in \gls{acr:ddn} is safe---either online or offline.
