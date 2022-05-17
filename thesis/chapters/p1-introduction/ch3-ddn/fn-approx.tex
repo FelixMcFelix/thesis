@@ -4,8 +4,9 @@ Of course, given that we lack \emph{a priori} knowledge of the function's true s
 Such a learnt function is then defined by a fixed structure (e.g., an \gls{acr:nn}'s architecture) and a \emph{parameter set} $\wvec{}$, which is typically a collection of real numbers.
 Of particular importance is that the function approximations presented here (and in general) are differentiable with respect to their parameters, which allows for $\wvec{}$ to be trained as we discuss through \cref{sec:learning-an-approximation}.
 
-Considering the deployment environment we're mainly interested in---\gls{acr:pdp} hardware---making the right choice is important both here and in the used data format (\cref{sec:numerical-representations-for-embedded-ml}).
+Considering the deployment environment we're mainly interested in---\gls{acr:pdp} hardware---making the right choice of algorithm and the used data format (\cref{sec:numerical-representations-for-embedded-ml}) is crucial.
 For instance, more complex functions (deeper \glspl{acr:nn}) have higher \emph{model capacity}, and are capable of learning more complex transformations, but often have a higher cost to use in inference: in either the number of required parameters, or the amount of arithmetic operations needed to produce an output.
+Accordingly, they can be less well suited for \gls{acr:pdp} execution.
 This also correlates with the cost of computing the gradient we'd use to move $\wvec{}$ to a more optimal set of values---in \glspl{acr:nn} this is more expensive than inference alone, while with simpler linear schemes like tile coding the gradient is acquired for free during the forward pass.
 Model capacity, inference cost, and learning cost then weigh against the finite resources of \gls{acr:pdp} hardware.
 We must then consider several function approximations according to how we want to integrate the \gls{acr:ml} component of a larger \gls{acr:ddn} system: online or offline, and in-\gls{acr:nic}/\gls{acr:pdp} or on commodity hardware.
@@ -22,7 +23,7 @@ I introduce and explain \emph{linear tile coding}, a simple and rather interpret
 While tile coding has been superseded in modern \gls{acr:rl} works by \glspl{acr:dnn}, I use it as the main function approximation scheme in \cref{chap:ddos-rl} for its computational simplicity for both inference and training.
 Crucially, it plays a key role in the design of \approachshort{} in \cref{chap:in-net-rl}, where it underpins the task of bringing \gls{acr:rl} to \gls{acr:pdp} \glspl{acr:nic} due to their particular constraints.
 \glspl{acr:nn} are presented due to their widespread adoption and hence deep relevance to \gls{acr:ddn} on the whole.
-In addition, they are used for flow classification in \cref{chap:seidr} to make good use of the data reduction provided by \seidr{} histograms.
+In addition, they are used for flow classification in \cref{chap:seidr} to make good use of the data reduction provided by in-network histograms.
 
 %?? Appears more in the RL lit than anything.
 %

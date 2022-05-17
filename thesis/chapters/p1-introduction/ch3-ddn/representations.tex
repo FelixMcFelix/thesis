@@ -14,7 +14,7 @@ Luckily, the task of bringing \gls{acr:ml} models to resource-constrained enviro
 To deploy \gls{acr:ml} models to \gls{acr:pdp} hardware, the question of what data format to use is one we \emph{must} ask ourselves.
 Simply put, this is a necessity due to the general (and expected!) lack of floating-point support in \gls{acr:pdp} hardware of all sizes.
 %?? necessity, question we \emph{must} ask ourself
-What might be less obvious is that we have different needs depending on whether the main task we're interested in is inference---i.e., per-packet application of a learned flow---or in-situ learning of a function or policy.
+What might be less obvious is that we have different needs depending on whether the main task we're interested in is inference---i.e., per-packet classification to detect attack traffic---or in-situ learning of a function or policy (such as adapting a learned \gls{acr:aqm} scheme to account for a new traffic class).
 %?? different needs based on inference and learning
 %?? different optim capability depending on target env?
 The speedup and memory savings we can gain from any choice are dependent on the target environment (e.g., between \gls{acr:pdp} switches, \glspl{acr:npu}, or host machines), while our ability to compute and manipulate policy gradients depends similarly on this.

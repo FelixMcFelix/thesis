@@ -1067,9 +1067,10 @@ To reduce traffic impact on infrastructure while freeing host resources, \emph{Z
 
 \subsection{Transports, protocols, and routing}\label{sec:pdp-uses-transports}
 Making better use of networks through \gls{acr:te}, more sophisticated \glspl{acr:cca}, and more adaptive routing is a challenging but worthwhile endeavour.
-\gls{acr:pdp} hardware allows us to place more complex decisions and new algorithms at a lower level, providing a strong use case for the better state and measurements they give us access to (\cref{sec:network-monitoring}).
+\gls{acr:pdp} hardware allows us to place more complex decisions and new algorithms at a lower level, where they can take advantage of the fine-grained or complex state and measurements that in-network compute gives us access to (\cref{sec:network-monitoring}).
+Our ideal aims are that flows would converge to their optimal fair-share faster (and with greater accuracy), better respond to congestion and incast events, or more dynamically make use of network capacity.
 Moreover, it allows us to consider new schemes for doing so as networked use cases change or evolve over the years to come.
-We'll consider here some ways in which \gls{acr:pdp} hardware makes the management and operation of networks easier and faster by measurement, cooperation, or novel algorithms.
+We'll consider here some ways in which \gls{acr:pdp} hardware makes the management and operation of networks faster or more resilient by measurement, cooperation, or novel algorithms.
 
 %?? ROuting and load balancing (over paths) more dynamic, fairer and more uniform than e.g. \gls{acr:ecmp}
 Multipath networks are commonly used to achieve high bisection bandwidth between hosts, but require specialised schemes like \gls{acr:ecmp} to balance load across their fabric.
@@ -1093,7 +1094,8 @@ Advanced, control-theoretic \glspl{acr:cca} like the \emph{PCC} family of \glspl
 Having more, high-quality information also prevents fairness issues which may arise from needing to rely on carefully tuned responses to otherwise opaque signals from the network, such as BBRv1's noted unfairness with other \gls{acr:tcp} traffic~\parencite{DBLP:conf/imc/WareMSS19}.
 %?? BBR~\parencite{DBLP:journals/queue/CardwellCGYJ16} is unfair~\parencite{DBLP:conf/imc/WareMSS19}
 %?? cost of logic and importance of good information to make decisions on.
-\gls{acr:pdp} infrastructure offers new ways to offload \gls{acr:cca} logic or to augment it with assistance from the network.
+Even older \glspl{acr:sdn} show that this can be the case---consider \emph{OTCP}~\parencite{DBLP:conf/noms/JouetPP16}, which calculates optimal pairwise \gls{acr:tcp} parameters by using OpenFlow and its supporting protocols to actively measure static network characteristics like latencies and link bandwidths.
+\gls{acr:pdp} infrastructure can go further still, and offers new ways to offload \gls{acr:cca} logic or to augment it with assistance from the network.
 Data centre networks are best placed for this---\emph{NDP}~\parencite{DBLP:conf/sigcomm/HandleyRAV0AW17} is a receiver-driven \gls{acr:cca} where P4 switches truncate packet payloads when buffers are at risk of exhaustion, while senders choose network routes for fairer load balancing.
 Header-only packets are prioritised, providing a dedicated fast path for control packets and effective congestion signals.
 \emph{HPCC}~\parencite{DBLP:conf/sigcomm/LiMLZFTCZKAY19} instead uses the \gls{acr:int} techniques discussed above to expose path characteristics and loads to a connection's sender.

@@ -108,12 +108,13 @@ The beauty is that, even as our networks evolve, we should be able to learn adju
 
 Handling this evolution---particularly at local scales---requires also that we can learn these properties \emph{online}.
 Pre-trained models to solve a task or implement some control mechanism such as a \gls{acr:cca} are likely to be trained in a `one size fits all' manner from a vast amount of data.
-This works well in the general case, of course; functions can be trained to handle a wide variety of scenarios and behave well in response.
-In reality we may very well know that some specific local characteristic (like protocol distribution, or network structure) gives us a property that we could otherwise exploit for per-network, per-switch, or per-machine models.
-In the event of either this scenario or some gradual change in the underlying problem, it's reasonable to tailor an existing policy to suit our current needs.
+This works well in the general case, of course; functions are often trained to handle the most common scenarios and behave well in response.
+In reality, a characteristic of our deployment environment might not have been included in training; either a useful property like a network's structure, or a problem dynamic like the local protocol distribution.
+%In reality we may very well know that some specific local characteristic (like protocol distribution, or network structure) gives us a property that we could otherwise exploit for per-network, per-switch, or per-machine models.
+In the event of either this scenario or some gradual change in the underlying problem, it is reasonable to tailor an existing policy to suit our current needs.
 Alternatively, we might aim to prevent performance degradation arising from complex dynamics we don't yet know how to model but can see in live networks, needing us to train from scratch.
 Online learning techniques, such as \gls{acr:rl} and federated versions of unsupervised and semi-supervised algorithms, allow us to adaptively train policies to consider local tailoring and global evolution.
-Standard \gls{acr:ml} approaches, on the other hand, require significant caveats to achieve the same effect; labelling data is expensive (either by hand or by constructing and running relevant simulations), datasets are too large to transport, and training datasets may have privacy or ownership concerns attached.
+Standard supervised \gls{acr:ml} approaches, on the other hand, require significant caveats to achieve similar tailoring; labelling data is expensive (either by hand or by constructing and running relevant simulations), datasets are too large to transport, and training datasets may have privacy or ownership concerns attached.
 %?? cost of having all data
 %?? privacy and data ownership concerns
 \gls{acr:rl} in particular avoids this by using incremental performance metrics which should be easily observable at runtime.
