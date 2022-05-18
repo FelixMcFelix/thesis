@@ -1,8 +1,10 @@
 \chapter{Conclusion}\label{chap:conclusion}
 This thesis has demonstrated how the advanced capabilities of modern \gls{acr:pdp} hardware can be used to make online learning---particularly classical \gls{acr:rl}---and other \gls{acr:ddn} use cases feasible in the dataplane.
-?? Say, once again, why this is a good idea in the first place
-?? automatically learn complex heuristics/dynamics?
-?? make management decisions faster and from more precise data.
+%?? Say, once again, why this is a good idea in the first place
+These capabilities move us closer to automatically inferring complex, tailored dynamics for network control and optimisation, in place of laboriously hand-tuned heuristics for the same tasks.
+%?? make management decisions faster and from more precise data.
+%?? cooperation form the network
+Moreover, the network cooperation enabled by \gls{acr:pdp} hardware allows us to make these decisions on more precise data and to take more involved actions on packets and flows.
 In spite of how far this hardware has come, this has required many design caveats---we have examined various \gls{acr:ml} and \gls{acr:rl} primitives alongside the architectures of modern \gls{acr:pdp} hardware to pick out the considerations of running in these resource-limited yet high-speed environments.
 At the same time, I have also argued the case for the unity of \gls{acr:ddn} and dataplane programmability: by mitigating amplification \gls{acr:ddos} attacks using an online multi-agent \gls{acr:rl} system, and by showing one way in which \gls{acr:pdp} hardware can support data-driven classifications for network management.
 %made online \gls{acr:rl} in \gls{acr:pdp} hardware possible, while also meaningfully advancing the state of the art in data-driven, programmable networks.
@@ -104,17 +106,20 @@ It is simply the case that, as in parallel computing, there is no free lunch~\pa
 %?? Uncomfortable security context
 %?? Try to establish when good/bad, wrt opsec?
 At present, \gls{acr:ml} and \glspl{acr:dnn} have a wide variety of viable attacks at runtime and during training, which raises questions about whether their use in \gls{acr:ddn} is safe---either online or offline.
-Attacks and defences still appear to be rapidly iterating against one another, and as such it's not clear that we should be focussing on integrating specific defences while they appear to have such a short shelf-life.
+Attacks and defences still appear to be rapidly iterating against one another, and as such it is not clear that we should be focussing on integrating specific defences while they appear to have such a short life-time.
 I argue that \gls{acr:ddn} deployment can be safe so long as there is a reasonable degree of isolation between a hypothetical attacker (or self-serving client) and the model.
 %?? spec. attacks: evasion, poisoning, data extraction.
-What isolation means then depends on the attacks we concern ourselves with.
+The meaning of `isolation' in this context changes depending on the attacks we want to defend our \gls{acr:ddn} system against.
 For instance, destructive steps in processing, true isolation as in many resource placement problems (i.e., \gls{acr:ddn} applied at design-time), or aggregation of input data may aid against evasion, poisoning, and adversarial behaviour.
 The network itself offers some degree of isolation of many outputs, which might make model stealing and evasion more difficult.
 Transient network conditions make flow statistics noisier, pushing them away from the intended perturbation, while routing and \gls{acr:qos} decisions might only be inferred indirectly with added noise and delay.
 %Hiding outputs as appropriate to prevent model stealing and similar attacks [probably can't even see most of the time, but might be able to infer approx later?]).
 In closed loop circumstances, isolation is less clear.
-This is purely intuitive reasoning, and likely unsatisfactory, but they are the best I can offer barring further research tailored to the network problem-space.
-What the field needs instead is a set of quantitative bounds on how an attacker's input can affect learnt models in reasonable scenarios, measured specifically on network tasks.
+%This is purely intuitive reasoning, and likely unsatisfactory, but they are the best I can offer barring further research tailored to the network problem-space.
+This is purely intuitive reasoning---in the longer term, we require further research tailored to the network problem-space.
+Future studies should aim to offer a set of quantitative bounds on how an attacker's input can affect learnt models in reasonable scenarios, measured specifically on network tasks.
+%For instance, measuring to what extent an attacker could reverse-engineer their
+These must account for the effects of data aggregation, processing, and noise from cross-traffic---as well as path characteristics introduced by other \glspl{acr:as} and network segments en-route to a target.
 
 %\section{The ghost of hardware yet to come}
 %Ooooo
@@ -138,8 +143,8 @@ To respond to such change, we simply need to either scale up gradient contributi
 Yet we are left with two key challenges.
 The first is that we need robust means of detecting the kinds of problem-space evolution we're interested in.
 There are tricky tuning factors to consider: chief among them are handling seasonality, and the timescales and magnitudes of evolution worth adapting to.
-Suppose traffic varies diurnally, in which case choosing the wrong timescales would likely cause an online learner to oscillate between policies---meanwhile, the desired behaviour would be to learn to handle these modes in the \emph{same policy}.
-The techniques discussed in \cref{sec:ddn-rl-design-considerations} may be useful to this end, such as adaptive exploration, changepoint detection, or signal processing methods (whose intersection with \gls{acr:rl} seems as-yet unexplored).
+If traffic varies diurnally, for instance, then choosing the wrong timescales would likely cause an online learner to oscillate between policies---meanwhile, the desired behaviour would be to learn to handle these modes in the \emph{same policy}.
+The techniques discussed in \cref{sec:ddn-rl-design-considerations} may be useful to this end, such as adaptive exploration, changepoint detection, or signal processing methods (whose intersection with \gls{acr:rl} seems as yet unexplored).
 The second challenge is that we must understand and model what problem-space evolution \emph{really} looks like.
 While it is known that \gls{acr:ddos} attack strategies evolve in real time~\parencite{DBLP:conf/spw/KangGS16}, to my knowledge no works detail what patterns such evolution might take.
 In the wider Internet, aggregate changes in bandwidth and usage are likely easy enough to model~\parencite{DBLP:conf/anrw/BauerJHBC21}.
@@ -162,7 +167,8 @@ But, barring historic case studies, estimating the effects of new protocols and 
 
 Online \gls{acr:rl} via \approachshort{} is limited to devices in a SmartNIC or \gls{acr:npu}-style form-factor.
 This is less than ideal for larger deployments, yet achieving this level of flexibility at switch scale is unlikely to be possible without heavy concessions.
-Register access limits and a fixed number of pipeline stages would make a purely P4-\gls{acr:pdp} variant impossible to express, let alone a \gls{acr:mat}-accelerated approach (which would be dependent on the controller for policy updates).
+Register access limits and a fixed number of pipeline stages would make a purely P4-\gls{acr:pdp} variant difficult to express, let alone a \gls{acr:mat}-accelerated approach (which would be dependent on the controller for policy updates).
+As discussed in \cref{sec:tile-code}, we may be able to use \glspl{acr:mat} to perform or accelerate the tile-coding step, but accessing and later updating action values stored in registers is likely to be incompatible with \gls{acr:rmt} designs.
 A promising avenue here would be to investigate ongoing transfer learning between online \approachshort{} agents and high-throughput offline function approximators such as \glspl{acr:bnn}.
 This might allow, for instance, having a canonical `known good' policy in the majority of the network installed to Tofino switches, while a smaller proportion of flows or packets are routed through actively learning bump-in-the-wire nodes.
 The control plane is then responsible for collating their local policy modifications and generating a set of \gls{acr:bnn} parameters which expresses the same decision boundaries as the aggregated tile-coded policy.
@@ -196,16 +202,16 @@ Hearkening back to my earlier thoughts in \cref{sec:pdp-summary}, the hardware a
 I expect that we will see many more points along the capacity-capability Pareto front---blurring the lines between compute classes as \gls{acr:cpu}-\gls{acr:nic} co-designs are beginning to do.
 Currently, the solution is to mix and match devices as a hybrid \gls{acr:soc} board (as in Intel's IPUs), but we should hope for a radical shake up in much the same vein as \gls{acr:rmt} sooner or later.
 %?? Faster adaptability and installation?
-Perhaps this will bowl over some of the roadblocks which make online (and otherwise in-\gls{acr:pdp}) \gls{acr:ml} difficult today---such as on-device state modification, or even piece-wise replacement of tables and logic (e.g., encoded as smaller P4 of \gls{acr:ebpf} subprograms).
+Perhaps this will tear down some of the roadblocks which make online (and otherwise in-\gls{acr:pdp}) \gls{acr:ml} difficult today---such as on-device state modification, or even piece-wise replacement of tables and logic (e.g., encoded as smaller P4 of \gls{acr:ebpf} subprograms).
 %?? blurring the lines between compute classes (see cpu-nic co-designs)
 %?? hybridisation,
 %?? OS level changes?
 Beyond hardware-based dataplane programmability, the rearchitecture and accelerated packet processing stacks we've seen from \glspl{acr:os} in the last few years alone bode well for software dataplanes.
-While there will of course be iterative improvements to \gls{acr:xdp} and the like to make them more capable, user-friendly, or better exposed to applications, more specialised kernel and network stack designs will likely arise.
+While there will of course be iterative improvements to \gls{acr:xdp} and similar frameworks to make them more capable, user-friendly, or better exposed to applications, more specialised kernel and network stack designs will likely arise.
 After all, the commodity \glspl{acr:cpu} which will inevitably be co-hosted with our SmartNICs and \glspl{acr:fpga} will need an accelerated and predictable stack for processing packets and flows.
 %?? Proliferation throughout the wider Internet: maybe we'll never get to where active networks wanted to be, but .
 %?? COntingent on lower cost and or more energy efficient? Maybe this couldbe a good thing?
-In time I expect that while `dumb' routing hardware will still make up much of the Internet's backbone and capacity, if \gls{acr:pdp} becomes lower cost and more energy-efficient then we will see greater proliferation of programmable network infrastructure from the core to the edge.
+In time, I expect that while standard (non-\gls{acr:pdp}) routing hardware will still make up much of the Internet's backbone and capacity, if \gls{acr:pdp} becomes lower cost and more energy-efficient then we will see greater proliferation of programmable network infrastructure from the core to the edge.
 It may be the case that we'll never reach the original \emph{active networking} vision of a fully cooperative and user-controlled routing fabric---perhaps this shouldn't be the case---but I think that this will enable a new kind of evolution in vendors, \glspl{acr:isp}, and host networking stacks.
 %?? And new use cases in turn
 Networking, as a field, is on the cusp of some truly interesting developments---and I'm excited to see where it all leads.
