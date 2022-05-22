@@ -5,16 +5,16 @@
 %?? PROBLEM
 Computer networks are complex, yet critical infrastructure.
 The Internet of today is a prime example.
-From its birth as \emph{ARPANET}~\parencite{DBLP:conf/afips/HeartKOCW70}, interlinking the computers of research institutions under sole administration, it has scaled to connect together billions of devices over chains of smaller networks owned by totally separate entities.
+From its birth as \emph{ARPANET}~\parencite{DBLP:conf/afips/HeartKOCW70}, interlinking the computer networks of self-governing research institutions, it has scaled to connect together billions of devices over chains of smaller networks owned by totally separate entities.
 This growth has come at a cost; large-scale networks are beset with layers upon layers of interlocking and overlaid systems divided amongst endpoint hosts and operators of the network fabric.
 The isolated, resilient design of all these layers is a strength in itself as these layers can, in theory, be replaced.
 Yet owing to this complexity, keeping the `Internet machinery' well-oiled and performant is a difficult task.
 
 As these networks have grown larger and faster over the last half-century, they have become more flexible to do just this.
-Early design choices had been bonded to fixed-function hardware, such as routing algorithms.
+Early design choices such as routing algorithms had been bonded to fixed-function hardware.
 To escape these shackles, the community sought through the early 2000s to separate the high-level forwarding behaviour of network packets (the \emph{control plane}) from the hardware dataplane, giving rise to \gls{acr:sdn}.
 This is a research success that has meaningfully impacted the design, adaptability, performance, and fault-tolerance of production networks.
-For instance, making routing decisions per-flow has enabled \gls{acr:te} that otherwise requires complex workarounds.
+For instance, the ability to make routing decisions per-flow has enabled \gls{acr:te} that formerly required complex workarounds.
 What this did not solve was inflexible \emph{dataplane} behaviour; switches still supported a fixed set of actions applied to a fixed set of protocols known ahead-of-time, with limited shared state for measurement purposes.
 Many packet actions---security functions and the like---were and are implemented as \glspl{acr:asic} inside \emph{middleboxes} to process traffic at line rate.
 Infamously, these add yet more inflexibility by relying on (possibly incorrect) handling of known protocols.
@@ -34,7 +34,7 @@ To observe incorrect (yet transient) paths followed by packets, or to inspect an
 %?? need a pdp problem -- measurement? -- modification? -- new problems like microburst dependent on speed \& workload? -- 
 
 Many other aspects of networks are run by heuristic methods: each complex, hand-tuned, and operating on limited information.
-Their responses must be both approximately correct \emph{and} computationally cheap to compute to scale reasonably.
+Their responses must be both approximately correct \emph{and} computationally cheap to scale reasonably.
 To make the point clear, consider \glspl{acr:cca}.
 \glspl{acr:cca} underpin the majority of Internet traffic's ability to dynamically scale send rates up or down---in the absence of actual network state, they must in effect reverse-engineer optimal actions by following a proxy metric such as delay or packet losses.
 %?? effectively reverse-engineering network state by a proxy metric
@@ -154,7 +154,7 @@ The second is by \emph{moving \gls{acr:ml} and \gls{acr:rl} logic directly into 
 \gls{acr:ddn} decisions may then be instantly factored into the routing and processing of typical dataplane \glspl{acr:mat}, at minimal latency cost.
 In concert with online learning techniques such as \gls{acr:rl}, we may also tailor this behaviour to suit the deployment device or location---either by tweaking a known-good base policy, or learning from scratch.
 %?? in-situ processing
-However, programming in-network services has its own challenges: the hardware offers restricted instruction sets, program lengths, data types, \glspl{acr:fu} which would have provided floating-point support, and memory.
+However, programming in-network services has its own challenges: the hardware offers restricted instruction sets, program lengths, data types, \glspl{acr:fu} for capabilities like floating-point support, and memory.
 Each limits the kinds of processing we aim to perform, but nowhere is this felt more keenly than the mismatch between the needs of \gls{acr:ml} algorithms and capabilities of network hardware.
 This grows greater still with our desire for online learning in the \gls{acr:pdp} context, which requires us to compute and represent incremental and optimal changes to a learned policy.
 While this logic could also be pushed to host machines, there are significant drawbacks in decision latency and throughput.
@@ -190,14 +190,14 @@ This thesis asserts that:
 	\remembertext{1}{Data-driven methods such as reinforcement learning can lead to improved performance in network optimisation and control problems, such as \gls{acr:ddos} prevention}.
 	\remembertext{2}{In-network compute can make data-driven networking more efficient, effective, and responsive---enabling online learning to tailor policies to their deployment environment}.
 	Finally, \remembertext{3}{dataplane programmability will allow the precise measurement \emph{and} data aggregation that can enable fine-grained data-driven analyses to scale to high flow rates or large networks}.
-	Applied together, programmable data-driven networks can improve computer network operation beyond the sum of its parts.}
+	Applied together, programmable data-driven networks can improve computer network operation beyond the sum of these parts.}
 %	?? Modern programmable network hardware will allow these key parts of data-driven or RL systems to run within the network fabric, improving performance and response times.
 %	?? \emph{Reinforcement learning can lead to improved performance in network optimisation and control problems, such as DDoS prevention.}
 %	?? \emph{Programmable dataplanes and in-network computation can enable new data-driven networking use-cases.}
 %	?? \emph{Programmable dataplanes and in-network computation can make data-driven networking more efficient, effective, and responsive.}
 \end{quotation}
 
-While claims \stmtno{\numrange{0}{1}} fall in-line with expected uses of these new technologies, the others require some extra explanation to unpack.
+While claims \stmtno{\numrange{0}{1}} fall in line with expected uses of these new technologies, the others require some extra explanation to unpack.
 %?? Points for \stmtno{0}?
 Claim \stmtno{2} may be somewhat surprising, if we think only of the massive $\mathcal{O}\left(\text{\unit{\mebi\byte}--\unit{\gibi\byte}}\right)$ models which dominate classification, control, and language tasks.
 By considering changes to algorithms and numerical formats, smaller models can be executed in the limited resources of \gls{acr:pdp} hardware.
