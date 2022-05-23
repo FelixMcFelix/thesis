@@ -256,7 +256,7 @@
 \section{Motivation}\label{sec:ddos-motivation}
 %?? What makes RL a suitable method for network anomaly detection, what features are most relevant?
 %?? Point I was thinking of: feedback-loop-like model allows monitoring \emph{after} an action is taken to (in theory) allow forgiveness of mistakenly punished flows. This does hinge on taking a flow-by-flow look at the state space, but if we can combine knowledge of current state (duh!), the last action taken (i.e. an indicator of our previous assessment [such as high pdrop $\implies$ bad]) then perhaps a flow which falls off identically to a legit flow can be rescued.
-Moving beyond the overt benefits of choosing \gls{acr:rl}-based defences for coping with evolving or ongoing control problems, we believe that there are concrete reasons for their use here.
+Moving beyond the overt benefits of choosing \gls{acr:rl}-based defences for coping with evolving or ongoing control problems, I believe that there are concrete reasons for their use here.
 We have seen that for other domains in particular, misclassification is a serious problem, which can introduce \emph{collateral damage} in the context of \gls{acr:ddos} prevention.
 In theory, the feedback-loop-like model allows us to monitor flows \emph{after} an action is taken to allow forgiveness of mistakenly punished flows.
 This does rely upon the ability to take a flow-by-flow view of the state space, but if we can combine knowledge of current state with the last applied action, then perhaps a flow which falls off identically to a legitimate flow can be rescued.
@@ -287,7 +287,7 @@ An attacker's goal is to minimise the fair-share bandwidth allocation that a ser
 Threat actors are external and act intentionally, aren't expected to be 
 \glspl{acr:apt}, and likely range from hacktivists to moderately funded adversaries.
 We assume that attacks will be volumetric \gls{acr:ddos} attacks with the structure of an \emph{amplification attack}, and that traffic aggregates at the target (unlike in a transit-link attack or \gls{acr:lfa}).
-The addresses of the set of unwitting reflector nodes are visible to the target, though any bots taking part in an attack or the machines those bots control are not revealed to the target without communication with \nth{3} party organisations such as upstream \glspl{acr:isp}.
+The addresses of the set of unwitting reflector nodes are visible to the target, though any bots taking part in an attack or the machines those bots control are not revealed to the target without communication with third-party organisations such as upstream \glspl{acr:isp}.
 The discovery of any reflector by some defence system does have a cost to the attacker---there is a particularly large (yet finite) supply of viable reflector nodes~\parencite{DBLP:conf/ndss/Rossow14}, but the constraints that each has a large upstream bandwidth and support for high-amplification protocols narrow this pool.
 
 We do not assume that an attacker has white-box access to an agent's policy, or that they will attempt to intelligently modify flow/system state to indirectly control an agent~\parencite{DBLP:conf/eurosp/PapernotMJFCS16, DBLP:conf/eurosp/PapernotMSW18, DBLP:journals/corr/HuangPGDA17, DBLP:conf/sp/Carlini017}---the kinds of evasion attack considered throughout \cref{sec:ddn-security}.

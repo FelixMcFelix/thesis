@@ -51,20 +51,20 @@
 	%
 	
 	\node[right=3 of aswpos](avfpos){};
-	\node[fill=white!60!uofgpumpkin, draw=black, minimum height=3.5cm, minimum width=4.5cm, below right= 0.1 of avfpos.north west](avf){};
+	\node[fill=white!60!uofgpumpkin, draw=black, minimum height=4cm, minimum width=4.5cm, below right= 0.1 of avfpos.north west](avf){};
 	\node[below right, inner sep=2pt] at (avf.north west) {\small Agent vNF};
 	\node[fill=white!90!uofgpumpkin, draw, rectangle, rounded corners=0.05cm, below=0.15] (avfsa) at ($(avf.north) + (0.2,0)$) {\begin{varwidth}{1.5 cm}\small \centering Stats API\end{varwidth}};
 	\node[fill=white!90!uofgpumpkin, draw, rectangle, rounded corners=0.05cm, below=0.9] (avfdb) at (avfsa.south west) {\begin{varwidth}{1.5 cm}\small \centering Flowstate\\Database\end{varwidth}};
 	\node[fill=white!90!uofgpumpkin, draw, rectangle, rounded corners=0.05cm, right=0.1] (avfsched) at (avfdb.east) {\begin{varwidth}{1.5 cm}\small \centering TRS\\Scheduler\end{varwidth}};
-	\node[fill=white!90!uofgpumpkin, draw, rectangle, rounded corners=0.05cm, below=2.3] (avfcore) at (avfsa.south) {\begin{varwidth}{1.5 cm}\small \centering Core\end{varwidth}};
+	\node[fill=white!90!uofgpumpkin, draw, rectangle, rounded corners=0.05cm, below=2.8] (avfcore) at (avfsa.south) {\begin{varwidth}{1.5 cm}\small \centering Core\end{varwidth}};
 	\node[fill=white!90!uofgpumpkin, draw, rectangle, rounded corners=0.05cm, right=0.8] (avfrl) at (avfcore.east) {\begin{varwidth}{1.5 cm}\small \centering RL\end{varwidth}};
 	
 	%%%
 	
 	\tikzset{>=stealth}
 	
-	\draw[thick, ->] (aswlc) -- (avfsa.west) node[midway,above] {\tiny Current load};
-	\draw[thick, ->] (aswsc) -- (avfsa.west) node[midway,sloped, above] {\tiny Flow stats};
+	\draw[thick, ->] (aswlc) -- (avfsa.west) node[pos = 0.4,sloped, below] {\tiny Current load};
+	\draw[thick, ->] (aswsc) -- (avfsa.west) node[pos = 0.42,sloped, below] {\tiny Flow stats};
 	
 	\draw[thick, ->] (oswlc) -- (avfsa) node[midway,above, sloped] {\tiny Current load};
 	

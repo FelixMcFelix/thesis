@@ -41,7 +41,7 @@
 \end{figure}
 
 The main element required by a per-source model is a feature set with high predictive power, so that behavioural differences are apparent to an agent.
-Elaborating on the statistics discussed in \cref{sec:ddos-motivation} which others have shown to be effective, we believe the following features to be useful (and humanly justifiable), and investigate their use alongside different traffic types.
+Elaborating on the statistics discussed in \cref{sec:ddos-motivation} which others have shown to be effective, I believe the following features to be useful (and humanly justifiable), and investigate their use alongside different traffic types.
 %?? We use these features, and why...
 
 \paragraph{Global state}
@@ -114,7 +114,7 @@ My aim was to design around this constraint as a form of future-proofing.
 
 All of the above features, save for global state, are 1-dimensional.
 For simplicity, here `\gls{acr:udp}' refers to congestion-unaware traffic, while `\gls{acr:tcp}' refers to congestion-aware flows.
-\Cref{fig:udp-feature-plots} shows the effectiveness of each feature for \gls{acr:udp} (resp.\ \cref{fig:tcp-cap-feature-plots} for \gls{acr:tcp}), on a single-destination topology (\cref{sec:single-dest}) with $n=2$ hosts per egress point averaged over \num{10} runs.
+\Cref{fig:udp-feature-plots} shows the effectiveness of each feature for \gls{acr:udp} (resp.\ \cref{fig:tcp-cap-feature-plots} for \gls{acr:tcp}), on a single-destination topology (\cref{sec:single-dest}) with $n=$~\num{2} hosts per egress point averaged over \num{10} runs.
 \Cref{fig:tcp-laf-feature-plots} demonstrates how feature accuracy varies when tiled alongside \emph{last action}, with similar trends observed when applied to \gls{acr:udp} traffic (\cref{fig:udp-laf-feature-plots}).
 %?? Core findings---different protocols need different features, so everything we proposed above has a use!
 The plots show that different protocols and traffic classes are best defended by different features---as such, every feature presented has value in a complete model.

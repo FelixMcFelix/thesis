@@ -8,16 +8,16 @@ Of the results presented, \emph{Guarded}'s unpredictable (often worse) starting 
 It's natural to expect that this would make the model easier to learn, but the additional state required appears to make the task \emph{harder}, beyond even the value of choosing a non-zero discount factor---which added forward-planning to explicitly mitigate this effect.
 Accordingly, we see that this design performs best (and exhibits considerably lower variance) when agents learn from as much knowledge as possible: high $n$ and single-agent training.
 To filter incoming traffic from a source, it must decide to degrade inbound traffic multiple times in a row, reducing the likelihood that a legitimate flow is punished by accident.
-Our belief is that \emph{Guarded} is a considerably stronger model for these reasons, and its successes offer strong rationale to consider the best schemes for efficient information sharing.
+My belief is that \emph{Guarded} is a considerably stronger model for these reasons, and its successes offer strong rationale to consider the best schemes for efficient information sharing.
 Paradoxically, \emph{Instant} generally achieves the best performance for \gls{acr:udp} traffic yet actively suffers when trained as a single learner---this may occur due to a roughly even spread of values between disparate actions, due to shared characteristics between legitimate and malicious flows.
 
 %?? May be hard to learn multiple features at once while controlling multiple flows while contending with many more agents, with harder dynamics like TCP. Does this hinder learning in the long run?
-Although we have improved upon Marl in both identified problem cases, the improvements are not quite on the order we'd expect for \gls{acr:udp} traffic.
+Although these developments have improved upon Marl in both identified problem cases, the improvements are not quite on the order we'd expect for \gls{acr:udp} traffic.
 %?? I don’t know if you want to also mention the problem of things getting “stuck” in locally optimal (but globally sub-optimal) policies. I think it’s fairly uncontroversial that an increase in state space would make this more likely. Also, the lack of discounting could play a large role (and more so as the state space becomes more complex…
 The most likely explanation is that agents are converging to, and becoming stuck in, locally optimal (but globally sub-optimal) policies.
 The increased state space size makes this a more likely occurrence, as does the unclear effect of hyperparameters ($\alpha$, $\gamma$) as we scale up the state space.
 I suspect that these difficulties may be exacerbated by the competitive nature of learning that these models embody: agents are learning action values for multiple features simultaneously, taking many actions at once (making it harder to observe the true value of each action), and controlling shared global state.
-Although our design does take steps to counteract such effects, these mitigations may not be enough.
+Although this design does take steps to counteract such effects, these mitigations may not be enough.
 Moreover, benign \gls{acr:udp} traffic shares many characteristics with attack traffic, suggesting that more training samples or some unknown feature might aid control, or that it may be worthwhile to extensively pre-train agents non-competitively on each feature using individual flows.
 
 %It is likely that the design of Marl++ 
@@ -38,15 +38,15 @@ One of the risks introduced by our policy update strategy is that so much work c
 The natural solution is to impose an upper bound on the amount of action computations/policy updates that can be performed before a work list is discarded completely.
 This removes the guarantee that all flows will be visited fairly often, but if updates occur regularly then this random sampling may be sufficient to achieve good performance.
 
-Can an attack on the controller can impact our approach?
+Can an attack on the controller impact our approach?
 This question hinges upon whether the deployment environment is a traditional network or is fully \gls{acr:sdn}-enabled---each agent is, in a sense, \emph{a} controller alongside the network's controller.
-In a traditional network, only the agents act as controllers, but since they periodically request per-flow data (rather than continuously receiving it) no amount of flows generates more requests or messages to the agent.
+In a traditional network, only the agents act as controllers, but since they periodically request per-flow data no amount of flows generates more requests or messages to the agent.
 More work is generated, but we discuss how to handle this safely above.
 Accordingly, agents can never be stalled by request volume: their only remote communication (load measurements) comes from trusted nodes, is highly periodic, and has constant size.
 The same logic holds for a fully software-defined network.
 Recalling that we do not employ the network's controller to install filtering rules on edge switches, an agent's ability to act is unimpeded.
 Thus, the controller is made no more vulnerable than in any other \gls{acr:sdn}.
-The only necessary change for such a scenario is that a load measurement which has not been updated (due to a timeout or missed deadline) should be set at $R_t=-1$.
+The only necessary change for such a scenario is that a load measurement which has not been updated (due to a timeout or missed deadline) should be set at $R_t=$~\num{-1}.
 %\begin{figure}
 %	\centering
 %	\includegraphics[width=0.9\linewidth]{../plots/policy-16-tcp-f5-mean-log}
@@ -86,9 +86,9 @@ These signals' topological separation, in concert with their burstiness and unpr
 Currently, we assume that switches support an extension to OpenFlow to enable remotely installable packet-drop rules, either by running a modified version of \gls{acr:ovs} on commodity hardware at these locations or through custom firmware for egress switches.
 Similar functionality could be employed by making use of OpenFlow's meter rules.
 
-Where overheads are concerned, the state space sizes guarantee that an \emph{Instant} agent's policy remains under \qty{520}{\kibi\byte}, although in practice our sparse representation typically leads to far smaller policies: $\sim$\qty{17.8}{\kibi\byte} from our experiments.
+Where overheads are concerned, the state space sizes guarantee that an \emph{Instant} agent's policy remains under \qty{520}{\kibi\byte}, although in practice our sparse representation typically leads to far smaller policies: $\sim$\qty{17.8}{\kibi\byte} from these experiments.
 \emph{Guarded} policies are \SI{30}{\percent} of this size.
-As we have described earlier, action updates require a constant number of floating point operations.
+As described earlier, action updates require a constant number of floating point operations.
 %---\num{160} floating point additions and \num{32} multiplications per update of $\wvec{}$ with per-tile updates, above the \num{160} additions required to choose an action.
 The vast majority of these operations can be vectorised trivially, if such hardware is present.
 %Action computation for \emph{Guarded} agents is cheaper still, requiring only \num{48} additions per action.

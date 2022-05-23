@@ -10,7 +10,7 @@ These nodes may be services, servers, or in the case of \glspl{acr:as} and trans
 Agents are co-located with each egress switch (i.e., $k$ ingress points from other \glspl{acr:as} require $k$ agents), all employ the same action model/design, and control the proportion of upstream packets from each external host to discard.
 Each destination node $s$ has a maximum capacity on its link utilisation, $U_s$.
 
-We assume that the deployment environment is a moderately complex \gls{acr:sdn}-capable network, because the paradigm offers features which can directly benefit \gls{acr:rl} agents acting within.
+We assume that the deployment environment is a moderately complex \gls{acr:sdn}-capable network, because the paradigm offers features which can directly benefit \gls{acr:rl} agents acting within its confines.
 The OpenFlow protocol allows a controller (or other authorised hosts) to install complex actions, forwarding rules and logic into a switch at runtime.
 For simplicity at this stage, all agents or learners run on commodity host machines.
 Furthermore, networks of this kind more naturally enable the use of \gls{acr:nfv}, allowing relocation and easy installation of learners---e.g., as examined by \textcite{DBLP:journals/tnsm/JakariaRF19}.
@@ -31,11 +31,11 @@ Although the choice of a classical \gls{acr:rl} method likely brings lower theor
 This aligns with our goal of quick online learning, and faster adaptation to aggregate changes in traffic without introducing dedicated tensor processing hardware to networks.
 Simpler decision boundaries reduce the risk of overfitting and unexpected behaviour, and we expect that the simplicity of tile-based policy computation will also greatly aid interpretability of anomalous action choices.
 
-When choosing a learning algorithm, we compared against Q-learning as well as methods based on \emph{eligibility traces} such as Watkins's $\operatorname{Q}(\lambda)$~\parencite[pp. 312--314]{RL2E} and $\operatorname{Sarsa}(\lambda)$~\parencite[p. 305]{RL2E}.
+When choosing a learning algorithm, I compared against Q-learning as well as methods based on \emph{eligibility traces} such as Watkins's $\operatorname{Q}(\lambda)$~\parencite[pp. 312--314]{RL2E} and $\operatorname{Sarsa}(\lambda)$~\parencite[p. 305]{RL2E}.
 Preliminary experiments found that Sarsa offered the best performance and behaviour.
 
 \paragraph{Action rate}
-We adapt the algorithm to prioritise rapid response to changes in network state and to visit as many state-to-state transitions as possible for effective learning.
+I adapt Sarsa to prioritise rapid response to changes in network state and to visit as many state-to-state transitions as possible for effective learning.
 To this end, we allow agents to make many decisions per timestep.
 We maintain the last state-action pair associated with each source and destination \gls{acr:ip} address, and calculate any actions for the flows which still exist.
 Finally, we update $\wvec{}$ using each available trace and the reward signal from the relevant destination.
@@ -50,7 +50,7 @@ A crucial observation is that value updates to each tile can move by different v
 \paragraph{Decision narrowings}
 When learning control on the basis of a tile-coded state space from high-dimensional state, assignment of credit to individual features for each decision is difficult because all tiles have identical gradient.
 To combat this, with probability $\epsilon$ an agent will mark a flow as being governed by a subset of the state space for the next \num{5} decisions.
-Each agent chooses actions on that source/destination pair using one element of local state, the global state, and the bias tile---the latter two are included to strike a balance between and accuracy and correct credit assignment.
+Each agent chooses actions on that source/destination pair using one element of local state, the global state, and the bias tile---the latter two are included to strike a balance between accuracy and correct credit assignment.
 
 \subsection{Feature space}\label{sec:feature-space}
 
@@ -66,7 +66,7 @@ Each agent chooses actions on that source/destination pair using one element of 
 	}
 \end{figure}
 
-Our state space combines elements of global state, network link load observations as used in past work such as Marl~\parencite{DBLP:journals/eaai/MalialisK15}, with per-flow measurements.
+The improved state space combines elements of global state, network link load observations as used in past work such as Marl~\parencite{DBLP:journals/eaai/MalialisK15}, with per-flow measurements.
 Each is tile-coded with \num{8} tilings and \num{6} tiles per dimension, using the windows described in \cref{tab:codings}.
 
 %?? How is global state acquired? See \cref{fig:global-state-path}. Why take paths in the way that we do? Mention deterministic ECMP routing etc...
@@ -76,14 +76,14 @@ The incoming link utilisations of the first hop, last hop, and tertiles of the p
 In the event that the path from an agent to its destination is shorter than \num{4} hops, we simply duplicate the load measurement of a middle hop or the last hop (in order of preference).
 \Cref{fig:global-state-path} illustrates the process.
 
-Global state is built in this way to offer compatibility with multipath, multi-destination networks, offering support for diverse deployment environments from endpoint servers to transit \glspl{acr:as}.
+Global state is built in this way to offer compatibility with multipath, multi-destination networks, offering support for diverse deployments from endpoint servers to transit \glspl{acr:as}.
 Computing the path from agent to destination is not computationally expensive.
-Multipath routing is often fast since typical \gls{acr:ecmp} algorithms simply hash a packet's flow key, and are deterministic to provide consistent quality-of-service to hosts.\sidenote{It's expected that most deterministic load balancing schemes should be trivial for hosts or controller machines to compute given up-to-date topology information. More dynamic schemes which balance adaptively on a flowlet or per-packet model are somewhat out of scope---this might be captured by an expectation in link loads over all valid paths.}
+Multipath routing is often fast since typical \gls{acr:ecmp} algorithms simply hash a packet's flow key, and are deterministic to provide consistent \gls{acr:qos} to hosts.\sidenote{It's expected that most deterministic load balancing schemes should be trivial for hosts or controller machines to compute given up-to-date topology information. More dynamic schemes which balance adaptively on a flowlet or per-packet model are somewhat out of scope---this might be captured by an expectation in link loads over all valid paths.}
 
 %?? Path computation fast and efficient due to deterministic routing based on hashes (ECMP)
 %?? Works for any arbitrary topology, even 
 
-Each of the per-flow features included in the state vector are described and analysed throughout \cref{sec:rethinking-the-state-space}.
+Each one of the per-flow features included in the state vector is described and analysed throughout \cref{sec:rethinking-the-state-space}.
 Each feature is tiled separately, with the exception of packet in/out count (per-window and total), mean in/out packet size, and $\Delta$ in/out rate, which are combined with the last action taken.
 Rather than having the network push the data to an agent, the agent requests this information about active flows periodically to isolate it from non-control-plane traffic and to eliminate the risk of resource exhaustion by excessive requests.
 
@@ -114,10 +114,10 @@ Denoting the upstream, downstream, and combined loads as $\uload{s}, \dload{s}, 
 	replacing $\arrload{s}{-}$ in \cref{eqn:reward} with whichever load direction is prioritised according to the traffic characteristics of the deployment environment. $\cond{s}$ represents an `overloaded' condition at destination $s$, equalling 1 if either load for $s$ is greater than its capacity.\label{eqn:reward}
 \end{subequations}
 We choose $\uload{\cdot}$ for defending \gls{acr:udp}-based models and $\dload{\cdot}$ for \gls{acr:http} traffic, though $\bload{\cdot}$ would likely be the most suitable for general deployment or heterogeneous traffic patterns.
-These choices reflect where the bulk of transmitted bytes in each traffic model are observed---and the lack of this knowledge in the general case.
+These choices reflect where the bulk of transmitted bytes in each traffic model is observed---and the lack of this knowledge in the general case.
 
 While the use and definition of $g(\cdot)$ appears nebulous, there are many possible ways to infer this quantity in practice.
-End-host servers may use canary flows or other active measurements, or employ existing quality-of-experience metrics in the case of \gls{acr:voip} services such as lost packets, reorderings, and jitter.
+End-host servers may use canary flows or other active measurements, or employ existing \gls{acr:qoe} metrics in the case of \gls{acr:voip} services such as lost packets, reorderings, and jitter.
 \glspl{acr:as} and transit networks may make use of reports received from downstream networks, e.g., over the \gls{acr:dots} protocol~\parencite{ietf-dots-use-cases-17}.
 Even if such heuristics or perfect knowledge aren't available in deployment, a sufficiently well-trained agent needs only to greedily follow the policy it has learnt from training, allowing pre-training by a simulated environment (with perfect knowledge) to transfer to reality.
 
@@ -136,12 +136,12 @@ When monitoring a source-destination pair, an agent uses its state vector to dec
 This is implemented by installing an action via OpenFlow, instructing its host switch to drop each relevant packet with probability $p$.
 Although it invites risks which I describe shortly, agents choose to drop packets rather than impose traffic limits as it offers a discrete action space without prior knowledge of traffic characteristics or measurement.
 Furthermore, we need not consider burstiness, fairness, or tuning of queue parameters (such as per-flow bucket sizes) which could limit scalability.
-I present two models on how to choose $p$: \emph{Instant} agents which directly choose $p$ over s uniform domain, and \emph{Guarded} agents which follow a reduced action set controlling an \gls{acr:fsm}.
+I present two models on how to choose $p$: \emph{Instant} agents which directly choose $p$ over a uniform domain, and \emph{Guarded} agents which follow a reduced action set controlling an \gls{acr:fsm}.
 
 \paragraph{Instant control}
 Each agent directly chooses $p \in \left\{ 0.0, 0.1, \ldots, 0.9 \right\}$, giving a discrete, static action set which cannot completely filter traffic.
 These choices ensure that the rate reduction imposed on traffic from a given source \gls{acr:ip} may never be permanent or irreversible.
-Since this model needs no forward planning, we found it best to set the discount factor $\gamma=0$ (making agents purely myopic).
+Since this model needs no forward planning, I found it best to set the discount factor $\gamma=$~0 (making agents purely myopic).
 
 \paragraph{Guarded control}
 The measurements of \textcite{DBLP:conf/ndss/KangGS16} suggest that bot attack flows cannot scale up to match an increase in available bandwidth.
@@ -165,7 +165,7 @@ This mode of action means that each agent is in control of pushback~\parencite{D
 Recall from the critical analysis of \emph{Marl} in \cref{sec:ddn-uses-security} that benign congestion-aware traffic which responds to packet loss as a congestion signal will \emph{explicitly slow down further}.
 This is of particular importance due to the prevalence of \gls{acr:tcp} and other congestion-aware protocols within the Internet.
 Analysis of the \gls{acr:caida} datasets for 2018~\parencite{caida-2018-passive} shows that congestion-aware traffic makes up at least \qtyrange{73}{82}{\percent} of packets, corresponding to \qtyrange{77}{84}{\percent} of data volume (\cref{adx:caida-traffic}).
-The QUIC transport protocol, which has become commonplace,is congestion-aware and makes up around \qtyrange{2.6}{9.1}{\percent} of traffic observed on backbone links, depending on location and typical workload~\parencite{DBLP:conf/pam/RuthPDH18}.
+The QUIC transport protocol, which has become commonplace, is congestion-aware and makes up around \qtyrange{2.6}{9.1}{\percent} of traffic observed on backbone links, depending on location and typical workload~\parencite{DBLP:conf/pam/RuthPDH18}.
 %As far as future network protocols are concerned, QUIC \cite{DBLP:conf/sigcomm/LangleyRWVKZYKS17}, a congestion-aware stream transmission protocol, will behave much like TCP, showing the importance of further development to properly handle traffic with such characteristics.
 Making the wrong action choices here will have a greater impact on most legitimate traffic.
 
@@ -174,7 +174,7 @@ The other key weakness of Marl is that actions are applied on a per-switch basis
 %?? Make more sane. This is about ``Why go per-flow?''
 This further justifies our focus on per-flow decisions---real-world deployments see many flows pass over any egress point, making such global actions more likely to inflict collateral damage.
 %This manifests in two ways: the best-achievable performance drops, and so too does the learning rate.
-We can show analytically that the intuition that per-flow decisions provide better service to carried traffic in this case.
+We can show analytically that the intuition that per-flow decisions provide better service to carried traffic holds in this case.
 Given the probability that a host is legitimate, $P_G \in [0,1]$, it follows that a host will be malicious with probability $P_B = 1 - P_G$.
 Defining \emph{imperfect service} to mean any case where all $n$ hosts whose traffic is carried by a single switch do not share the same classification (i.e., a mixture of benign and malicious hosts), then the probability that a switch is delivering imperfect service is $P_{M,n} = 1 - (P_G^n + P_B^n)$.
 \begin{thm}
@@ -217,16 +217,16 @@ At their worst, these risks present additional attack surface to an adversary.
 To tackle these problems, we make use of \gls{acr:trs} updates.
 
 The scheduler begins with a shuffled work list of active flows.
-When requested, the scheduler estimates the cost of an action computation using the timing information from past inference, and proceeds down the list to send a set of flow 5-tuples to the core which can be handled in a set time limit.
+When requested, the scheduler estimates the cost of action inference using past timing information, and proceeds down the list to send a set of flow 5-tuples to the core Sarsa logic which can be handled in a set time limit.
 The scheduler continues until the list is empty, at which point it is repopulated and reshuffled with active flows.
 
 %Following \citeauthor{DBLP:conf/sigcomm/ChenL0L18}'s observations on handling short flows \cite{DBLP:conf/sigcomm/ChenL0L18}, we maintain a deadline of \SI{1}{\milli\second}---an agent is typically able to process around 3 flows in this time.
 Following the observations of \Textcite{DBLP:conf/sigcomm/ChenL0L18} concerning short flows, we maintain a deadline of \qty{1}{\milli\second}---in tests, an agent is typically able to process around \num{3} flows in this time.
 Ideally, deadlines should be tuned based on the frequency at which statistics arrive.
-Naturally, an agent must carry work forward (and coalesce state updates) when \emph{host density} is $n>3$ (\cref{sec:ddos-evaluation}); this behaviour is not explicitly a property of network size, but relates to the cost of inference and learning.
+Naturally, an agent must carry work forward (and coalesce state updates) when \emph{host density} is $n>$~3 (\cref{sec:ddos-evaluation}); this behaviour is not explicitly a property of network size, but relates to the cost of inference and learning.
 The amount of processed flows per deadline depends on the agent design (required \gls{acr:fpu} operations, policy size), but also on the amount of flow telemetry data needing processed---the current implementation is written in Python, restricting this handling to a single thread.
 An implementation in a systems language such as Rust or C++ would allow faster concurrent processing.
 
 There is a risk that so much work can be queued up that an agent is never able to act on some attack flows.
-A solution is to impose an upper bound on the amount of action computations/policy updates that can be performed before the work list is regenerated.
+A solution is to impose an upper bound on the amount of action inference and policy updates that can be performed before the work list is regenerated.
 This removes the guarantee that all flows will be visited often, but if updates occur regularly then this sampling may be sufficient to achieve good performance.

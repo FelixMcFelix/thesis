@@ -4,17 +4,17 @@ This work is most naturally compared against Marl, introduced by \textcite{DBLP:
 We are most interested in seeing how their approach contrasts with the new agent designs across different topologies and workloads.
 Different network environments will also impose different levels of host density, where popular web servers may have orders of magnitude more clients than egress points from their network---I aim to show how these characteristics affect performance and learning rate.
 Marl is known to outperform the AIMD~\parencite{DBLP:journals/ton/YauLLY05} strategy, yet the state of the art has long since moved on.
-To paint a more current picture, we compare our work against an effective modern approach, SPIFFY~\parencite{DBLP:conf/ndss/KangGS16}.
+To paint a more current picture, I compare this work against an effective modern approach, \emph{SPIFFY}~\parencite{DBLP:conf/ndss/KangGS16}.
 SPIFFY tests a proportion of flows by routing them through an alternate path with higher bandwidth, observing how their speed changes some time later.
 This comparison lets us position our new agent designs against the state of the art, observing that SPIFFY has a similar mode of interaction to \gls{acr:rl}-based systems (taking action, observing an effect, and acting once again) and does not rely on protocol characteristics or signatures.
-We make the simplifying assumption that a suitable unused path exists (with identical bandwidth to the server's link).
-We test \qty{10}{\percent} of active flows at a time (according to the authors' observation that there is a factor of \qty{10}{\times} difference between the ideal and achieved bandwidth expansion), excluding flows below \qty{50}{\kilo\bit\per\second} and requiring a \qty{3}{\times} expansion from legitimate flows, making a judgement after \qty{5}{\second}.
+In reimplementing SPIFFY, I make the simplifying assumption that a suitable unused path exists (with identical bandwidth to the server's link).
+\qty{10}{\percent} of active flows were tested at a time (according to the authors' observation that there is a factor of \qty{10}{\times} difference between the ideal and achieved bandwidth expansion), excluding flows below \qty{50}{\kilo\bit\per\second} and requiring a \qty{3}{\times} expansion from legitimate flows, making a judgement after \qty{5}{\second}.
 
-To test this, we made use of both traffic models introduced in \cref{sec:a-new-normal} (Opus and \gls{acr:tcp}), both topologies discussed below (1-dest vs.\ Fat-Tree), and vary the amount of hosts typically communicating over each agent's ingress/egress node.
-Additionally, we evaluated our new models in multi-agent mode (\emph{separate}, no model sharing), and in single-agent mode (\emph{single}, zero-cost perfect information sharing).
+To test this, I made use of both traffic models introduced in \cref{sec:a-new-normal} (Opus and \gls{acr:tcp}), both topologies discussed below (1-dest vs.\ Fat-Tree), and vary the amount of hosts typically communicating over each agent's ingress/egress node.
+Additionally, these new models were evaluated in multi-agent mode (\emph{separate}, no model sharing), and in single-agent mode (\emph{single}, zero-cost perfect information sharing).
 In each case, the algorithm's performance was averaged over \num{10} episodes of length \num{10000} timesteps (setting each agent's $\wvec{}=\mathbf{0}$ between episodes).
 Host allocations at the beginning of each episode were generated pseudorandomly to ensure fairness between episodes---a host is malicious with probability $\operatorname{P}\left(\mathit{malicious}\right)$, and is benign otherwise.
-Benign hosts generate traffic from either \cref{sec:tcp-http-traffic-model,sec:udp-opus-traffic-model} depending on the experiment, while malicious hosts generate traffic according to \cref{sec:attack-traffic-model} (both at experiment-dependent rates).
+Benign hosts generate traffic according to either \cref{sec:tcp-http-traffic-model,sec:udp-opus-traffic-model} depending on the experiment, while malicious hosts generate traffic as described in \cref{sec:attack-traffic-model} (both at experiment-dependent rates).
 
 All experiments were executed on Ubuntu 18.04.2 LTS (GNU/Linux 4.4.3-040403-generic x86\_64), using an Intel Core i7-6700K (\qtyproduct[product-units=single]{4 x 4.2}{\giga\hertz}) which had \SI{32}{\gibi\byte} of \gls{acr:ram}.
 %All code underpinning these findings is available on a public repository\footnote{\url{https://github.com/FelixMcFelix/rln-dc-ddos-paper}}.

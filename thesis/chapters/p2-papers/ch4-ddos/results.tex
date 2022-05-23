@@ -1,7 +1,7 @@
-We now examine the performance of our two new models (\emph{Instant}, \emph{Guarded}) as compared against existing \gls{acr:rl} work (\emph{Marl}) and\emph{SPIFFY} under different traffic behaviour and topologies, varying the host-to-learner ratio $n$ and environment.
+We now examine the performance of the two new models (\emph{Instant}, \emph{Guarded}) as compared against existing \gls{acr:rl} work (\emph{Marl}) and \emph{SPIFFY} under different traffic behaviour and topologies, varying the host-to-learner ratio $n$ and environment.
 %?? Probably best just to look at top level stuff, and THEN a simplified comparison for each intended improvement (like banded rewards).
 %Additionally, we examine the performance effects of environmental characteristics and potential improvements: negative reinforcement, the case where one agent makes all decisions, and pre-training on individual features.
-We present the average rewards for all combinations of these factors in \crefrange{tab:av-vals}{tab:av-ecmp-vals}---providing a rough idea of expected performance, with the highest-performing model in bold and the best \gls{acr:rl}-based model underlined.
+\Cref{tab:av-vals,tab:av-ecmp-vals} present the average rewards for all combinations of these factors---providing a rough idea of expected performance, with the highest-performing model in bold and the best \gls{acr:rl}-based model underlined.
 Average rewards take into account any portions of time that an agent allows illegal system states.
 Several plots augment this, illustrating peak performance or the amount of time which an agent requires to learn.
 
@@ -96,12 +96,12 @@ Several plots augment this, illustrating peak performance or the amount of time 
 
 In a single-destination network, we observe that Marl's performance degrades as $n$ increases.
 Typically, our \emph{Instant} agent design achieves the best performance in multi-agent mode, having lower collateral damage than the current state-of-the-art, but sharply degrades at low $n$ when agents share experience.
-This trend reverses for the \emph{Guarded} model, which improves as $n$ increases and in single-agent mode---when $n\ge4$, the single-agent variant offers consistent improvement.
+This trend reverses for the \emph{Guarded} model, which improves as $n$ increases and in single-agent mode---when $n\ge$~\num{4}, the single-agent variant offers consistent improvement.
 %Across all choices of $n$, we see that Marl++ exhibits reduced collateral damage compared to Marl, with SPF starting poorly yet becoming more effective for larger $n$ (\cref{tab:av-vals}, \emph{Capped}, UDP).
 \Cref{fig:udp-tree-box} shows the preserved traffic in multi-agent mode.
 %?? Discuss multi-dest topol once all results available.
 When defending multiple destinations, we see a sharp decrease in the effectiveness of all agent designs.
-Our new agent designs become more effective as $n$ increases, while Marl's effectiveness is roughly constant (aside from the outlier at $n=12$).
+The new \emph{Instant} and \emph{Guarded} agent designs become more effective as $n$ increases, while Marl's effectiveness is roughly constant (aside from the outlier at $n=$~\num{12}).
 Interestingly, SPIFFY is unable to effectively protect \gls{acr:cbr} traffic.
 
 \subsection{Congestion-aware traffic}
@@ -121,7 +121,7 @@ Interestingly, SPIFFY is unable to effectively protect \gls{acr:cbr} traffic.
 	\includegraphics[width=\linewidth]{plots/marl/tnsm-tcp-box-single-thesis}
 	\caption[Online performance for HTTP benign traffic in a single-destination network, single-agent mode.]{
 		Online performance for \gls{acr:http} benign traffic in a single-destination network, single-agent mode.
-		\emph{Instant} and \emph{Guarded} exhibit similar efficacy at $n=2$, protecting less traffic than Marl.
+		\emph{Instant} and \emph{Guarded} exhibit similar efficacy at $n=$~\num{2}, protecting less traffic than Marl.
 		Only \emph{Guarded}'s performance rapidly increases with $n$, achieving a considerably better median and lower variance than the other models.
 		The longer tails of outliers typically indicate the longer training time the new models require---we observe that \emph{Guarded} typically has considerably lower variance once it has converged on a stable policy.
 		\label{fig:tcp-tree-box}
@@ -198,7 +198,7 @@ In both cases, SPIFFY greatly outperforms the \gls{acr:rl}-based methods.
 %We discuss our conjectures for why this reversal occurs in \cref{sec:discussion}.
 
 \subsection{Increased attack volume}\label{sec:results-attack-volume}
-To assess the effect of larger volumes of attack traffic, we increase an attacker's output by various factors, supposing $n=16$ with \gls{acr:http} traffic (\emph{Guarded}, Single); \cref{tab:atk-vol} records the expected rate of attack and average performance.
+To assess the effect of larger volumes of attack traffic, we increase an attacker's output by various factors, supposing $n=$~\num{16} with \gls{acr:http} traffic (\emph{Guarded}, Single); \cref{tab:atk-vol} records the expected rate of attack and average performance.
 The initial increase in traffic volume causes the steepest reduction in performance (due to the increased cost of incorrect action), though performance levels out as attack traffic increases.
 
 \begin{table}
@@ -221,11 +221,11 @@ The initial increase in traffic volume causes the steepest reduction in performa
 %?? Consider talking about the execution times of the old MARL approach here? They're real nice (as expected), so we have lots of room to play around with while (hopefully) remaining under the 1ms target time given by \textcite{DBLP:conf/sigcomm/ChenL0L18}.
 
 %Overall, each episode takes around \SI{10}{\minute} to run, while each set of \num{10} requires around \SI{2}{\hour} due to additional set-up/tear-down costs associated with mininet.
-Measurements from each of these experiments indicated that the cost of computing any action is typically within \qtyrange{80}{100}{\micro\second} per flow.
+Measurements from each of these experiments indicated that the cost of computing any action is takes a median \qty{515.94}{\micro\second} (following the Float results for \emph{Collector} in \cref{tab:lats}), and is typically \qtyrange{80}{100}{\micro\second} per flow during a decision narrowing.
 This is reassuring when measured alongside the insights from other work.
 \Textcite{DBLP:conf/sigcomm/ChenL0L18} observe that, ideally, actions must be computed and taken within \qty{1}{\milli\second} to have a meaningful effect on short flows.
 %Most flows are short, and flow-size follows a heavy-tailed distribution.
 That our starting point falls significantly below this threshold allows us to safely consider more costly actions or larger state spaces, which would typically increase the computational cost.
 This cost is constant and independent of network size.
-As discussed in \cref{sec:systems-considerations}, we are able to judge \num{3} flows before this deadline: the difference is primarily accounted for by serialisation/communication delays, learning logic, and single-threaded processing in the Python language.
+As discussed in \cref{sec:systems-considerations}, we are able to judge \numrange{2}{3} flows before this deadline, dependent on $\epsilon$: this is worsened in practice by serialisation \& communication delays, learning logic, and single-threaded processing in the Python language.
 %?? TODO: update with modern numbers...

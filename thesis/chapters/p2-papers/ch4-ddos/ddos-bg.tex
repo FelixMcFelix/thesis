@@ -5,7 +5,7 @@ Attackers achieve this by either exploiting peculiarities of \gls{acr:os} or app
 Hosts often participate unwillingly, typically having been recruited into a \emph{botnet} by malware infection to be orchestrated from elsewhere~\parencite{DBLP:conf/uss/AntonakakisABBB17}.
 
 Why focus on this problem in particular?
-The primary reason is that their scale and impact presents a constant threat to any Internet service.
+The primary reason is that its scale and impact presents a constant threat to any Internet service.
 Exhausting all of a server's resources (or those of the infrastructure providing a path to it) ensures that it cannot be accessed---causing financial losses, silencing information sources, or creating downstream service breakages.
 Some services, such as those associated with game hosting, are likely to be targeted simply for competitive advantage or reputation~\parencite{aws-shield-review-2020}.
 Accordingly, \gls{acr:ddos} attacks are often nicknamed an `800-pound gorilla'~\parencite{DBLP:conf/imc/CzyzKGPBK14} on the wider Internet.
@@ -182,7 +182,7 @@ Finally, the exact proportions of this heterogeneous mixture vary over time and 
 %?? Classes respond in different ways to different actions.
 Consider a point estimate of sorts obtained by analysing the 2018 \gls{acr:caida} traces~\parencite{caida-2018-passive}, shown in \cref{adx:caida-traffic}.
 On this tap of \gls{acr:isp} traffic, congestion-aware traffic makes up at least \qtyrange{73}{82}{\percent} of packets; varying over time and the link's direction.
-The corollary is that congestion-unaware \gls{acr:udp} traffic makes up at most \qtyrange{27}{18}{\percent}---a significant fraction of collateral damage, if we are careless around our defence and detection model in the above example.
+The corollary is that congestion-unaware traffic makes up at most \qtyrange{27}{18}{\percent}---a significant fraction of collateral damage, if we are careless around our defence and detection model in the above example.
 %?? Describe all my CAIDA analysis here
 %?? analysis of CAIDA datasets~\parencite{caida-2018-passive}
 %?? congestion-aware traffic makes up at least \qtyrange{73}{82}{\percent} of packets
@@ -199,7 +199,7 @@ A consequence is that punishing actions can have a greater relative impact on so
 
 \paragraph{Evolution}
 Just as new attacks and attack vectors arise over time, so too does the rest of the network evolve.
-New protocols such as \emph{QUIC}~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17} come into use in the Internet at large, and can achieve near-instantaneous widespread adoption via the backing of hypergiant networks.
+New protocols such as \emph{QUIC}~\parencite{DBLP:conf/sigcomm/LangleyRWVKZYKS17} come into use in the Internet at large, and can achieve near-instantaneous widespread adoption via the backing of hypergiant network operators.
 New \glspl{acr:cca} such as \emph{BBR}~\parencite{DBLP:journals/queue/CardwellCGYJ16} are deployed to improve flow bandwidth utilisation, but lead to observable changes in flow-level behaviour.
 %?? Why? Protos, traffic kinds (e.g. web video)
 %?? Discussion of evolution of traffic: what's come before, what's coming next.
@@ -227,7 +227,7 @@ According to \textcite{DBLP:conf/imc/JonkerKKRSD17}, the most-used techniques in
 %\sidenote{?? Para before this. Mention one or two of the old-school ways brought up in the DDoS section like AIMD, Pushback...}
 While typically proprietary in nature, we see a split between \emph{cloud services}, \emph{in-line systems} (i.e., middleboxes) and hybrids thereof.
 Cloud services (traffic scrubbers) are known to be most appropriate for handling volumetric attacks and are externally hosted, analysing and filtering out malicious traffic by having services redirect all inbound communication for processing.
-The act of redirection is often made cheaper and/or feasible by the use of selective \gls{acr:bgp} advertisement or \gls{acr:dns} modification, aided by reverse proxy or \emph{generic routing encapsulation}.
+The act of redirection is often made cheaper and feasible by the use of selective \gls{acr:bgp} advertisement or \gls{acr:dns} modification, aided by reverse proxy or \emph{generic routing encapsulation}.
 Amongst these, \gls{acr:bgp}-based diversion is most effective where many hosts must be protected, and \gls{acr:dns} works most reliably for single-host installations.
 In-line systems, hosted within a service's domain of control, are most useful for handling semantic attacks as these often admit \emph{attack signatures} (since they must exploit a particular bug in the server).
 Similarly, such attacks tend not to exhibit long-term characteristics that cloud scrubbers might use to aid detection, as many of these attacks present themselves as a single packet.
@@ -236,7 +236,7 @@ Similarly, such attacks tend not to exhibit long-term characteristics that cloud
 
 \gls{acr:ddn} solutions to \gls{acr:ddos} attacks have been examined through the literature, such as \Textcite{DBLP:conf/lcn/BragaMP10}, \emph{Marl}~\parencite{DBLP:conf/iaai/MalialisK13,DBLP:journals/eaai/MalialisK15}, and \emph{Athena}~\parencite{DBLP:conf/dsn/LeeKSPY17}.
 \Cref{sec:ddn-uses-security} explains these, alongside their drawbacks and experimental shortcomings, in detail.
-Marl in particular has design flaws which are placed under great scrutiny, motivating the improved \gls{acr:rl} work I develop in \cref{chap:ddos-rl}.
+Marl in particular has design flaws which are placed under great scrutiny, motivating the improved \gls{acr:rl} work I develop in the remainder of this chapter.
 %\Textcite{DBLP:conf/lcn/BragaMP10} have examined the detection of ongoing (flooding-based) DDoS attacks through \emph{self-organising maps}, making use of SDN to gather statistics effectively.
 %Many of their features aren't overly relevant, as their focus is not active defence or discovering \emph{which} hosts are contributing to an attack.
 
@@ -268,7 +268,7 @@ Because of this, traditional flooding-based attacks aren't fully alleviated.
 \emph{SENSS}~\parencite{DBLP:conf/acsac/RamanathanMYZ18} aims to help hosts and \emph{endpoint-servers} communicate upstream with \glspl{acr:isp}.
 The rationale is that although \gls{acr:ddos} traffic can be filtered at any point along its path, it will impact less of the network if it is filtered \emph{close to its source}---this observation holds true in all attack classes (direct, reflection, \gls{acr:lfa}), which exhibit a tree-like pattern of traffic.
 This information currently propagates through human channels, eventually leading to traffic blackholing being performed by key \glspl{acr:as}.
-The core idea is that the \emph{victim} should be given responsibility for intelligence and decision-making, who pass on their requests to \glspl{acr:isp} (alongside ample payment).
+The core idea is that the \emph{victims} should be given responsibility for intelligence and decision-making, who pass on their requests to \glspl{acr:isp} (alongside ample payment).
 They are able to show that this approach functions for multiple algorithms---including using \gls{acr:nat} for true outbound requests as a mechanism for reflector filtering close to the source, similar techniques to others to ``route around'' the congestion added by \glspl{acr:lfa}, and location-based filtering for signature-free attacks.
 %The need for payment does seem odd at the outset, but it becomes clear that this is a necessary mechanism to enable ``remote networks to collaborate on demand, without prior trust''.
 %The mitigation strategies they propose do hold water, and strike me as interesting---using NAT for true outbound requests as a mechanism for reflector filtering close-to-source, similar techniques to others to ``route around'' the congestion added by LFAs, and location-based filtering for signature-free attacks.
