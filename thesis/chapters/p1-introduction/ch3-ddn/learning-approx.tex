@@ -1,19 +1,19 @@
 Having introduced function approximation schemes of relevance to this thesis (and the most prominent in \gls{acr:ddn} at present), we now turn our attention to how these approximators are trained in practice.
 Due to its relevance in \gls{acr:dnn} and \gls{acr:drl}, this comprises a brief discussion of gradient descent techniques and stochastic optimisers, followed by a more in-depth introduction to and overview of the field of \gls{acr:rl}.
-Tying these back to the realities of \gls{acr:ddn}, many of these techniques and advances are likely feasible in a \gls{acr:pdp} context with small datasets and no minibatches, such as the variants of \gls{acr:sgd}, but their use is left to future work.
+Tying these back to the realities of \gls{acr:ddn}, many of these techniques and advances are likely feasible in a \gls{acr:pdp} context with small datasets and no minibatches, such as \gls{acr:sgd} and its variants, but their use is left to future work.
 
 We can begin by assuming that our approximate function is backed by some \emph{parameter vector} $\wvec{}$, such that $\hat{\symbfit{y}} = f{\left(\symbfit{x}~|~\wvec{}\right)}$---an input vector $\symbfit{x}$ produces some output $\hat{\symbfit{y}}$, and ideally after training $\hat{\symbfit{y}}\eqsim\symbfit{y}$ across all input $\symbfit{x}$.
 For all intents and purposes, we can understand $\wvec{}$ as a large block of real numbers residing in \gls{acr:ram}, and that we update this block over time.
 We may not have access to a ground-truth $\symbfit{y}$ (i.e., in the \gls{acr:rl} case), but we generally assume that there does exist a best-fitting or optimal output.
-In case we do, however, we may refer to the complete set of training inputs and ground-truth outputs as $\symbfit{X}$.
+In case we do have the true $\symbfit{y}$ values, we may refer to the complete set of training inputs and ground-truth outputs as $\symbfit{X}$.
 Crucially, we require that $f$ is differentiable with respect to $\wvec{}$: if we define some scalar performance metric $J$ which assesses the quality of an output $\hat{\symbfit{y}}$, then $\nabla_{\wvec{}}{J}$ offers a direction in $\wvec{}$.\sidenote{In the definition of $J$, we naturally expand occurrences of $\hat{\symbfit{y}}$ in terms of $f$, and thus $\wvec{}$. Additionally, $J$ may be defined over any subset (or all) of the training set $\symbfit{X}$.}
-This output gradient is simply a vector, which represents the direction in parameter-space which  would have the largest \emph{increase} in the value of $J$ if followed.
-The approaches presented in \cref{sec:function-approximation} provide just this.
+This output gradient is simply a vector which represents the direction in parameter-space which  would have the largest \emph{increase} in the value of $J$ if followed.
+The approaches presented in \cref{sec:function-approximation} are differentiable as required.
 
 \subsection{Gradient descent}
 %Supervised and unsupervised methods alike typically offer clear ways to map from the model parameters we have at this moment, and our performance on a training dataset, into a \emph{loss function}.
 Most supervised \gls{acr:ml} problems are defined in terms of a \emph{loss function} $L$, such that differences between our output $\hat{\symbfit{y}}$ and $\symbfit{y}$ values are penalised.
-Some examples in use today include the mean absolute and mean squared errors ($L_1$ and $L_2$ loss) in regression tasks, or (categorical) cross-entropy loss in classification.
+Some examples in use today include the mean absolute and mean squared errors ($\ell_1$ and $\ell_2$ loss) in regression tasks, or (categorical) cross-entropy loss in classification.
 Naturally, these are differentiable, but as we aim to \emph{minimise} loss we then \emph{subtract} the gradient from $\wvec{}$; this concept underlies \emph{gradient descent}.
 Gradient descent is the iterative process of optimising our parameter vector $\wvec{}$, using all input data and labels $\symbfit{X}$ at each iteration:
 \begin{equation}
@@ -23,7 +23,7 @@ Every iteration, we move the parameter vector a small step in the direction whic
 However, re-evaluating the loss function over all input data becomes intractable in the case that either the function is expensive to compute on a moderately-sized dataset, or the dataset itself is monstrously large.
 Both are often the case in \gls{acr:dnn} training.
 It is for this reason that \gls{acr:sgd} and related algorithms are typically employed in \gls{acr:ml} model training, particularly for \glspl{acr:dnn}.
-\gls{acr:sgd} modifies the above such that individual, randomly chosen samples (or larger minibatches) are used as the input for the loss function rather than the entire dataset.
+\gls{acr:sgd} modifies the above formula such that individual, randomly chosen samples (or larger minibatches) are used as the input for the loss function rather than the entire dataset.
 This only approximates the loss gradient at $\wvec{}$ on the input data, but in practice this is key for the training of modern \gls{acr:ml} techniques---$\alpha$ may be reduced over time and the dataset reshuffled as necessary until convergence.
 
 While \gls{acr:sgd} provides the theoretical underpinning for more efficient \gls{acr:ml} training, in practice the difficulty of choosing $\alpha$ with regard to different parameter sensitivity has led to more adaptive methods.
@@ -39,19 +39,19 @@ For more details, readers should refer to more specialised texts such as \Textci
 \begin{marginfigure}
 	\centering
 	\resizebox{0.9\linewidth}{!}{\input{diagrams/rl/toy-forward-plan}}
-	\caption[A motivating example for MDPs in handling delayed rewards.]{A toy example showing how the \emph{delayed rewards} which an \gls{acr:rl} agent learns to maximise. Consider a traveller journeying towards a castle in the south, with $R$ being some aggregate of food, water and rest. Learning only to optimise immediate rewards attached to actions would lead our traveller to choose an overall worse path---going thirsty in the desert!}\label{fig:toy-rl-motiv}
+	\caption[A motivating example for MDPs in handling delayed rewards.]{A toy example showing how the \emph{delayed rewards} which an \gls{acr:rl} agent learns to maximise. Consider a traveller journeying towards a castle in the south, with $R$ being some aggregate of food, water and rest. Learning only to optimise \emph{immediate} rewards attached to actions would lead our traveller to choose an overall worse path---going thirsty in the desert!}\label{fig:toy-rl-motiv}
 \end{marginfigure}
 
 \subsection{Reinforcement learning}
 When we aim to optimise for decisions and estimations in classification, clustering, and regression, it suffices to apply gradient descent and similar optimisers to minimise this loss function alone.
 How might things differ when we want to design some \emph{agent}---an actor who sees and acts on a system for many timesteps---to interact with the world?
 Consider a toy example in \cref{fig:toy-rl-motiv}: an oracle with global knowledge knows that a hypothetical traveller would best be served by going through the swamp, even if it appears the worse of two choices.
-Yet if we applied simple input classification to choose our path at each turn, we would always act poorly without some way of propagating knowledge of later choices.
-It becomes more complex to collect training data once we realise that our actions move the world forward and change it (thus we may not be able to rewind a simulation to explore alternative choices), and that we might need to explore apparently suboptimal choices for some time to be better off in aggregate.
+Yet if we applied simple input classification to choose our path at each turn, we would always act poorly without some way of propagating knowledge of later choices' value.
+It becomes more complex to collect training data once we realise that our actions move the world forward and change it (thus we may not be able to rewind a simulation to explore alternative choices), and that we might need to explore apparently suboptimal choices for some time to be better off in the long-term.
 
 \glsxtrfull{acr:rl} algorithms are methods of training such an agent to choose an optimal sequence of actions in pursuit of a given task~\parencite{RL2E}, and neatly encode these training- and run-time notions of \emph{exploration} and \emph{exploitation}.
 An agent is typically defined by its \emph{policy} $\pi$, which chooses an action in response to an input state.
-These powerful techniques effectively use a \emph{reward} metric to learn a state-action mapping without any explicit model of the system they're learning to control---even when reward signals are sparse or come with some delay after an initial choice.
+These powerful techniques effectively use a \emph{reward} metric to learn a state-action mapping without any explicit model of the system they're learning to control---even when reward signals are sparse or come with some delay after an initial choice as \cref{fig:toy-rl-motiv} exemplifies.
 
 To achieve the goals described above, we first make the assumption that the task we're attempting to solve is structured as an \gls{acr:mdp}.
 In an \gls{acr:mdp}, we break the world or target problem down into a set of \emph{states} ($\mathcal{S}$), \emph{actions} ($\mathcal{A}$), and \emph{reward measurements} ($\mathbb{R}$).
@@ -130,9 +130,9 @@ To see how this combines with a simple linear function approximation, consider \
 	}
 \resizebox{0.6\linewidth}{!}{\input{diagrams/rl/tile-coding-update}}
 \caption[An end-to-end example of Sarsa updating the values for a chosen action using a tile-coded policy.]{
-	The update step for \cref{fig:sarsa-tilecode}, given an observed \gls{acr:td} error $\delta_t=-0.2$ (indicating a lower observed reward than the expected long-term value of \num{0.7}) and $\alpha=0.5$.
+	The update step for \cref{fig:sarsa-tilecode}, given an observed \gls{acr:td} error $\delta_t=$ \num{-0.2} (indicating a lower observed reward than the expected long-term value of \num{0.7}) and $\alpha=$ \num{0.5}.
 	Action 4's value is thus reduced in the tiles associated with state $s$, but remains the most likely choice; the negative $\delta_t$ may have arisen from noise in the reward signal.
-	For illustrative purposes, I choose an unrealistically high $\alpha$ (typically, $\alpha\le0.05$ is a more reasonable choice).
+	For illustrative purposes, I choose an unrealistically high $\alpha$ (typically, $\alpha\le$ \num{0.05} is a more reasonable choice).
 	\label{fig:sarsa-tilecode-update}
 }
 \end{figure}
@@ -169,7 +169,7 @@ Policy gradient methods like actor-critic algorithms may prove trickier even wit
 \emph{Q-learning}~\parencite{WatkinsThesisQLearning}, similar to Sarsa (though \emph{off-policy}), has had a long and continuing influence on the design of \gls{acr:rl} algorithms.
 \emph{DQN}~\parencite{DBLP:journals/corr/MnihKSGAWR13} introduced \gls{acr:drl} by making the additional modifications required to keep Q-learning stable and feasible using \glspl{acr:dnn}, primarily by including an \emph{experience replay buffer}.
 This buffer contains a history of individual state transitions, and once this is full enough the model is updated using a randomly chosen subset (minibatch) of such transitions at each timestep, drawing influence from \gls{acr:sgd}.
-\emph{DDQN}~\parencite{DBLP:conf/aaai/HasseltGS16} addresses value over-estimation in this family of algorithms by using two parameter sets $\wvec{}$ and $\wvec{}'$, which alternate between the roles of computing action-values and the action value for the \gls{acr:td} update $\delta_t$.
+\emph{DDQN}~\parencite{DBLP:conf/aaai/HasseltGS16} addresses value over-estimation in this family of algorithms by using two parameter sets $\wvec{}$ and $\wvec{}'$, which alternate between the roles of computing action-values for selection and the \gls{acr:td} update $\delta_t$.
 
 %?? Space from direct policy search (ES, Policy gradients) towards value-based \url{https://icml.cc/2015/tutorials/PolicySearch.pdf}
 
@@ -204,7 +204,7 @@ The mean of their noise vectors is then taken to be the `true' policy update.
 \paragraph{Exploration vs. exploitation in practice}
 Consider again the dilemma presented in \cref{fig:toy-rl-motiv}: discovery of an optimal policy relies on either global knowledge, or \emph{exploration} of a suboptimal portion of the state-space.
 \gls{acr:rl} agents are typically initialised with either zeroed or random policy parameters, but we cannot expect that for larger state spaces this produces \emph{meaningful} exploration.
-I.e., it may well be the case that following the current optimal policy up to some uncertain state and then exploring can provided targeted and useful samples, whereas randomised parameters are something more akin to a random walk for all timesteps spent in early episodes.
+It may well be the case that following the current optimal policy up to some uncertain state and then exploring can provided targeted and useful samples, whereas randomised parameters are something more akin to a random walk for all timesteps spent in early episodes.
 
 To encourage exploration in discrete action spaces, we typically introduce some randomness into action selection.
 \emph{$\epsilon$-greedy methods} pick another action at random with probability $\epsilon$---typically annealing the value of $\epsilon$ towards zero over some number of timesteps or training episodes.
@@ -219,7 +219,7 @@ However, more recent ablation studies have shown that this offers no tangible be
 Automatic, adaptive control requires accurate, recent state to make optimal decisions and to act in a timely manner.
 Action execution, computation and training have real costs, which have been shown to negatively affect the performance of asynchronous \gls{acr:rl} systems~\parencite{DBLP:journals/firai/TravnikMSP18}.
 Hence, \gls{acr:ddn} applications are profoundly affected, as they must often reckon with inference times which are significant compared to the systems they control.
-As it stands, state measurement and policy execution require additional hardware and infrastructure, increasing delays and costing rack-space in the datacentres or networks where we aim to deploy \gls{acr:ddn}.
+As it stands, state measurement and policy execution require additional hardware and infrastructure, increasing delays and costing rack-space in the data centres or networks where we aim to deploy \gls{acr:ddn}.
 %Placing learning algorithms, policy execution, and measurement into the network fabric will increase performance, the accuracy of system state and simplify network architectures which use data-driven concepts.
 
 There remains some degree of divergence between the theory and implementation of \gls{acr:rl} agents when it comes to accounting for the above costs.
@@ -252,4 +252,4 @@ In the \gls{acr:pdp} case, this can be important for a wide variety of reasons; 
 \paragraph{Tooling}
 The growth in interest around \gls{acr:rl} research has generated strong development tools for the community.
 OpenAI Gym~\parencite{DBLP:journals/corr/BrockmanCPSSTZ16} presents a consistent middleware for integrating new algorithms and new target problems to be solved.
-Equally, the sample complexity demands (coupled with vested interest from hypergiant networks) has led to significant advancements in distributed training (\cref{sec:ddn-collaborative-training})---of these, Ray RLLib~\parencite{DBLP:conf/osdi/MoritzNWTLLEYPJ18} offers distributed integration with OpenAI Gym.
+Equally, the high sample complexity (coupled with vested interest from hypergiant networks) has led to significant advancements in distributed training (\cref{sec:ddn-collaborative-training})---of these, Ray RLLib~\parencite{DBLP:conf/osdi/MoritzNWTLLEYPJ18} offers distributed integration with OpenAI Gym.

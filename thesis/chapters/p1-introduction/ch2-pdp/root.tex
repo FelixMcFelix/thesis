@@ -518,7 +518,7 @@ The authors explicitly incorporate these events into the pipeline model and modi
 In particular, it allows for event handlers to be triggered between devices while enabling more flexible control and modification of shared datastructures behind reliability measures like fast reroute.
 
 The P4 language is currently incompatible with heterogeneous hardware to some extent; written dataplane programs are typically tied to a particular switch model, for instance V1Model, \gls{acr:psa}, NetFPGA SUME, or the Tofino Native Architecture.
-Network architects typically procure hardware from several manufacturers to prevent vendor lock-in, but the P4 model for device has its own metadata types, hardware constraints, and quirks which developers must be aware of.
+Network architects typically procure hardware from several manufacturers to prevent vendor lock-in, but the P4 model for each device has its own metadata types, hardware constraints, and quirks which developers must be aware of.
 While architectures such as the \gls{acr:psa} are more general and should, in principle, support several target switches, it is often preferable to use a switch's own architecture for performance or optimisation reasons.
 As a result it is currently tedious to write and maintain a unified dataplane that is provably uniform across different packet processing devices.
 $\mu$\emph{P4}~\parencite{DBLP:conf/sigcomm/SoniR0DF20} extends the P4 compiler to decompose parser and action code into independent subprograms which may be composed together in a more simple manner by programmers.
@@ -576,7 +576,7 @@ This flexibility has a sharp downside; the variable and state model forces pipel
 Although \gls{acr:ml} can be made feasible in \gls{acr:pdp} hardware as I show in \cref{sec:inc-uses-pdp-ml}, achieving more complex or higher-precision inference at line rate can only be enabled by dedicated architectural support.
 \emph{Taurus}~\parencite{DBLP:journals/corr/abs-2002-08987,DBLP:conf/asplos/SwamyR0GO22} is a proposal to add compute and memory units to the \gls{acr:psa} as part of a map-reduce block specifically designed to optimise per-packet \gls{acr:ml} inference.
 The proposal has the ingress \gls{acr:rmt} pipeline now perform feature extraction from packet header data among its standard duties.
-In particular, it demonstrates that efficient line-rate inference can be achieved using a \gls{acr:cgra} of map-reduce units between the ingress and egress pipelines---implementing \glspl{acr:nn}, \gls{acr:lstm} networks, or \glspl{acr:svm} which process every packet header vector.
+In particular, it demonstrates that efficient line-rate inference can work using a \gls{acr:cgra} of map-reduce units between the ingress and egress pipelines---implementing \glspl{acr:nn}, \gls{acr:lstm} networks, or \glspl{acr:svm} which process every packet header vector.
 This \gls{acr:cgra} implements a large grid of replicated fixed-point compute and memory units, allowing higher throughput by what the authors describe as `spatial \gls{acr:simd}'.
 This achieves line-rate throughput while reducing latencies from the $\mathcal{O}\left(\unit{\milli\second}\right)$ \gls{acr:cpu} and \gls{acr:gpu} inference to $\mathcal{O}$(\qty{e2}{\nano\second}), dependent on the target application.
 In turn, the outputs of any classifiers in this block become available to later pipeline stages, which are able to act upon packets accordingly.
@@ -599,7 +599,7 @@ The \emph{Portable \gls{acr:nic} Architecture}~\parencite{p4-pna}, which is in t
 This is expected to feature a message processing block for programmable segmentation and coalescing etc., as expected by host \glspl{acr:os} and their drivers.
 Most notably, this includes device-local updates and additions to table state, packet mirroring, and table row expiry events.
 To date, device-local updates have been implemented as part of T4P4S to explore some of the design-space around concurrent table access and modifications~\parencite{DBLP:conf/ancs/SimonSSGC21}.
-However, this capability is bot guaranteed for all similar devices.
+However, this capability is not guaranteed for all similar devices.
 Netronome \gls{acr:nfp} \gls{acr:nic} tables are reliant on the optimised DCFL~\parencite{DBLP:conf/infocom/TaylorT05} data format, potentially still limiting the capability for rule installation to control plane devices.
 
 %\gls{acr:pdp} hardware excels in applying actions to network packets using \glspl{acr:mat}, potentially giving us a high-performance method to install selected actions within the network.
@@ -640,7 +640,7 @@ If we place commodity hosts in-line like this, then they will be unable to meet 
 		\resizebox{\linewidth}{!}{\input{diagrams/pdp-lit/steering-3}}
 		\caption{On-path (direct).\label{fig:pdp-lit-steering:on}}
 	\end{subfigure}
-	\caption[The spectrum of on-path traffic processing.]{To introduce packet processing to the network, engineers must make a conscious decision about where such processing may be installed, and if needed how traffic can be steered there---this leads to spectrum of how on-path processing may be. The main sizes and types of redirections are shown here: (a) having to redirect to another network for packet processing, (b) internally rerouting and steering packets to reach one or more processing machines (i.e., in \gls{acr:vnf} scenarios), and (c) placing processing \emph{directly in-path}. Generally speaking, smaller path deviations have a smaller latency impact. Paths and \gls{acr:as} relationships here are purely for demonstration, and may be longer in practice (similarly, case (b) may occur entirely within a single data centre \gls{acr:as}). Appliances performing packet processing are coloured {\color{uofgrust} in orange-red}.\label{fig:pdp-lit-steering}}
+	\caption[The spectrum of on-path traffic processing.]{To introduce packet processing to the network, engineers must make a conscious decision about where such processing may be installed, and if needed how traffic can be steered there---this leads to spectrum of how on-path processing may be. The main sizes and types of redirections are shown here: (a) having to redirect to another network for packet processing, (b) internally rerouting and steering packets to reach one or more processing machines (e.g., in \gls{acr:vnf} scenarios), and (c) placing processing \emph{directly in-path}. Generally speaking, smaller path deviations have a smaller latency impact. Paths and \gls{acr:as} relationships here are purely for demonstration, and may be longer in practice (similarly, case (b) may occur entirely within a single data centre \gls{acr:as}). Appliances performing packet processing are coloured {\color{uofgrust} in orange-red}.\label{fig:pdp-lit-steering}}
 \end{figure}
 
 These new, specialised devices are a double-edged sword---making efficient use of \emph{all} network resources becomes non-trivial due to device heterogeneity in architecture and capabilities.
@@ -661,7 +661,7 @@ Can we then accelerate \emph{individual parts} of a packet processing stack?
 
 \emph{Offloading} is the process of moving part or all of a packet processing function elsewhere to improve overall performance---reducing latency or increasing throughput---typically by taking advantage of novel heterogeneous hardware.
 Originally, this referred to simpler transport-level accelerations that \glspl{acr:nic} could perform in hardware which would free up \gls{acr:cpu} cycles on a host machine, such as checksum offloads, large send \& receive offloads to split or coalesce larger than \gls{acr:mtu}-size packets, and receive-side scaling.
-The idea is that the unique capabilities of existing \gls{acr:sdn} switches and \gls{acr:pdp} hardware can be taken advantage of to optimise a target dataplane, enabling a very generic and useful kind of offloading.
+The idea is that the unique capabilities of existing \gls{acr:sdn} switches and \gls{acr:pdp} hardware can be taken advantage of to optimise a target dataplane, enabling a very generic and useful kind of acceleration.
 This extends also to host machines, which have no shortage of technologies for improving packet processing by shifting user code into the network stack or skipping the kernel entirely.
 Such hosts may even use attached SmartNICs to accelerate applications or transport logic.
 
@@ -731,7 +731,7 @@ Most of the impact on traffic processing originates also from logical costs due 
 \Cref{fig:pdp-lit-offloading} lays out some of these stages in the Linux environment.
 Primarily, the \gls{acr:os} kernel is notified that packet \glspl{acr:dma} have completed via \glspl{acr:irq}, at which point a kernel thread is awoken and the device driver is called to transfer the packet contents into a \gls{acr:skb} usable by the stack.\sidenote{The conventional network stack does not poll for packets. While this would reduce any additional delays associated with the interrupt model, running a device driver in a busy loop is not generally considered feasible or acceptable. This model \emph{does} drive specialist frameworks like \gls{acr:dpdk}, which we'll cover, but this requires care and significant changes in userland code.}
 Awaking a thread does not guarantee that it will be instantly ready to serve the packet, adding latency, while readying packet \glspl{acr:skb} adds additional per-packet overheads which harm receive-side latency and throughput.
-The Linux network stack itself must then inspect \glspl{acr:skb} to handle, for instance, decapsulation, transport logic such as \gls{acr:tcp} and \gls{acr:cca} management, and connection handling---among other functions related in more much detail by existing work~\parencite{DBLP:conf/sigcomm/CaiCVH021}.
+The Linux network stack itself must then inspect \glspl{acr:skb} to handle decapsulation, transport logic such as \gls{acr:tcp} and \gls{acr:cca} management, and connection handling---among other functions related in more much detail by existing work~\parencite{DBLP:conf/sigcomm/CaiCVH021}.
 Finally, the packet is served over a socket to a (possibly sleeping) userland thread, who may require a context switch before the received data may be finally used---again, another source of processing latency.
 
 %?? IRQs enable, but can take time for CPU to awaken.
@@ -740,11 +740,11 @@ Finally, the packet is served over a socket to a (possibly sleeping) userland th
 
 Interestingly, these additional hardware and software costs are analogous to route-level steering on a smaller scale.
 %?? Make the argument around existing doftware needing a reasonable OS?
-A more specialised packet processing stack might be one way to remove many of the software costs, but such a clean-slate proposition would lock packet processing programs out of access to software reliant on typical \glspl{acr:os} functionality.
+A more specialised packet processing stack might be one way to remove many of the software costs, but such a clean-slate proposition would lock packet processing programs out of access to software reliant on typical \gls{acr:os} functionality.
 %Instead, recent years have brought greater kernel support for eliminating as many of these stages as possible.
 \emph{Host offloading frameworks} aim instead to reduce this steering as far as possible with support from the \gls{acr:os} or hardware; either by eliminating much of the logical packet processing invoked by the \gls{acr:os} kernel, or moving user code to an earlier point in the stack.
 Returning to \cref{fig:pdp-lit-offloading}, we now focus on the user-programmable blocks.
-In the best case, SmartNIC hardware allows user code to be moved onto the \gls{acr:nic}, removing \gls{acr:pcie} bus transfer latency as packet processing no longer needs to touch the \gls{acr:cpu}.
+In the best case, SmartNIC hardware allows user code to be moved onto the \gls{acr:nic} completely, removing \gls{acr:pcie} bus transfer latency as packet processing no longer needs to touch the \gls{acr:cpu}.
 Of course SmartNICs are typically less capable than hosts (in clock speeds and included \glspl{acr:fu}), and for that reason we'll briefly discuss kernel bypass methods such as \gls{acr:dpdk} and offloads enabled by \gls{acr:ebpf}.
 As before, offloaded user code may be some or all of a larger program, potentially divided into fast and slow paths according to whether host compute is needed.
 
@@ -884,12 +884,12 @@ Additionally, by swapping testpmd for a Rust-based receive stack and reading fro
 
 \subsection{Frameworks for automatic offloading}\label{sec:frameworks-for-automatic-offloading}
 One of the strengths of the above offload technologies is that their architects are keen to see them achieve widespread adoption, and as such they tend to be well-integrated with existing technical stacks.
-For instance, \gls{acr:ebpf} has a codegen target for both the LLVM and GCC compiler suites since 2015 and 2019 respectively~\parencite{ebpf-llvm,ebpf-gcc}, enabling code written in popular high-level languages like C or Rust to be compiled to this level.
+For instance, \gls{acr:ebpf} has been offered as a codegen target for both the LLVM and GCC compiler suites since 2015 and 2019 respectively~\parencite{ebpf-llvm,ebpf-gcc}, enabling code written in popular high-level languages like C or Rust to be compiled to this level.
 This presents an interesting research challenge: adapting these developments towards lower-level fragments of such programs intelligently, such that offloading can improve performance with little input from the programmer.
 I provide here a brief overview of the higher- and lower-level tooling developed by the research community to either lower the barrier for adoption (and easily migrate existing \gls{acr:nf} solutions), or to improve on the potential performance benefits.
 
 \paragraph{Host-to-SmartNIC}
-\emph{Floem}~\parencite{DBLP:conf/osdi/PhothilimthanaL18} presents a DSL in Python for Click-like dataflow programming to be offloaded, specifying a processing graph of logical blocks which compiles to C code for hosts and target NICs.
+\emph{Floem}~\parencite{DBLP:conf/osdi/PhothilimthanaL18} presents a \gls{acr:dsl} in Python for Click-like dataflow programming to be offloaded, specifying a processing graph of logical blocks which compiles to C code for hosts and target NICs.
 Users specify which parts of the processing graph execute on each offload device, making this a useful (but not necessarily optimal) tool for investigating offloading strategies.
 Per-packet metadata is user-specified, but the compiler can infer which state must cross \gls{acr:cpu}-to-\gls{acr:nic} boundaries with the aid of annotations.
 Individual blocks (and the centralised queue handling) require user implementation in C for each target device class.
@@ -913,7 +913,7 @@ As a solution to OpenFlow's limited action set, \emph{BPFabric}~\parencite{DBLP:
 %?? well-suited because \gls{acr:ebpf} simple, non-Turing, bounded exec time suited for real-time.
 \gls{acr:ebpf} was seen as well-suited here because of its simple semantics and restrictions which kept it non-Turing complete; thus, having bounded execution times suitable for real-time packet processing.
 Its authors keep most of the OpenFlow machinery intact---the device-controller relationship specifically---but instead install one \gls{acr:ebpf} program per device, encoding its entire view of the dataplane.
-\gls{acr:mat} layouts and program needs are included in the ELF metadata of supplied \gls{acr:ebpf} programs, and the return value of such a program is the desired output port (including the standard special ports to forward packets to the controller).
+\gls{acr:mat} layouts and program needs are included in the ELF metadata of supplied \gls{acr:ebpf} programs, and the return value of such a program is the desired output port (including special OpenFlow-style ports to forward packets to the controller).
 Such programs would be compiled to from a constrained, high-level, C-like language with the typical \gls{acr:ebpf} restrictions on loops, with a device-local loader playing the role of the Linux kernel's verifier.
 %?? device-local loader plays the role of kernel in verification etc.
 %?? Keeps all the relevant OpenFlow machinery
@@ -936,7 +936,7 @@ This dedicated design outperforms hosts and \gls{acr:nfp} SmartNICs in latency, 
 
 \paragraph{eBPF in hosts}
 Preliminary work has been proposed on automatically splitting \gls{acr:ebpf} programs between an \gls{acr:xdp} part and userland part~\parencite{DBLP:conf/conext/ShahinfarMSSBA21}.
-Their work considers both horizontal splits, i.e., subdividing code into \gls{acr:ebpf} chunks using tail-calls, and vertical user$\leftrightarrow$kernel splits of code.
+This approach considers both horizontal splits, i.e., subdividing code into \gls{acr:ebpf} chunks using tail-calls, and vertical user$\leftrightarrow$kernel splits of code.
 %I think their XDP vs.~AF\_XDP split test confirms that the first handler in the XDP hook is basically single-threaded, which probably has some implications for our use of it as an offload.
 This appears to have promise for increasing application throughput, although optimal splitting points vary based on the use case.
 
@@ -957,7 +957,7 @@ Morpheus achieves substantial latency and throughput improvements on larger data
 While tools to convert C programs into the required VHDL specifications exist, the authors find that they lead to suboptimal code in area and \gls{acr:lut} usage.
 As is standard in Click-like approaches, functions are written as directed graphs of predefined Click-like blocks, in this case each specifically written in a hardware description language to achieve lower \gls{acr:fpga} resource utilisation.
 
-\emph{Metron}~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} builds on OpenBox to break \gls{acr:vnf} chains into stateless and stateful logic: stateless processing is offloaded to the network via the ONOS controller (making use of e.g., heterogeneous OpenFlow and P4 hardware), while function chains are dynamically allocated one per core.
+\emph{Metron}~\parencite{DBLP:conf/nsdi/KatsikasBKSM18} builds on OpenBox to break \gls{acr:vnf} chains into stateless and stateful logic: stateless processing is offloaded to the network via the ONOS controller (making use of heterogeneous OpenFlow and P4 hardware), while function chains are dynamically allocated one per core.
 %?? weak \gls{acr:mat} programmability of modern \glspl{acr:nic} to control core steering.
 Crucially, the performance of these stateful functions is maximised by using the weak \gls{acr:mat} programmability of modern \glspl{acr:nic} to control core steering dynamically (and consistently) according to load and to balance traffic across replicated functions.
 Chains are allocated in the network using a combination of topology and current load information (preferring local processing).
@@ -1040,12 +1040,12 @@ By using \gls{acr:int}-like switch tracking, \emph{Unroller}~\parencite{DBLP:con
 Unlike \gls{acr:int}, Unroller tracks only the minimum ID seen by a packet, periodically overriding this at geometrically increasing intervals.
 To detect \gls{acr:ddos} attack victims in pure P4, \emph{INDDoS}~\parencite{DBLP:journals/tnsm/DingSPCS21} uses count-min sketches to estimate the number of flows inbound for a given server.
 \emph{Jaqen}~\parencite{DBLP:conf/uss/LiuNNLK0BYS21} offers a framework for \gls{acr:pdp}-augmented \gls{acr:isp} networks to detect and mitigate many volumetric, amplification, and semantic \gls{acr:ddos} attacks (though not \glspl{acr:lfa}).
-To gather state, it maintains sketches of source/destination \glspl{acr:ip} and ports alongside counters, as well as useful primitives like native stateless P4 implementations of \texttt{SYN} cookie functions and approximate Bloom filter allow- and block-lists.
+To gather state, it maintains sketches of source/destination \gls{acr:ip} addresses and ports alongside counters, as well as useful primitives like native stateless P4 implementations of \texttt{SYN} cookie functions and approximate Bloom filter allow- and block-lists.
 State is polled by the control plane, which interprets sketches to perform higher-level logic (e.g., observing thresholds, significant changes) and installs detection and mitigation functions using a heuristic algorithm to ensure sufficient coverage.
 
 \subsection{Service acceleration and offloading}\label{sec:ddn-service-accel}
 Distributed data structures, such as key-value stores, are a foundational part of many data centre applications for process coordination and concurrency control.
-\emph{NetChain}~\parencite{DBLP:conf/nsdi/JinLZFLSKS18} and \emph{FLAIR}~\parencite{DBLP:conf/nsdi/TakruriKAA20} offer P4-based implementations of distributed key-value stores, routing and serving requests and updates subject to a chain replication protocol for reliability, achieving an order-of-manitude latency improvement for reads and writes.
+\emph{NetChain}~\parencite{DBLP:conf/nsdi/JinLZFLSKS18} and \emph{FLAIR}~\parencite{DBLP:conf/nsdi/TakruriKAA20} offer P4-based implementations of distributed key-value stores, routing and serving requests and updates subject to a chain replication protocol for reliability, achieving an order-of-magnitude latency improvement for reads and writes.
 NetChain in particular uses a mixture of \glspl{acr:mat} and registers to accelerate index lookups and store data respectively, though both eliminate steering costs and host stack costs.
 As another example, distributed hash tables like \emph{No-hop}~\parencite{DBLP:conf/ancs/HugerichSS21} see improved lookup times from route caching enabled by the \gls{acr:pdp} ecosystem.
 
@@ -1069,7 +1069,7 @@ To reduce traffic impact on infrastructure while freeing host resources, \emph{Z
 \subsection{Transports, protocols, and routing}\label{sec:pdp-uses-transports}
 Making better use of networks through \gls{acr:te}, more sophisticated \glspl{acr:cca}, and more adaptive routing is a challenging but worthwhile endeavour.
 \gls{acr:pdp} hardware allows us to place more complex decisions and new algorithms at a lower level, where they can take advantage of the fine-grained or complex state and measurements that in-network compute gives us access to (\cref{sec:network-monitoring}).
-Our ideal aims are that flows would converge to their optimal fair-share faster (and with greater accuracy), better respond to congestion and incast events, or more dynamically make use of network capacity.
+Our ideal aims are that flows would converge to their optimal fair-share of bandwidth faster (and with greater accuracy), better respond to congestion and incast events, or more dynamically make use of network capacity.
 Moreover, it allows us to consider new schemes for doing so as networked use cases change or evolve over the years to come.
 We'll consider here some ways in which \gls{acr:pdp} hardware makes the management and operation of networks faster or more resilient by measurement, cooperation, or novel algorithms.
 
@@ -1095,7 +1095,7 @@ Advanced, control-theoretic \glspl{acr:cca} like the \emph{PCC} family of \glspl
 Having more, high-quality information also prevents fairness issues which may arise from needing to rely on carefully tuned responses to otherwise opaque signals from the network, such as BBRv1's noted unfairness with other \gls{acr:tcp} traffic~\parencite{DBLP:conf/imc/WareMSS19}.
 %?? BBR~\parencite{DBLP:journals/queue/CardwellCGYJ16} is unfair~\parencite{DBLP:conf/imc/WareMSS19}
 %?? cost of logic and importance of good information to make decisions on.
-Even older \glspl{acr:sdn} show that this can be the case---consider \emph{OTCP}~\parencite{DBLP:conf/noms/JouetPP16}, which calculates optimal pairwise \gls{acr:tcp} parameters by using OpenFlow and its supporting protocols to actively measure static network characteristics like latencies and link bandwidths.
+Even older \glspl{acr:sdn} show the value of high-quality, global information---consider \emph{OTCP}~\parencite{DBLP:conf/noms/JouetPP16}, which calculates optimal pairwise \gls{acr:tcp} parameters by using OpenFlow and its supporting protocols to actively measure static network characteristics like latencies and link bandwidths.
 \gls{acr:pdp} infrastructure can go further still, and offers new ways to offload \gls{acr:cca} logic or to augment it with assistance from the network.
 Data centre networks are best placed for this---\emph{NDP}~\parencite{DBLP:conf/sigcomm/HandleyRAV0AW17} is a receiver-driven \gls{acr:cca} where P4 switches truncate packet payloads when buffers are at risk of exhaustion, while senders choose network routes for fairer load balancing.
 Header-only packets are prioritised, providing a dedicated fast path for control packets and effective congestion signals.
@@ -1132,13 +1132,13 @@ In-network \gls{acr:ml} research aims to solve this (preferably at line-rate) by
 In particular they use custom parsers as a feature extraction mechanism, and convert parameters and inference logic into \glspl{acr:mat} to implement these models using pure P4.
 This guarantees their compatibility with the vast majority of \gls{acr:pdp} devices in deployment.
 These include multiple implementations of \glspl{acr:svm}, decision trees, Na\"{i}ve Bayes, and K-means classifiers, executing but not training on these devices.
-In particular, they investigate the best use of tables in these scenarios---per-feature, per-class and per-cluster---noting that all cases exhibit different impact from quantisation, processing length (in recirculations).
+In particular, they investigate the best use of tables in these scenarios---per-feature, per-class and per-cluster---noting that all cases exhibit different impact from quantisation and processing length (in recirculations).
 %Evaluating using the P4$\rightarrow$NetFPGA workflow~\cite{DBLP:conf/fpga/IbanezBMZ19} against an IoT traffic classification (and QoS assignment) problem, even in the best cases (decision trees, SVMs, K-means) a feature/class limit of \num{20} is suggested.
 %This suggests that training (or adaptive policy modification in RL's case) are relatively unexplored---but potentially costly, given that these cannot be implemented using only table matches.
 
 \glspl{acr:nn} require more specific considerations due to their variable structure, but their implementation in \gls{acr:pdp} hardware is an important topic due to their ubiquity in \gls{acr:ml} and \gls{acr:ddn} research.
 \textcite{langlet-ml-netronome} has shown the viability of \gls{acr:nn} inference using \qty{64}{\bit} quantisation on \gls{acr:nfp} SmartNICs, but this can observe high ($\sim$\qty{500}{\micro\second}) inference latency on line rate traffic for larger inputs.
-This compute model has the main downside, however, of being unsuited to \gls{acr:rmt} or \gls{acr:rmt} switches.
+This compute model has the main downside, however, of being unsuited to \gls{acr:rmt} or \gls{acr:psa} switches.
 \glspl{acr:bnn} have been shown to be a promising data format for \gls{acr:pdp} hardware; not least because they are computationally efficient, but because they admit ready conversion to \glspl{acr:mat}, and are thus suitable for deployment on \emph{all} P4 devices.
 \emph{BaNaNa SPLIT} shows how these \glspl{acr:bnn}, installed in \glspl{acr:nic}, can as a partial offload mechanism~\parencite{DBLP:conf/sigcomm/SanvitoSB18}; \gls{acr:dnn} inference is often carried out on the \gls{acr:cpu} to remove latencies imposed by \gls{acr:gpu} batching and transfer, but they show that the fully-connected layers of such networks can be accelerated further by \glspl{acr:nic} subject to some accuracy loss.
 \emph{N2Net}~\parencite{DBLP:journals/corr/abs-1801-05731} and \emph{N3IC}~\parencite{DBLP:journals/corr/abs-2009-02353} examine, collectively, different ways of running \glspl{acr:bnn} among SmartNICs, P4 implementations, and \glspl{acr:fpga} to achieve line-rate, in-path, per-packet inference of classes for use by later tables or packet tagging.
@@ -1243,5 +1243,5 @@ It offers today a source of raw device data which we would have never been able 
 At the same time it provides ways of helping host machines scale further via aggregation, and a promising location to perform complex, data-driven logic and reaction.
 I am of the opinion, however, that it is still a field in its adolescence.
 The hardware solutions and designs which have arisen and entered widespread market adoption (e.g., \gls{acr:rmt}$\rightarrow$Tofino) are impressive, powerful and capable---but they are the first wave of fully programmable devices at this scale and this form-factor, and we should expect even more innovation in hardware and languages as the field evolves.
-This may well take the form of incoming heterogeneity, as device manufacturers produce \gls{acr:pdp} devices tailored to different use cases in much the same way as \emph{Taurus}.
+This may well take the form of incoming heterogeneity, as device manufacturers produce \gls{acr:pdp} devices tailored to different use cases in much the same vein as \emph{Taurus}.
 Projects like \emph{BrainWave} reiterate that network hypergiants already hold the means and motivation to do just this.

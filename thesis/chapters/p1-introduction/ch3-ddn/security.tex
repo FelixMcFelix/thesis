@@ -1,4 +1,4 @@
-\gls{acr:ml} models, introduce particular security issues in their training, use, and how we expose them or their decisions to users.
+\gls{acr:ml} models introduce particular security issues in their training, use, and how we expose them or their decisions to users.
 Recall that, in general, their operation is \emph{entirely governed by their parameter set $\wvec{}$}, and that we currently face great difficulty in understanding exactly what transformations or logic they encode.
 What additional concerns might arise from this?
 The most obvious challenge is that an attacker might construct input samples which appear to a human to have one label, but produce a strong response in a \gls{acr:ddn} model for \emph{another label}.
@@ -13,7 +13,7 @@ These classes of attack, interestingly, mostly mirror those that have historical
 
 I introduce in this section the techniques and procedures for undertaking these classes of attack, in addition to defences and present suggestions on how and why they work.
 %Finally, I ...
-It must be stated that the attack and defence surface of \gls{acr:ml} models is very much subject to the same game of cat-and-mouse as any other security domain, i.e. malware or \gls{acr:ddos} design and detection.
+It must be stated that the attack and defence surface of \gls{acr:ml} models is very much subject to the same game of cat-and-mouse as any other security domain, e.g., malware or \gls{acr:ddos} design and detection.
 This field in particular moves very quickly due to the larger reach and impact of \glspl{acr:dnn} in society as a whole, motivating constant scrutiny by the security community.
 As a result, any defences listed are certain to have been invalidated by the time this thesis is read; I hope this section at least provides an illustration of the \emph{classes} of input, output and model transforms that have held some promise.
 
@@ -41,7 +41,7 @@ In the image domain, they have been made transform-resilient~\parencite{DBLP:jou
 
 A more recent formalisation and strengthening of attacks based on raw input data was recently presented by \textcite{DBLP:conf/sp/Carlini017}.
 Around the time of publication, distillation~\parencite{DBLP:conf/sp/PapernotM0JS16} was proposed as a form of hardening for neural networks expected to perform in adversarial settings where evasion attacks might be common.
-This work reveals that existing approaches for generating adversarial examples \emph{weren't strong enough} and, accordingly, approaches like defensive distillation are shown to be ineffective.
+This work reveals that existing approaches for \emph{generating} adversarial examples weren't strong enough and, accordingly, approaches like defensive distillation are shown to be ineffective.
 Some future works refer to the methods they propose as CW-$\ell_{\{0, 2, \infty\}}$ attacks.
 Their attacks exceed existing work based on these three well-understood metrics by a more in-depth analysis of the construction of cost functions, a reworked box constraint built around $\tanh(\cdot)$ (as in HDR image tone mapping), and a more nuanced treatment of the effects of discretisation error.
 By introducing a \emph{confidence factor} $\kappa$, they are able to explicitly design attacks which are \emph{transferable} between one classifier and its distilled form, or a network derived from the original by black box inference.
@@ -54,13 +54,14 @@ By introducing a \emph{confidence factor} $\kappa$, they are able to explicitly 
 %?? Where are we now? Transform invariant (i.e., photographs \cite{DBLP:journals/corr/KurakinGB16}, 3D model \& 2D transforms \cite{DBLP:journals/corr/AthalyeS17}): what does this mean with regards to the transforms we apply to our input data?
 
 In practice, inputs to \gls{acr:ml} classifiers are often heavily pre-processed or undergo some statistical transformation; either to achieve a fixed-size and compact representation or to increase accuracy.
-In this sense we can refer to the `true' inputs as belonging to the \emph{problem space}, while the transformed input given to the \gls{acr:dnn}/\gls{acr:ml} classifier belongs to the \emph{feature space}\sidenote{Image and audio processing are something of an exception to this, where the feature space \emph{is} the problem space. As a result, most adversarial \gls{acr:ml} research targets these domains for simplicity.}.
+In this sense we can refer to the `true' inputs as belonging to the \emph{problem space}, while the transformed input given to the \gls{acr:dnn}/\gls{acr:ml} classifier belongs to the \emph{feature space}.\sidenote{Image and audio processing are something of an exception to this, where the feature space \emph{is} the problem space. As a result, most adversarial \gls{acr:ml} research targets these domains for simplicity.}
 A malware detector would not, for instance, take an executable's binary as its input, and would instead process behavioural features extracted by static and dynamic analysis tools. 
-Of course, these transforms are non-invertible and often non-differentiable, the need to maintain input functionality (in, e.g., malware), and when combined with input validity checks this makes it difficult to create adversarial examples.
-A recent frontier on enabling such attacks is a framework for expressing input validity and transformation constraints~\parencite{DBLP:conf/sp/PierazziPCC20}; if feature transformations are approximately differentiable then, otherwise falling back on genetic algorithms and Monte Carlo tree search.
+Of course, the transforms to determine these features are non-invertible and often non-differentiable.
+Perturbed inputs also need to maintain functionality (in, e.g., malware), and when combined with input validity checks this makes it difficult to create adversarial examples.
+A recent frontier on enabling such attacks is a framework for expressing input validity and transformation constraints~\parencite{DBLP:conf/sp/PierazziPCC20}; if feature transformations are approximately differentiable then they may be used directly, otherwise falling back on genetic algorithms and Monte Carlo tree search.
 
 \gls{acr:drl} algorithms are equally vulnerable to this class of attacks, despite the fact that their stochastic nature greatly influences the trajectories gathered during training.
-The meaning of an attacker manipulating the environment is, again, problem space dependent, and most work focuses to some extent on reducing agent performance rather than invoking specific actions.
+The meaning of an attacker manipulating the environment is, again, problem space dependent, and most work focusses to some extent on reducing agent performance rather than invoking specific actions.
 \Textcite{DBLP:journals/corr/HuangPGDA17} have shown that this vulnerability to adversarial inputs extends between \gls{acr:rl} algorithms in white-box settings, while perturbations acquired in a black-box setting on the same \gls{acr:nn} architecture require greater error bounds to invoke the same loss of reward.
 An alternative strategy is to directly modify the PPO algorithm, training agents to choose actions with the highest likelihood of making another victim agent perform suboptimally~\parencite{DBLP:conf/uss/Wu0WX21}---i.e., through this adversarial agent's effect on shared environment state via valid actions.
 
@@ -91,7 +92,7 @@ When an insufficient amount of the constituent classifiers return the same resul
 The approach naturally suits ensemble methods such as \emph{random forests}, but an extension to \glspl{acr:svm} is proposed.
 Moreover, the addition of the `uncertain' classification acts as a useful metric for continuous training and evolution.
 
-Ensembles of \emph{classifications} around one data point, rather than \emph{classifiers} (i.e., without changing the classifier).
+Ensembles of \emph{classifications} around one data point, rather than \emph{classifiers} (i.e., without changing the classifier) have also been considered.
 Adversarial examples typically occur very close to the decision hyperplane; applying too much noise can either accidentally `push' the data into a classification the attacker did not desire, or it may become humanly perceptible.
 This principle is exploited by \textcite{DBLP:conf/acsac/CaoG17}, who propose ensemble classification of potentially adversarial data by sampling from the local hypercube---\emph{region-based} classification, rather than standard \emph{point-based} classification.
 %This approach is remarkable because it may rely on any existing classifier $\mathcal{C}$.
@@ -125,7 +126,7 @@ This forces adversarially triggered features to contribute larger activations th
 However, this adds a non-negligible clean accuracy cost and adds \qtyrange{10}{50}{\percent} execution time (large--small \glspl{acr:nn}).
 
 \Textcite{DBLP:journals/corr/abs-2002-04599} suggest an inherent balancing act between sensitivity and invariance-based attacks---in that defence against one creates a vulnerability against the other.
-Sensitivity attacks are what we usually consider in this family (a small change which doesn't impact the input's true label), while invariance attacks use a change which \emph{would} change the true label, but is performed in such a way that the model still outputs the old label.
+Sensitivity attacks are what we usually consider in this family (a small change which doesn't impact the input's true label), while invariance attacks use a change which \emph{would} alter the true label but is performed in such a way that the model still outputs the old label.
 The defence in question would be against attacks within some $\ell_p$ norm ball (i.e., similar pixel/state similarity)---with the findings suggesting that a `robust' neural network is even more sensitive than an undefended one.
 
 %?? New work~\parencite{DBLP:journals/corr/abs-2002-04599} covering the balancing attack between sensitivity/invariance-based attacks. Sensitivity is what we usually think of (small change which doesn't impact the true label), invariance is a change which \emph{would} change the true label, but is performed in such a way that the model still outputs the old label. Implication: defending against one makes you more sensitive to the other (specifically, attacks within some $\ell_p$ norm ball)---even more sensitive than an undefended network.
@@ -141,20 +142,20 @@ In this case, an attacker can construct a path in feature space from a labelled 
 
 \emph{Clean-label} poison attacks~\parencite{DBLP:journals/corr/abs-2005-00191} combine the insights of \gls{acr:dnn} adversarial examples to force a classifier to misbehave on a target instance, while all training data appears correct to a human observer.
 Perturbed data points are selected, forming a convex hull around the target point in feature space.
-This causes the target to be mapped to the same class as the hull, though takes around \qty{3}{\hour} to launch a successful attack.
+This causes the target to be mapped to the same class as the hull, though it can take around \qty{3}{\hour} to launch a successful attack.
 
 %?? Backdooring/Trojan~\parencite{DBLP:journals/corr/abs-1712-05526,DBLP:conf/eurosp/TanS20}
 \emph{Trojan} and \emph{backdoor} attacks are a stronger and recent variant of model poisoning~\parencite{DBLP:journals/corr/abs-1712-05526}.
 They differ from their precursors in that an attacker aims to keep the victim model's performance unchanged for all typical inputs, while an input of their choice maps to their desired output.
 An attacker may also have a model learn a `trigger' in the input (i.e., a relative sequence of state values, or a pair of glasses in an image) which immediately produces their desired label if it is present.
-These attacks are possible in black-box scenarios with little effort: consider that \citeauthor{DBLP:journals/corr/abs-1712-05526} are able to achieve both classes of attack in \numrange{5}{50} (versus a training set of size \num{600000}) without awareness of either the model or training data.
+These attacks are possible in black-box scenarios with little effort: consider that \citeauthor{DBLP:journals/corr/abs-1712-05526} are able to achieve both classes of attack in \numrange{5}{50} injected training samples (versus a training set of size \num{600000}) without awareness of either the model or training data.
 White-box scenarios can make these learnt triggers less obvious to an analyst, by including additional terms in the loss function to penalise cases where their feature activations are easy to discriminate from benign inputs~\parencite{DBLP:conf/eurosp/TanS20}.
 Concrete attacks have also been proposed, which target \gls{acr:fl}~\parencite{DBLP:conf/aistats/BagdasaryanVHES20} and \glspl{acr:gnn}~\parencite{DBLP:conf/uss/XiPJ021}.
 
 %In \gls{acr:ddn}...
 
 \paragraph{Defences}
-Earlier work on centroid-distance anomaly detection~\parencite{DBLP:journals/jmlr/KloftL10} indicated that online learning systems which assume stationary normality require exponential amount of poison samples with respect to how far the mean must move.
+Earlier work on centroid-distance anomaly detection~\parencite{DBLP:journals/jmlr/KloftL10} indicated that online learning systems which assume stationary normality require an exponential amount of poison samples with respect to how far the mean must move.
 If non-stationarity is modelled via a bounded memory of points then an attacker requires only a linear amount of samples if they control a sufficient fraction of the network throughput.
 However, this analysis has limited applicability to modern function approximation which encodes far more complex decision surface behaviour---particularly when bounded memories are not kept.
 %Yet in systems which use a finite number of data points (i.e. modelling non-stationarity) an attacker requires only a linear amount of data if they control a sufficient fraction of the network throughput.
@@ -187,7 +188,7 @@ The presence of soft labels essentially provides strong knowledge about the clas
 \Textcite{DBLP:conf/uss/JagielskiCBKP20} examine the extraction of high-fidelity models in greater depth, finding that this distillation-like approach is somewhat limited by non-determinism in the \gls{acr:sgd} procedure and random initialisation of $\wvec{}$ (i.e., peak \qty{93}{\percent} fidelity).
 Their analytic extraction of truly functionally equivalent models based on ReLU behaviour is limited to 2-layer models at this stage.
 Exact model theft is most possible when directly monitoring \gls{acr:pcie} bus traffic, i.e., as performed by a compromised or outright adversarial cloud host provider.
-Even when running application code on \glspl{acr:tee} to prevent external inspection, access to \glspl{acr:gpu} or \glspl{acr:tpu} still requires communication over the insecure \gls{acr:pcie} bus.\sidenote{While confidential models could in theory be run on the \gls{acr:cpu} using \glspl{acr:tee}, most capable Intel \glspl{acr:cpu} have an enclave memory limit of around \qty{128}{\mebi\byte}. More recent offering are beginning to extend this into $\ge$\qty{8}{\gibi\byte}~\parencite{tee-memlimit}, though this still limits the achievable throughput one can attain versus a dedicated accelerator.}
+Even when running application code on \glspl{acr:tee} to prevent external inspection, access to \glspl{acr:gpu} or \glspl{acr:tpu} still requires communication over the insecure \gls{acr:pcie} bus.\sidenote{While confidential models could in theory be run on the \gls{acr:cpu} using \glspl{acr:tee}, most capable Intel \glspl{acr:cpu} have an enclave memory limit of around \qty{128}{\mebi\byte}. More recent offerings are beginning to extend this into $\ge$\qty{8}{\gibi\byte}~\parencite{tee-memlimit}, though this still limits the achievable throughput one can attain versus a dedicated accelerator.}
 Although additional \gls{acr:pcie} traffic, re-ordering, and batching complicate this task, by using locally known models as a reference point it is possible to extract the sent compute kernel in spite of proprietary driver behaviour.
 
 %?? Just look at PCIe lol~\parencite{DBLP:conf/uss/ZhuCZL21}

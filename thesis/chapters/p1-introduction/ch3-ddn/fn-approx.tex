@@ -20,7 +20,7 @@ We must then consider several function approximations according to how we want t
 
 I discuss here some forms of function approximation which are pertinent to this thesis, and to \gls{acr:ddn} and \gls{acr:ml}/\gls{acr:rl} in general.
 I introduce and explain \emph{linear tile coding}, a simple and rather interpretable scheme which appears throughout more classical \gls{acr:rl} research, as well as providing an overview of common variations on \glspl{acr:nn}.
-While tile coding has been superseded in modern \gls{acr:rl} works by \glspl{acr:dnn}, I use it as the main function approximation scheme in \cref{chap:ddos-rl} for its computational simplicity for both inference and training.
+While tile coding has been superseded in modern \gls{acr:rl} works by \glspl{acr:dnn}, I use it as the main function approximation scheme in \cref{chap:ddos-rl} for its computational simplicity in both inference and training.
 Crucially, it plays a key role in the design of \approachshort{} in \cref{chap:in-net-rl}, where it underpins the task of bringing \gls{acr:rl} to \gls{acr:pdp} \glspl{acr:nic} due to their particular constraints.
 \glspl{acr:nn} are presented due to their widespread adoption and hence deep relevance to \gls{acr:ddn} on the whole.
 In addition, they are used for flow classification in \cref{chap:seidr} to make good use of the data reduction provided by in-network histograms.
@@ -54,7 +54,7 @@ The parameter vector $\wvec{}$ then assigns a value to each tile, allowing us to
 	f_\mathit{tile}(s, \wvec{}) = \wvec{}^{\top} \operatorname{\mathbf{x}}(s)
 	\label{eqn:lin-approx}
 \end{equation}
-As all values of $\operatorname{\mathbf{x}}(s)$ are boolean, this is equivalent to simply summing the values of each hit tile.
+As all values of $\operatorname{\mathbf{x}}(s)$ are boolean, this is equivalent to simply summing the values attached to each hit tile.
 Moreover, the parameter gradient ($\nabla_{\wvec{}}$) at any point is \emph{computed during the forward pass}:
 \begin{equation}
 	\nabla_{\wvec{}}{f_\mathit{tile}(s, \wvec{})} = \operatorname{\mathbf{x}}(s)
@@ -66,7 +66,7 @@ Generally, tile sets cover overlapping areas by varying the maxima and minima of
 The number of tiles in any one tiling is easy to know, as we only need to take the product of all entries of \emph{tiles\_on\_dim}---or return 1 for a bias tiling---and global starting indices into $\wvec{}$ can be precached for each tiling.
 \Cref{fig:tilecode-code} then demonstrates the process for a 2-dimensional state space in an \gls{acr:rl} context, i.e., defining the state-action value $\acval{s}{a}{\wvec{}} = f_\mathit{tile}(s, \wvec{})[a]$.\sidenote{It should be noted that the more \gls{acr:rl}-specific $\operatorname{\mathbf{x}}(s, a)$---i.e., approximating the value of a state-action pair---is virtually interchangeable with this representation. We can simply store the values for all actions together, as they are typically all required in value-based \gls{acr:rl}---if specific tiles are needed to derive the theory or update the representation, we just assign a tile to each action \emph{after} evaluating $\operatorname{\mathbf{x}}(s)$.}
 It should be apparent that the numbers of tiling sets and the degree of subdivision along each dimension allow a designer to control feature resolution and generalisation.
-To capture combinatorial effects or represent an input on multiple scales representation we may combine codings by concatenating individual feature vectors.
+To capture combinatorial effects or represent an input on multiple scales we may combine codings by concatenating individual feature vectors.
 For instance, different tiling sets may choose the same dimensions with different tile widths, or consider each feature both separately and combined with some covariant property.
 
 \begin{algorithm}
@@ -130,7 +130,7 @@ This means that we need only perform $n_{\mathit{tilings}} + 2$ additions and \n
 	\wvec{t+1}[i][a_t] = \wvec{t}[i][a_t] + \alpha \delta_t, \forall i \in s_{\mathit{list}}.
 	\label{eqn:sg-sarsa-opt}
 \end{equation}
-If desired we may define a state space with an arbitrary number of tiles per dimension (higher-resolution, lower generalisation), yet having constant-size state vectors and constant action computation cost ($\mathcal{O}(n_{\mathit{tilings}})$).
+If desired we may define a state space with an arbitrary number of tiles per dimension (higher-resolution, lower generalisation), yet having constant-size state vectors and constant action computation cost scaling in $\mathcal{O}(n_{\mathit{tilings}})$.
 Beyond this, we need not store action values for tiles which have not yet been visited, conserving memory.
 A caveat of tile coding remains, in that the value of $\alpha$ must be reduced according to the number of tilings to prevent divergence at the expense of slower learning ($\alpha \leftarrow \alpha / n_{\mathit{tilings}}$).
 
@@ -160,7 +160,7 @@ Some input data, such as images or fixed-length time-series sequences, often con
 \begin{figure}
 	\centering
 	\resizebox{0.9\linewidth}{!}{\input{diagrams/nns/fcnn}}
-	\caption[An example fully-connected neural network.]{\glspl{acr:nn} arrange neurons into layers, which allows all activations in each layer to be calculated by a single affine transformation followed by an elementwise application of some non-linear function. I.e., in this fully-connected network $\mathbf{a}_{i} = \operatorname{map}\left(f, \mathbf{W}_i\mathbf{a}_{i-1} + \mathbf{b}_i\right)$. By doing so, they can take advantage of commodity \glspl{acr:gpu} (which excel at linear algebra) or more specialised \glspl{acr:tpu}.}\label{fig:fcnn}
+	\caption[An example fully-connected neural network.]{\glspl{acr:nn} arrange neurons into layers, which allows all activations in each layer to be calculated by a single affine transformation followed by an elementwise application of some non-linear function $f$. I.e., in this fully-connected network $\mathbf{a}_{i} = \operatorname{map}\left(f, \mathbf{W}_i\mathbf{a}_{i-1} + \mathbf{b}_i\right)$. By doing so, they can take advantage of commodity \glspl{acr:gpu} (which excel at linear algebra) or more specialised \glspl{acr:tpu}.}\label{fig:fcnn}
 \end{figure}
 
 %\paragraph{Convolutional networks}
@@ -179,7 +179,7 @@ The main way in which they differ is that they feed neuron state from the previo
 \glsxtrfull{acr:lstm}~\parencite{DBLP:journals/neco/HochreiterS97} units include extra gates to control how hidden state is held between timesteps element-wise (input, output and forget gates), whose parameters are also trainable.
 \glsxtrfullpl{acr:gru}~\parencite{DBLP:conf/emnlp/ChoMGBBSB14} remove the output gate (passing on only the hidden state), and as a result are competitive with fewer weights to learn.
 
-Returning again to the \gls{acr:pdp} context, \glspl{acr:nn} are useful because they have both a high model capacity and are quite compactly represented by all parameters in $\wvec{}$---they encode a \emph{transformation} of input data rather than a lookup table.
+Returning again to the \gls{acr:pdp} context, \glspl{acr:nn} are useful because they have both a high model capacity and are quite compactly represented by all parameters in $\wvec{}$---they encode a \emph{transformation} of input data rather than a look-up table.
 They can thus require less memory to store a policy than tiles might need, at the same count of input dimensions.
 %As we have ??
 However, not only is their gradient computation more expensive than the forward pass, their training requires many passes (or epochs) over a large training corpus which should be held at or near the agent under training---likely ruling out their use in \emph{online} learning in \gls{acr:pdp} hardware.

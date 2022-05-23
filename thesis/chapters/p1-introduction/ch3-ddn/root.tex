@@ -7,12 +7,12 @@ As in \cref{sec:in-network-compute-use-cases}, there is still vast scope to impr
 As a result, research into \glspl{acr:cca}, network designs, and routing procedures is very much ongoing.
 Crucially, as these operations lie at the core of network operation their solutions tend towards extremely efficient heuristic methods; they must be evaluated per-packet or react as quickly as possible to state change.
 Unlike the approaches empowered by the programmability explored through \cref{chap:nets}, the norm is that most deployment environments have no access to such tools, and thus have reduced scope for co-design or measuring network properties that would make their design simpler.
-Designing new methods for network optimisation then requires deep insight into any problem, its edge cases, and the hardware/performance characteristics of the target environment.\sidenote{This affects how we design such heuristics even on commodity hosts---for instance, kernel-space \glspl{acr:cca} (i.e., as part of the TCP stack) are unable to use floating point arithmetic.}
+Designing new methods for network optimisation then requires deep insight into any problem, its edge cases, and the hardware \& performance characteristics of the target environment.\sidenote{This affects how we design such heuristics even on commodity hosts---for instance, kernel-space \glspl{acr:cca} (i.e., as part of the TCP stack) are unable to use floating point arithmetic.}
 
 Suppose that, as network administrators or protocol designers, we have access to a reasonable amount of information about the machines, network segments or \glspl{acr:as} under our control---measurements, observations, and statistics taken at run-time, from simulation, or by modelling.
 A natural question to ask, then, is whether we can use this data to enhance and improve the operation and use of our network automatically.
 Thinking further still, we might wonder whether we can outperform the general (yet useful) heuristics which are widely deployed and researched, allowing us to tailor network behaviour according to its environment and traffic patterns.
-These questions are the founding principles of \gls{acr:ddn}\sidenote{Alternatively titled \emph{self-driving networks}.}, a recent field of research focussed on the automatic control and optimisation of network systems, which has sprung forth due to recent advances in \gls{acr:ml} and \gls{acr:rl}~\parencite{DBLP:conf/anrw/FeamsterR18,DBLP:journals/pieee/KellererKBBR019}.
+These questions are the founding principles of \glsxtrfull{acr:ddn}\sidenote{Alternatively titled \emph{self-driving networks}.}, a recent field of research focussed on the automatic control and optimisation of network systems, which has sprung forth due to recent advances in \gls{acr:ml} and \gls{acr:rl}~\parencite{DBLP:conf/anrw/FeamsterR18,DBLP:journals/pieee/KellererKBBR019}.
 
 The ideas and goals of automated network control have always existed and evolved in one form or another, particularly as computational inference and learning have grown more powerful.
 Primarily, these ideas have propagated in their early forms via position papers offering a `vision of things to come'.
@@ -52,7 +52,7 @@ Sadly, full examination and further development lies beyond the scope of this th
 \section{Summary}
 I have introduced and discussed a wide variety of problems in the networking domain where \gls{acr:ml} and \gls{acr:rl} techniques are able to provide tangible improvements in performance and resilience of modern networks.
 We have also covered the basics of \gls{acr:ml} techniques and function approximations, as well as the intuition and \gls{acr:mdp} formalism underpinning \gls{acr:rl} algorithms.
-Finally, we have examined modern \gls{acr:rl} algorithms, techniques for the network to improve \gls{acr:ml} training, concessions and design decisions required to bring \gls{acr:rl} and \gls{acr:ml} to network devices, and open challenged pertinent to \gls{acr:ddn}.
+Finally, we have examined modern \gls{acr:rl} algorithms, techniques for the network to improve \gls{acr:ml} training, concessions and design decisions required to bring \gls{acr:rl} and \gls{acr:ml} to network devices, and open challenges pertinent to \gls{acr:ddn}.
 
 Unfortunately, the security context around \gls{acr:ddn} remains an uncomfortably open question.
 While not all the attacks presented can \emph{immediately} generalise to networks or other problem-space representations, the absence of research into specific attacks in this field does not inspire confidence.

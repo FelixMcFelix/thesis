@@ -1,10 +1,10 @@
 Leaving security aside for now, there remain key issues in the training and design of \gls{acr:ddn}-backed systems.
-I briefly discuss several high-level challenges in the applicability of \gls{acr:ddn}, and initial in-roads to their solution: issues inherent to data collection and simulation in representative environments; the seeming lack of generality of \gls{acr:ml}/\gls{acr:rl} models in the systems domain; and the interpretation and verification of trained function approximators, particularly when given control over such critical infrastructure as the Internet.
+I briefly discuss several high-level challenges in the applicability of \gls{acr:ddn}, and initial in-roads to their solution: issues inherent to data collection and simulation in representative environments; the seeming lack of generality of \gls{acr:ml} and \gls{acr:rl} models in the systems domain; and the interpretation and verification of trained function approximators, particularly when given control over such critical infrastructure as the Internet.
 
 \subsection{Input data and simulation}
 A key issue in \gls{acr:ddn} is that training from trace data is inherently fraught with risk.
 Consider that traces contain fixed sequences of states, and it should be apparent that through their use we cannot model or learn how the controlled system acts in response to change.
-This includes the tacit assumption that the model will not change in response to the input, either due to an unforeseen operational mode, or because the users of the system actively change their behaviour.
+Traces include the tacit assumption that the model will not change in response to the input, either due to an unforeseen operational mode, or because the users of the system actively change their behaviour.
 Even given these difficulties, why do some studies still attempt to learn network control in this manner?
 Network operators are, broadly speaking, unwilling to apply untested and unverified \gls{acr:ml} or \gls{acr:rl} models towards production networks; not only because they aim to prevent misconfiguration or collapse, but to uphold contractually enforced \glspl{acr:sla}.
 Overcoming this requires the design and implementation of accurate simulations, which are marred by complex interactions between and across levels of the (ever-evolving) networking stack, particularly at Internet scale~\parencite{DBLP:journals/ton/X01c}.
@@ -26,7 +26,7 @@ Even so, in the case of doubly robust estimators \citeauthor{DBLP:conf/hotnets/B
 In addition, different policies will invoke different state distributions, and these approaches are incompatible to some extent with non-Markovian problems or non-stationarity.
 
 While it might be easier to cynically connect this goal to the initial wave of dataset-driven \gls{acr:ml} algorithm applications papers, trace data \emph{can be correctly handled}.
-For instance, using \gls{acr:rl} to solve static problem instances derived or cast similarly to \textsf{NP}-hard optimisation problems does not require simulation or ongoing interaction with a `real' environment.
+For instance, using \gls{acr:rl} to solve static problem instances derived or cast similarly to \textsf{NP}-Hard optimisation problems does not require simulation or ongoing interaction with a `real' environment.
 Although it can be difficult to know ahead of time, it's worth considering whether the problem is adversarial in some way; an ongoing control problem is altogether different from an offline optimisation task.
 It's unlikely that in an optimised chip floorplanning task, for instance, that target programs will immediately start acting differently---compare this to a network where our actions immediately induce varied modes in \glspl{acr:cca}.
 
@@ -37,7 +37,7 @@ State and action space definitions have potent effects, are inherently problem-s
 
 Recent research aims to investigate whether more general approaches are feasible, by using \gls{acr:ml} inference to convert input vectors and decisions into a performance metric~\parencite{DBLP:conf/nsdi/FuGMR21}---effectively as a black-box form of `what-if' analysis.
 Ideally, there would be no case-specific design elements beyond the chosen input features, offering accurate performance prediction would function for many separate applications.
-Looking at this task on scheduling, planning, and placement tasks\sidenote{Generally, the varied parameter which must be optimised is some form of compute allocation, e.g., the number of servers or executors given to a task set.}, they find that inbuilt optimisations add irreducible variance to the learning problem, even when the task is made as simple as possible.
+Looking at scheduling, planning, and placement tasks\sidenote{Generally, the varied parameter which must be optimised is some form of compute allocation, e.g., the number of servers or executors given to a task set.}, they find that inbuilt optimisations add irreducible variance to the learning problem, even when the task is made as simple as possible.
 Non-deterministic behaviour (i.e., stochastic load balancing) is for instance an obvious source of noise, but threshold-based behaviours also cause significant discontinuities.
 Even after diagnosis of these noise sources (negating the desired ease-of-use), input-sensitive tasks still require probabilistic \gls{acr:ml} methods, which can be harder to reason about or act on.
 
@@ -54,8 +54,8 @@ Many classical \gls{acr:ml} approaches such as \glspl{acr:svm} or decision trees
 These comprise repeated high-dimensional linear transforms of input data (e.g., by matrices containing thousands of values), interposed with non-linear activation functions.
 \glspl{acr:cnn} and \glspl{acr:lstm} complicate this logic further by introducing learnt convolution filters and temporal relationships, respectively.
 On some data classes such as images, it is possible to visualise learnt feature activations~\parencite{cnn-features-distil}, which typically manifest as shapes or patterns that make some degree of sense to a human observer.
-Network state spaces, however, are far less intuitive, so feature activations in NNs are less obviously meaningful and still fail to allow configurability.
-Tools such as \emph{LIME}~\parencite{DBLP:conf/kdd/Ribeiro0G16} can reveal the relative importance of each feature in such cases, but it can still require in-depth testing to realise that (and not \emph{why}) an agent never chooses some actions in spite of their optimality~\parencite{DBLP:conf/sigcomm/DethiseCK19}.
+Network state spaces, however, are far less intuitive, so feature activations in \glspl{acr:nn} are less obviously meaningful and still fail to allow configurability.
+Tools such as \emph{LIME}~\parencite{DBLP:conf/kdd/Ribeiro0G16} can reveal the relative importance of each feature in such cases, but it can still require in-depth testing to realise that (let alone \emph{why}) an agent never chooses some actions in spite of their optimality~\parencite{DBLP:conf/sigcomm/DethiseCK19}.
 %?? Interpretability, particularly for more powerful fn approxes
 %?? Main problem? Can'y humanly visualise the transformations on input data
 %?? Why? High-dimensional transfomrations w/ millions or billions of parameters, interposed with non-linear transformations
@@ -77,7 +77,7 @@ Unfortunately, the hypergraph representation fails to explain or simplify the lo
 Verification has a broad set of meanings in \gls{acr:ml} research, from investigating security properties (i.e., adversarial robustness\sidenote{I discuss verification as an approach towards adversarial example resistance in \cref{sec:ddn-security}.}) to more global guarantees of input and output properties.
 One promising line of work in this area applies \gls{acr:smt} solvers to smaller \glspl{acr:dnn} for, e.g., safety and liveness constraints on inputs~\parencite{DBLP:conf/cav/KatzBDJK17,DBLP:conf/cav/KatzHIJLLSTWZDK19}.
 These verification techniques are powerful in that they can guarantee a desired property is upheld (or produce a distinct counterexample where it is not), although recalling that \gls{acr:smt} solution is \textsf{NP}-Hard, this comes at a high execution cost.
-Luckily, most \gls{acr:ddn} use cases considered in this thesis apply small-to-moderately sized networks, to which such verification is well-suited---moreover, latency and throughput demands incentivise the use of smaller \glspl{acr:nn}.
+Luckily, most \gls{acr:ddn} use cases considered by this thesis apply small-to-moderately sized networks, to which such verification is well-suited---moreover, latency and throughput demands incentivise the use of smaller \glspl{acr:nn}.
 Extending this towards \gls{acr:rl} is trickier, given that we must now verify that properties hold over state trajectories of arbitrary length.
 In addition, the onus now falls on system operators to design suitable state transition functions (i.e., accurate system simulations) to model how a system evolves in response to an action.
 With these primitives, some degree of \gls{acr:drl} verification is possible via bounded model checking~\parencite{DBLP:conf/sigcomm/KazakBKS19,DBLP:conf/sigcomm/EliyahuKKS21} (checking run-lengths of $n$ states from a set of initial states), and $k$-induction~\parencite{drl-verification-2}.
@@ -87,7 +87,7 @@ In addition to the need to define state transition dynamics using only linear fu
 
 %?? As in use cases, can buy some of this back by using \gls{acr:ddn} to choose params for an existing approach
 It's worth noting that, as with several approaches examined in \cref{sec:use-cases}, a hybrid approach can be useful in reducing the impact of both these concerns.
-By augmenting an algorithmic or heuristic approach with \gls{acr:ddn} to compute optimal parameter choices, it can be far more reasonable in practice to understand how the system on the whole will behave.
+By augmenting an algorithmic or heuristic approach with \gls{acr:ddn} to compute optimal parameter choices, it can be far more reasonable in practice to understand how a system on the whole will behave.
 Equally, it becomes easier to bound such choices within a safe range as needed.
 
 %\subsection{Eh??}
