@@ -1,4 +1,4 @@
-\approachshort{} is implemented as a collection of programs targetting the Netronome \gls{acr:nfp} family of SmartNICs, using a mixture of the proprietary Micro-C language and P4.
+\approachshort{} is implemented as a collection of programs targeting the Netronome \gls{acr:nfp} family of SmartNICs, using a mixture of the proprietary Micro-C language and P4.
 As this work's implementation relies upon a good amount of platform-specific intrinsics and optimisations, it is necessary to explain some of the \gls{acr:nfp}'s basic architectural details.
 These \gls{acr:soc} devices achieve scalable packet processing through sheer parallelism.
 Most of the chip is composed of \glspl{acr:me}---physical cores---grouped into \emph{islands} of 4 or 12 \glspl{acr:me}.
@@ -100,14 +100,14 @@ If $\epsilon$ is reduced by an amount smaller in magnitude than the current numb
 \subsection{Agent-environment communication}\label{sec:agent-environment-communication}
 \approachshort{} uses \gls{acr:mpmc} messaging channels to communicate with other elements; be they P4 programs on the packet path, or other on-chip analysis and control modules.
 %Through these channels a system \emph{pushes} state vectors, reward measures, and setup packets as inputs, and \emph{pulls} a stream of state-action pairs as outputs.
-This allows decisions to be made asynchronously---preventing packet stalling---and allowing many RL agents to be used if desired.
-The key insight of this mechanism is that on-chip reward and state signals enjoy first-class support in the same manner as packets from the P4 dataplane, allowing agents to act on environmental signals from other on-NIC/chip asynchronous processes or the controller.
+This allows decisions to be made asynchronously---preventing packet stalling---and allows many \gls{acr:rl} agents to be used if desired.
+The key insight of this mechanism is that on-chip reward and state signals enjoy first-class support in the same manner as packets from the P4 dataplane, allowing agents to act on environmental signals from other on-\gls{acr:nic} and -chip asynchronous processes, or the controller itself.
 As such, \approachshort{} can receive input from P4 \texttt{extern}s or other, dedicated off-path flow state measurement applications.
 
 This implementation uses platform-specific \gls{acr:ipc}---\emph{EMEM ring buffers}---as the basis for \gls{acr:mpmc} communication over the \inring{} and \outring{} rings.
 These are \gls{acr:nfp}-intrinsic primitives which allow an arbitrary number of listener threads to await the arrival of any work item using hardware signalling.
 While this signalling and delivery is specially hardware-accelerated, this comes at a cost of strict message body size limits; unfortunately this falls short of the maximum state-action pair size, let alone arbitrary policy packet payloads.
-To work around this \approachshort{} maintains a freelist of byte slices for both the \inring{} and \outring{} channels, while EMEM ring messages themselves carry lengths and pointers received from the freelist alongside any preliminary P4 parser data.
+To work around this, \approachshort{} maintains a freelist of byte slices for both the \inring{} and \outring{} channels, while EMEM ring messages themselves carry lengths and pointers from the freelist alongside any preliminary P4 parser data.
 As \gls{acr:pdp} hardware lacks dynamic memory allocation, large buffers are allocated at compile time with many fixed-size slices; \inring{}'s buffer slots are sized to hold \gls{acr:mtu}-size packets, while \outring{}'s slots hold enough bytes to store the largest possible state-action pair.
 The \approachshort{} controller with the lowest index locks each of these lists and populates it using all contained slices, from which point any other thread in the SmartNIC may lock the structure to request or return a valid message pointer.
 This costs a median \qtyrange{126}{140}{\nano\second} communication time for pointer-sized (\qty{4}{\byte}) messages depending on the locality of the work producer and consumer, with cross-island messages having the higher costs (\cref{tab:nfp-ipc-costs}).
@@ -189,7 +189,7 @@ As a result, lower bit depth tile representations (\qtylist{8;16}{\bit}) ultimat
 Is there a way to take advantage of this to gain additional throughput for these tile widths?
 That is, to find a bit-packing strategy which enables multiple additions to be performed in a single atomic operation as a makeshift form of \gls{acr:simd}?
 While this is doable, the main issue is that additions are performed on signed data in effectively an unsigned way, as the carry between arbitrary bit pairs cannot be disabled.
-\emph{Unsigned} overflows are a common occurrence when operating on signed data in this manner\sidenote{Recall that \mintinline{rust}{-1i8}$\rightarrow$\mintinline{rust}{0i8} is also \mintinline{rust}{0xffu8}$\rightarrow$\mintinline{rust}{0x00u8}. As we can reasonably expect individual tile preferences for each action to oscillate between positive and negative, each sign change will trigger an unsigned overflow.}: na\"{i}ve packing will cause the sign changes of adjacent computations to `bleed into' adjacent fields.
+\emph{Unsigned} overflows are a common occurrence when operating on signed data in this manner\sidenote{Recall that \mintinline{rust}|-1i8|$\rightarrow$\mintinline{rust}|0i8| is also \mintinline{rust}|0xffu8|$\rightarrow$\mintinline{rust}|0x00u8|. As we can reasonably expect individual tile preferences for each action to oscillate between positive and negative, each sign change will trigger an unsigned overflow.}: na\"{i}ve packing will cause the sign changes of adjacent computations to `bleed into' neighbouring fields.
 In the non-atomic case a single packing bit suffices between any pair of values, all of which may be masked out in a single \gls{acr:alu} operation.
 In the atomic case, $n$~\unit{\bit} padding fields allow at most $2^n-1$ additions from separate tasks without clearing.
 Having \num{136} tasks and \num{31} workers we require at least \qty{8}{\bit} padding to elide all atomic clears, or \qty{5}{\bit} if every addition is followed by a test-clear operation on all padding bits.
@@ -202,42 +202,42 @@ This can be useful on other platforms where atomic operations are much more expe
 	\centering
 	\begin{bytefield}{32}
 		\bitheader{0,7,8,15,16,23,24,31} \\
-		\bitbox{16}[]{\mintinline{rust}{i16}$_0$} &
+		\bitbox{16}[]{\mintinline{rust}|i16|$_0$} &
 		\bitbox{8}[bgcolor=bitscratch]{} &
-		\bitbox{8}[]{\mintinline{rust}{i16}$_1$} \\
-		\bitbox{8}[]{...\mintinline{rust}{i16}$_1$} &
+		\bitbox{8}[]{\mintinline{rust}|i16|$_1$} \\
+		\bitbox{8}[]{...\mintinline{rust}|i16|$_1$} &
 		\bitbox{8}[bgcolor=bitscratch]{} &
-		\bitbox{16}[]{\mintinline{rust}{i16}$_2$}
+		\bitbox{16}[]{\mintinline{rust}|i16|$_2$}
 	\end{bytefield}
 
 	\vspace{1em}
 	\begin{bytefield}{32}
 		\bitheader{0,7,8,15,16,23,24,31} \\
 		\bitbox{8}[bgcolor=bitscratch]{} &
-		\bitbox{8}[]{\mintinline{rust}{i8}$_0$} &
+		\bitbox{8}[]{\mintinline{rust}|i8|$_0$} &
 		\bitbox{8}[bgcolor=bitscratch]{} &
-		\bitbox{8}[]{\mintinline{rust}{i8}$_1$} \\
+		\bitbox{8}[]{\mintinline{rust}|i8|$_1$} \\
 		\bitbox{8}[bgcolor=bitscratch]{} &
-		\bitbox{8}[]{\mintinline{rust}{i8}$_2$} &
+		\bitbox{8}[]{\mintinline{rust}|i8|$_2$} &
 		\bitbox{8}[bgcolor=bitscratch]{} &
-		\bitbox{8}[]{\mintinline{rust}{i8}$_3$}
+		\bitbox{8}[]{\mintinline{rust}|i8|$_3$}
 	\end{bytefield}
 
 	\vspace{1em}
 	\begin{bytefield}{32}
 		\bitheader{0,5,6,7,8,10,11,15,16,18,19,23,24,29,30,31} \\
-		\bitbox{8}[]{\mintinline{rust}{i8}$_0$} &
+		\bitbox{8}[]{\mintinline{rust}|i8|$_0$} &
 		\bitbox{8}[bgcolor=bitscratch]{} &
-		\bitbox{8}[]{\mintinline{rust}{i8}$_1$} &
+		\bitbox{8}[]{\mintinline{rust}|i8|$_1$} &
 		\bitbox{6}[bgcolor=bitscratch]{} &
-		\bitbox{2}[]{\mintinline{rust}{i8}$_2$} \\
-		\bitbox{6}[]{...\mintinline{rust}{i8}$_2$} &
+		\bitbox{2}[]{\mintinline{rust}|i8|$_2$} \\
+		\bitbox{6}[]{...\mintinline{rust}|i8|$_2$} &
 		\bitbox{5}[bgcolor=bitscratch]{} &
-		\bitbox{8}[]{\mintinline{rust}{i8}$_3$} &
+		\bitbox{8}[]{\mintinline{rust}|i8|$_3$} &
 		\bitbox{5}[bgcolor=bitscratch]{} &
-		\bitbox{8}[]{\mintinline{rust}{i8}$_4$}
+		\bitbox{8}[]{\mintinline{rust}|i8|$_4$}
 	\end{bytefield}
-	\caption[Bit-packing layouts for emulated SIMD addition using atomics.]{Bit-packing layouts within a big-endian \qty{64}{\bit} integer required to emulate \gls{acr:simd} addition using atomics. Packing requirements prevent the ideal \qtylist{4;8}{\times} throughput gain for \qtylist{16;8}{\bit} data we'd expect from hardware \gls{acr:simd}. These layouts achieve \qtylist{3;4;5}{\times} \gls{acr:alu} throughput, where the latter \mintinline{rust}{i8} layout requires an explicit atomic clear after every addition. These maximise the count of byte-aligned data, though this cannot be guaranteed as we require at least $\log_2(\mathit{workers})$ bits of internal padding.\label{fig:bb-simd}}
+	\caption[Bit-packing layouts for emulated SIMD addition using atomics.]{Bit-packing layouts within a big-endian \qty{64}{\bit} integer required to emulate \gls{acr:simd} addition using atomics. Packing requirements prevent the ideal \qtylist{4;8}{\times} throughput gain for \qtylist{16;8}{\bit} data we'd expect from hardware \gls{acr:simd}. These layouts achieve \qtylist{3;4;5}{\times} \gls{acr:alu} throughput, where the latter \mintinline{rust}|i8| layout requires an explicit atomic clear after every addition. These maximise the count of byte-aligned data, though this cannot be guaranteed as we require at least $\log_2(\mathit{workers})$ bits of internal padding.\label{fig:bb-simd}}
 \end{figure}
 
 \paragraph{Initialisation}
@@ -350,7 +350,7 @@ The control packet generation library and evaluation frameworks which build upon
 I use a simple first-fit work placement algorithm, \cref{alg:parsa-schedule}, run in \approachshort{}-\Coopfw{} whenever a full configuration is installed.
 This places the largest work item into the least loaded minion context of the least loaded \gls{acr:me}, and assigns an equal number of tasks among all \glspl{acr:me} where possible.
 Each work item is a separate \emph{tiling} over a list of dimensions, where it can be reasonably assumed that these items are sorted by dimension count---thus, the reversed work list places the most computationally expensive tasks first.
-The approximate cost of any work item according to its dimension count and memory location was empirically measured offline and fed back into ther scheduler---a mean \qtylist{5.2;6.2;9.7;11.0}{\micro\second} for bias (0D), CLS (1D), CTM ($\le$2D) and IMEM ($\le$4D) tilings respectively.
+The approximate cost of any work item according to its dimension count and memory location was empirically measured offline and fed back into the scheduler---a mean \qtylist{5.2;6.2;9.7;11.0}{\micro\second} for bias (0D), CLS (1D), CTM ($\le$2D) and IMEM ($\le$4D) tilings respectively.
 Finally, this scheduler weighs the total cost per core based on the number of minion threads available.
 This weighting specifically accounts for the controller thread on the first core.
 To work around some fairly opaque waking behaviour between contexts on each \gls{acr:me}, I apply a small penalty to minion contexts with a lower internal ID.

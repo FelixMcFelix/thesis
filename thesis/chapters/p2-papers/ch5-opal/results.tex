@@ -40,7 +40,7 @@ As anticipated, the \Coopfw{} strategy is key in achieving serviceable throughpu
 By limiting the available workers in software, I show how \Coopfw{}'s policy update time (thus  online throughput---\cref{fig:vary-core}) and state-action latency (\cref{fig:vary-core-latency}) scale with available cores.
 While \Coopfw{} always outperforms the host-based floating point implementations according to the earlier findings, we observe that there are two distinct crossover points which must be met to overcome our own \Indfw{}; \num{8} workers for online throughput, and \num{3} workers for state-action latency.
 Some artefacts of the hardware environment and design choices are visible, such as the addition of new physical cores being more significant than contexts, and the presence of some schedule bottlenecks.
-Most importantly however, \Coopfw{}'s resource demand is tunable at compile time to meet the online training rate and/or action latency required by a task/environment.
+Most importantly however, \Coopfw{}'s resource demand is tunable at compile time to meet the online training rate and action latency required by a task or environment.
 
 \begin{figure}
 	\resizebox{\resultplotwidth}{!}{
@@ -107,17 +107,17 @@ This matches \qty{32}{\bit} becoming dominant in complex workloads: higher dimen
 Most of the I/O comes \emph{after} this step, causing \gls{acr:alu} use to dominate.
 This also explains why \qty{32}{\bit} becomes the best choice at different policy complexities for online (\cref{fig:vary-work}, 10 dims) and offline (\cref{fig:vary-work-latency}, 3 dims) agents, where hashtable accesses and a \texttt{memcpy} of the state vector fall into the serial portion of the online algorithm.
 Smaller bit depths still give a \qtyrange{2}{4}{\times} saving in memory for policy storage (enabling more fine-grained or complex policies), in exchange for slightly worse latency and throughput.
-To overcome this, we investigated \gls{acr:simd}-like bit-stuffing of values into a single word during atomic writeback (as the platform offers both \qtylist{32;64
+To overcome this, I investigated \gls{acr:simd}-like bit-stuffing of values into a single word during atomic writeback (as the platform offers both \qtylist{32;64
 }{\bit} atomic addition) as presented in \cref{sec:intra-agent-communication}.
 Unfortunately, manipulating tiles into the correct format added \qty{10}{\percent} extra overhead.
 
 \subsection{Work allocation}\label{sec:opal-results-work-alloc}
-\Cref{fig:work-alloc-32} shows that our heuristic allocator (\emph{Balanced}) is key in achieving consistent sub-\qtylist{35;65}{\micro\second} latencies and update times, respectively.
+\Cref{fig:work-alloc-32} shows that our heuristic allocator (\emph{Balanced}, \cref{alg:parsa-schedule}) is key in achieving consistent sub-\qtylist{35;65}{\micro\second} latencies and update times, respectively.
 The trend is repeated for all bit depths.
 The constant difference between \emph{Action} and \emph{Update Prep} scales with bit depth, matching storage and lookup work in the serial portion of \emph{ParSa} (\cref{fig:work-alloc-allbit}).
 The severe underperformance of the \emph{Na\"{i}ve} allocator confirms that work item complexity is correlated with its index, as batching work in contiguous chunks gives some workers only high-dimensionality tilings.
 The minor gap in lower bound performance between the \emph{Random} and \emph{Balanced} allocators suggests that further optimisations can be made.
-We expect that closing or exceeding this gap may require more complex modelling of hardware thread interactions, which lies far beyond the scope of in-NIC scheduling.
+I expect that closing or exceeding this gap may require more complex modelling of hardware thread interactions, which lies far beyond the scope of in-\gls{acr:nic} scheduling.
 Some additional complexity may be tolerated, subject to code store limits---scheduling runs exactly once per configuration change, so does not impact per-action code.
 
 \begin{figure}
@@ -138,7 +138,7 @@ Some additional complexity may be tolerated, subject to code store limits---sche
 	\resizebox{\resultplotwidth}{!}{
 		\includegraphics{plots/opal/rl-perf-tester/vary-core-tput-on-per}
 	}
-	\caption[\approachshort{}-\coopfw{}'s online throughput per core as the number of worker threads is varied.]{\approachshort{}-\coopfw{} online throughput per core as the number of worker threads is varied. Additional threads exhibit diminishing return on overall throughput for a given policy size. Note that the spikes of increasing per-core value correspond to the scheduler bottlenecks observed in \cref{fig:vary-core}.\label{fig:tput-per-core}}
+	\caption[\approachshort{}-\coopfw{}'s online throughput per core as the number of worker threads is varied.]{\approachshort{}-\coopfw{} online throughput per core as the number of worker threads is varied. Additional threads exhibit diminishing returns on overall throughput for a given policy size. Note that the spikes of increasing per-core value correspond to the scheduler bottlenecks observed in \cref{fig:vary-core}.\label{fig:tput-per-core}}
 \end{figure}
 
 An interesting aspect of \Coopfw{} and \emph{ParSa} is that adding cores has both diminishing returns and key thresholds to pass.
@@ -162,24 +162,24 @@ Referring to \cref{fig:state-slip}, we take $t_2$ from \cref{tab:lats} for host 
 	\emph{This gives an end-to-end inference latency of \qty{572.9}{\micro\second}}.
 \end{description}
 Using these estimates, in-\gls{acr:nic} \gls{acr:rl} inference offers \qtylist{14.96;16.54}{\times} speedups in latency over collector and \gls{acr:vnf} deployments respectively (assuming no steering cost in either case).
-The \glspl{acr:rtt} in our earlier microbenchmark---\cref{fig:xdp-microbench}---are slightly more complex to compare against; they include the wire times and send-side costs of an additional host machine (a minor form of steering).
+The \glspl{acr:rtt} in our earlier microbenchmark---\cref{fig:xdp-microbench}---are slightly more complex to compare against; they include the \gls{acr:mac} times, wire times, and send-side costs of an additional host machine (a minor form of steering).
 What is clear, however, is that raw \approachshort{} inference costs are very similar to those required to reach a host machine via \gls{acr:xdp} and its related technologies\sidenote{To reiterate, the median \glspl{acr:rtt} were around \qty{19}{\micro\second} for \gls{acr:dpdk}, \qty{30.25}{\micro\second} for Native \gls{acr:xdp}, and \qty{32.5}{\micro\second} for \texttt{AF\_XDP}.} which have sprung up in more recent years.
 We also contrast these against \gls{acr:drl} policies on network tasks, which can take \qty{3}{\milli\second} to compute~\parencite{DBLP:journals/corr/abs-1910-04054}---2 orders of magnitude above \approachshort{} with identically sized (20-dim) input vectors.
 %In the name of fairness, we assume that rule installation uses same mechanism we recommend, but show how bad it can get? I.e. with rule installation costs etc.
 
 \subsection{Co-existence with the dataplane}
-The traffic generation setup met \qty{40}{\giga\bit\per\second} for packet sizes $\ge$\qty{256}{\byte}.
+The traffic generation setup met \qty{40}{\giga\bit\per\second} for packet sizes \qty{\ge256}{\byte}.
 %For frame sizes of \qtylist{64;128;256}{\byte} input traffic rates were \qtylist{17.4;32.9;37.0}{\giga\bit\per\second} respectively (\qtylist[per-symbol=p,sticky-per=true]{33.9;32.2;18.1}{\mega\packet\per\second}).
 For frame sizes of \qtylist{64;128}{\byte}, input traffic rates were \qtylist{17.4;32.9}{\giga\bit\per\second} respectively (\qtylist[per-symbol=p,sticky-per=true]{33.9;32.2}{\mega\packet\per\second}).
 Passing this traffic over the \gls{acr:nfp} device running \approachshort, no packet losses were incurred at any rate of \gls{acr:rl} actions.
 
 \Cref{fig:dataplane-heat} shows the effect of \gls{acr:rl} workloads on the round-trip latencies of cross traffic.
-As observed latencies do not obey a normal distribution (particularly \qtylist{256;1518}{\byte}, which are bimodal), I employ a one-tailed \emph{Mann-Whitney U test} to mark statistically significant population increases in latency ($p < 0.05$) with a ``+''.
+As observed latencies do not obey a normal distribution (particularly \qtylist{256;1518}{\byte}, which are bimodal), I employ a one-tailed \emph{Mann-Whitney U test} to mark statistically significant population increases in latency ($p <$~\num{0.05}) with a ``+''.
 In general, statistically significant latency increases concentrate around smaller packet sizes.
 All (bar one) of these affected \nth{99} percentile latencies by under \qty{0.38}{\percent} (at most \qty{78}{\nano\second}).
 This slight degradation can be explained by increased pressure on the \gls{acr:nfp}'s \gls{acr:cpp} bus, which is responsible for handling cross-island accesses to memory (particularly IMEM/EMEM) and other resources.
 \approachshort{} places load on the \gls{acr:cpp} bus through its \inring{}/\outring{} EMEM rings and last-tier policy accesses.
-This also explains the sensitivity of \qty{256}{\byte} packets to \approachshort{}---the \gls{acr:nfp} P4 toolchain segments packets, storing metadata (e.g., \gls{acr:mac} prepend) and the first bytes of a packet in a \qty{256}{\byte} CTM block and parking their payloads in EMEM.
+This also explains the sensitivity of \qty{256}{\byte} packets to \approachshort{}---the \gls{acr:nfp} P4 toolchain segments packets, storing metadata (e.g., \gls{acr:mac} prepend) and the first bytes of a packet in a \qty{256}{\byte} CTM block while parking their payloads in EMEM.
 \qty{256}{\byte} packets overshoot this due to metadata, causing small I/O accesses at a high rate for packets sized around this cutoff.
 %Regardless, this effect is small when observed.
 
@@ -270,7 +270,7 @@ Full, in-network packet tagging and classification by pre-trained \glspl{acr:bnn
 N3IC achieves packet inference in \qty{45}{\micro\second} on the \gls{acr:nfp}, and \qty{0.3}{\micro\second} on NetFPGA for \qty{256}{\bit} inputs.
 Comparatively, \approachshort{}-\Coopfw{} can process an identically-sized input (8-dim) in a median \qty{13.83}{\micro\second}.
 This work handles larger inputs (\qty{640}{\bit}) at lower latencies (\qty{34}{\micro\second}), and offers online learning.
-We expect that a NetFPGA implementation of \approachshort{} would enjoy a similar factor of speedup.
+I expect that a NetFPGA implementation of \approachshort{} would enjoy a similar factor of speedup.
 No works investigate the runtime training of \gls{acr:bnn} function approximators in-\gls{acr:nic}.
 
 \textcite{langlet-ml-netronome} has shown the viability of \gls{acr:nn} inference using \qty{64}{\bit} quantisation on the \gls{acr:nfp}, using \emph{in-path} compute rather than our asynchronous model.

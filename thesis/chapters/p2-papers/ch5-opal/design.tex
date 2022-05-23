@@ -17,7 +17,7 @@ Its design is based on meeting the following constraints:
 %	\item[Several flows?] Blah blah blah.
 \end{description}
 
-To meet these constraints, \approachshort{} operates alongside a co-hosted P4 dataplane in a SmartNIC, running asynchronously with respect to the packet forwarding path, with its full interaction model given by \cref{sec:opal-sys-model}.
+To meet these constraints, \approachshort{} operates alongside a co-hosted P4 dataplane in a SmartNIC, running asynchronously with respect to the packet forwarding path, with its full interaction model given in \cref{sec:opal-sys-model}.
 To achieve both inference and learning I employ fixed-point $Q$ numbers as the main data format, and justify this against data formats in other embedded environments (\cref{sec:opal-data-format}).
 Classical \gls{acr:rl} algorithms and function approximation schemes---semi-gradient Sarsa and tile coding (\cref{sec:tile-code,sec:demo-rl-sarsa})---enable learning under the memory and computational constraints of \gls{acr:pdp} hardware. This considers different parallel processing strategies, as well as the conversion to a wait-free algorithm enabled by using $Q$ numbers as the primary data format (\cref{sec:opal-algorithm}).
 
@@ -44,7 +44,7 @@ This would introduce new issues in concurrent access, work splitting, and altere
 
 \approachshort{} is a general, task-independent framework for in-network, online training and execution of \emph{any reinforcement learning agent design} using classical methods.
 \approachshort{} is agnostic to the meaning of state vectors it receives as inputs and the actions it produces, which are employed by other functional units or the dataplane.
-However, in-NIC/in-network execution specifically benefits packet-, flow-, and network-level learning, control, and optimisation tasks.
+However, in-\gls{acr:nic} or in-network execution specifically benefits packet-, flow-, and network-level learning, control, and optimisation tasks.
 \approachshort{} meets the above goals by operating as a system which exists \emph{in parallel} to a co-hosted P4 dataplane.
 \Cref{fig:netro-arch} describes and demonstrates the requisite interaction model; state extraction (i.e., flow telemetry collection and processing) occurs in the ingress and egress \glspl{acr:mat} of the P4 dataplane.
 The packet pipeline of a P4 dataplane then communicates with \approachshort{} via \texttt{extern} plugins using \inring{} (state, configuration) messages to reconfigure the agent or request inference, and \outring{} (action) messages which carry output state-action pairs for the environment to make use of.
@@ -153,7 +153,7 @@ To provide the needed functionality and runtime configuration, \approachshort{}'
 \subsection{Data format}\label{sec:opal-data-format}
 %?? data format selection vs alternatives
 To implement online learning such as in \gls{acr:rl}, we require a data type which allows us to perform numerical computation without an \gls{acr:fpu}---principally, to compute the values in action preference lists.
-Moreover, to achieve online learning we require a format which is both fast to work with (to minimise processing latencies), and suited to represent gradients and temporal difference values i.e., incremental changes to stored policy weights.
+Moreover, to achieve online learning we require a format which is both fast to work with (to minimise processing latencies), and suited to represent gradients and temporal difference values, i.e., incremental changes to stored policy weights.
 Recalling the discussion in \cref{sec:numerical-representations-for-embedded-ml}, we employ \emph{fixed-point arithmetic}; it offers both the versatility needed to be easily reconfigurable, and it maps simply to \gls{acr:alu} operations.
 For instance, only multiplications and additions require additional bitshifts for base pre-/post-conversion, while additions and subtractions require no additional overhead.\sidenote{Depending on the system design, (hyper-)parameters used only in divisions can be replaced with right bitshifts if we restrict their allowed values to negative powers of 2. This comes at the cost of system flexibility, and as such \approachshort{}'s implementation doesn't make use of this possibility.}
 
@@ -181,7 +181,7 @@ In addition to the prohibitive complexity of building this data structure on-dev
 I instead suggest in general that \texttt{extern}s or datapath stages which apply \gls{acr:rl} actions to packets should maintain a small store of state-action pairs, and periodically send these back to the controller for batch installation.
 This ensures that the majority of installed rules benefit from faster hardware-accelerated lookups, while preventing installation delay on the newest decisions.
 Platforms such as Intel Tofino greatly simplify this, where Tofino Native Architecture intrinsics such as \emph{Action Profiles/Selects} allow a P4 action to be chosen based on a register value (e.g., an \gls{acr:rl} action).
-Future \glspl{acr:nic} and SmartNICs may expose support for runtime table modification via the Portable \gls{acr:nic} Architecture~\parencite{p4-pna} as discussed in \cref{sec:frontiers-in-programmable-networks}, but at present these proposals are and under constant reconsideration and are far too nascent to seriously consider.
+Future \glspl{acr:nic} and SmartNICs may expose support for runtime table modification via the Portable \gls{acr:nic} Architecture~\parencite{p4-pna} as discussed in \cref{sec:frontiers-in-programmable-networks}, but at present these proposals are under constant revision and are far too nascent to seriously consider.
 
 \subsection{Algorithm}\label{sec:opal-algorithm}
 To enable online in-\gls{acr:nic} learning in spite of the computational limits of \gls{acr:pdp} hardware, we must return to \emph{classical} \gls{acr:rl} methods and models.
@@ -215,13 +215,13 @@ The final action preference list is given by \cref{eqn:lin-approx}, which we can
 $$
 \mathbf{a} = \wvec{}^{\top} \mathbf{x} = \wvec{}\left[h_1\right] + \wvec{}\left[h_2\right] = \sum_{h\in{}H}\wvec{}\left[h\right]
 $$
-As a result, tile coded \gls{acr:rl} inference may be subdivided into several distinct computations tile indices whose results are added together as a final aggregation step.
+As a result, tile coded \gls{acr:rl} inference may be subdivided into several distinct computations of tile indices whose results are added together as a final aggregation step.
 Most of the work in each task arises from computing the tile index hit by the state vector.
 Crucially, we have shown that memory regions of each tiling have no overlap with one another by construction.
 Each memory address is visited and owned by exactly one task---hence, there is no concurrent access to policy values---and so no locks are required to protect each region of the policy.
 \Cref{fig:opal-par-tilecode} demonstrates this process visually.
 
-When updating the policy we need only monitor the number of completed tasks rather perform than a final aggregation step.
+When updating the policy we need only monitor the number of completed tasks rather than perform a final aggregation step.
 To see this, we specialise Sarsa's update step (\cref{eqn:sg-sarsa-update}) using our list of hit indices $H$.
 After centrally computing a \gls{acr:td} value $\delta_t$ using $\mathbf{x}$ and a subsequent $\mathbf{x}'$, the action $a$ invoked by $\mathbf{x}$, and a learning rate $\alpha$, we update the policy values involved in the previous decision (using Python slice notation for simplicity):
 \begin{align*}
@@ -345,7 +345,7 @@ In the case that action inference is requested, the policy hit index is computed
 As described above, each action value is atomically added to its matching position in the shared preference list \emph{values} (\crefrange{alg:parsa:parminion-liststart}{alg:parsa:parminion-listend}).
 When an update is requested, all tile hit indices are recomputed (\cref{alg:parsa:parminion-acthit2}), and an adjustment $\delta$ is added to the selected action in each case (\cref{alg:parsa:parminion-update}).
 Once all subtasks have been completed, this thread's completion is recorded (\cref{alg:parsa:parminion-lastack}).
-While it is apparent that the indices of hit tiles may also be locklessly sent back and stored as part of the execution trace---i.e., by adding an extra value slot per task---the number of subtasks often far exceeds the count values in a state vector.
+While it is apparent that the indices of hit tiles may also be locklessly sent back and stored as part of the execution trace---i.e., by adding an extra value slot per task---the number of subtasks often far exceeds the count of values in a state vector.
 As a result, this results in a larger \texttt{memcpy} in \emph{Ctl} (the serial portion of ParSa), and as such it is more efficient to recompute hit indices in the update step---though this optimisation is useful in the case of the first (non-ParSa) parallelisation strategy.
 
 %?? mention that theoretical worse than just adding more cores due to message passing costs, memfence, compiler reordering etc., size of serial portion, number of constituent tasks. (could split to indiv actions, but need stupid cores for feasible.)

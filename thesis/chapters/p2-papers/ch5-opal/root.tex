@@ -119,10 +119,10 @@ Finally, I summarise the findings of this chapter in \cref{sec:opal-summary}.
 \section{Evaluation}\label{sec:opal-evaluation}
 \input{chapters/p2-papers/ch5-opal/evaluation.tex}
 
-\section{Results and Discussion}\label{sec:opal-results}
+\section{Results and discussion}\label{sec:opal-results}
 \input{chapters/p2-papers/ch5-opal/results.tex}
 
-\section{Potential Integrations}\label{sec:opal-potential-integrations}
+\section{Potential integrations}\label{sec:opal-potential-integrations}
 \input{chapters/p2-papers/ch5-opal/ddos-integration.tex}
 
 %\section{Related Work}
@@ -149,14 +149,14 @@ Finally, I summarise the findings of this chapter in \cref{sec:opal-summary}.
 
 We have seen through this chapter that online \gls{acr:rl} in \gls{acr:pdp} hardware is not only possible, but crucially offers tangible improvements to state-action latency and online learning throughput.
 This confirms one of the key assertions in my thesis statement, namely that \superrecallthesis{2}.
-The key to doing so was to consider the architectural strengths and weaknesses of the target environment---in this case, SmartNIC devices---to creatively choose data formats and algorithms which suit their weaker, \gls{acr:fpu}-free, resource constrained environment rather than the state of the art.
+The key to doing so was to consider the architectural strengths and weaknesses of the target environment---in this case, SmartNIC devices---to creatively choose data formats and algorithms which suit their weaker, \gls{acr:fpu}-free, resource constrained designs rather than the state of the art.
 We have considered an off-path execution model, which places \gls{acr:rl} logic in-\gls{acr:nic}, and have explored its essential role in preventing any impact to packet forwarding performance while enabling access to device-local state.
 By looking at these both, in tandem with the high degree of parallelism that SmartNIC devices engender, the \emph{ParSa} algorithm was developed, which exploits the nature of tile-coded function approximation.
 Moreover, I've shown that it subdivides into neatly disaggregated tasks and is thus wait-free when combined with an atomic aggregation mechanism.
 We have examined two concrete implementations of \approachshort{}---\indfw{} and \coopfw---which apply SmartNICs' parallelism in different ways to tailor state-action latency or online and offline throughput according to operators' needs.
 These are driven by effective methods for storing policy data across a non-uniform memory architecture, efficient internal and external communication, and careful task scheduling.
 \approachshort{} was empirically evaluated on a number of benchmarks sized to large policies, confirming its reduced state-action latency and increased throughput compared to host-based execution.
-Observed performance numbers justified design choices in the scheduler, and validated the off-path execution model's ability to protect other cross-traffic carried by the NIC.
+Observed performance numbers justified design choices in the scheduler, and validated the off-path execution model's ability to protect other cross-traffic carried by the \gls{acr:nic}.
 Moreover, \approachshort{}'s runtime costs exist on a similar order of magnitude to existing \gls{acr:pdp} \gls{acr:ml} works implemented on the same hardware, indirectly confirming its validity and suggesting that sub \unit{\nano\second} execution might be offered by bespoke \gls{acr:fpga} implementations.
 Finally, we have discussed how \approachshort{} might combine with other state-of-the-art \gls{acr:pdp} works to realise the anti-\gls{acr:ddos} agents presented in \cref{chap:ddos-rl} entirely in \gls{acr:pdp} hardware.
 
