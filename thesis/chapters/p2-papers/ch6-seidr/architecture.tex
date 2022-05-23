@@ -23,7 +23,7 @@
 %?? Say Histograms! "choose to focus on distributional characteristics"
 
 Recalling much of the discussion in \cref{sec:pdp-specd-hw}, \gls{acr:pdp} hardware restricts the programming models and datatypes we may make use of, such as \glspl{acr:fpu} which would otherwise be helpful for the kinds of aggregation and statistics we're interested in.
-Chief among them though is the limited low-latency memory---$\mathcal{O}\left(\qty{e1}{\mega\byte}\right)$~\parencite{DBLP:conf/sosp/JinLZSLFKS17}.
+Chief among them though is their limited low-latency memory---$\mathcal{O}\left(\qty{e1}{\mega\byte}\right)$~\parencite{DBLP:conf/sosp/JinLZSLFKS17}.
 In light of these restrictions, histograms become a natural choice.
 They are particularly suited for monitoring \emph{distributional} characteristics of one or more features, an example of which will be introduced shortly.
 Each bucket is encoded as a fixed-size integer, and assuming we know the data ranges and granularity of traffic features we're interested in we can tune maximum bucket counts to fit the desired flow count into a given memory budget.
@@ -183,7 +183,7 @@ Increasing the bucket count requires new firmware installation, as many dataplan
         \label{fig:bbr-hist-app}
     \end{subfigure}
 
-    \caption[Example dataplane histograms showing visible differences in inter-arrival times of selected TCP flavours.]{Example dataplane histograms showing visible differences in inter-arrival times of selected \gls{acr:tcp} flavours. These plots examine sub-\qty{1}{\milli\second} dynamics of two separate flows of \qty{1000}{\mega\bit\per\second} traffic generated according to \cref{sec:seidr-datasets}, over these flows' entire lifecycles. BBR flows have significantly more \glspl{acr:iat} measured in the \qtyrange{100}{800}{\micro\second} band, with additional structural differences outside this significant region.}
+    \caption[Example dataplane histograms showing visible differences in inter-arrival times of selected TCP flavours.]{Example dataplane histograms showing visible differences in inter-arrival times of selected \gls{acr:tcp} flavours. These plots examine sub-\qty{1}{\milli\second} dynamics of two separate flows of \qty{1000}{\mega\bit\per\second} traffic generated according to \cref{sec:seidr-datasets}, over these flows' entire lifecycles. BBR flows have significantly more \glspl{acr:iat} measured in the \qtyrange{100}{800}{\micro\second} band, with additional structural differences outside this region.}
     \label{fig:tcp-hist-app}
 \end{figure}
 
@@ -199,19 +199,19 @@ If we choose to emit histogram packets to the control plane, we may make use of 
 Practically speaking, these allow us to pack and emit arbitrary \texttt{struct}s which are delivered to the attached controller \gls{acr:cpu} over the P4Runtime \gls{acr:api}.
 
 \Cref{alg:measure,fig:arch} instead show a more complex case, where we emit generated histogram packets in-band on the dataplane.
-The \gls{acr:psa} does not have any explicit mechanisms for generating new packets to be carried by the \emph{dataplane}.
+The \gls{acr:psa} does not have any explicit mechanisms for generating new dataplane packets.
 To circumvent this, any packet which would complete a histogram is tagged for cloning at the end of the ingress pipeline, and recirculation at egress (\cref{algline:recirc}).
 This truncated copy returns to \seidr{}'s table, where we enable the relevant headers, change L2/3 fields, and write out the histogram contents (\crefrange{algline:rewrite-start}{algline:rewrite-end}).
-The P4 deparser outputs the new protocol stack at egress, and transmits the histogram UDP packet into the network.
-Although achieved in a somewhat roundabout way, this does have an upside in that it's compatible with the guaranteed core functions of the \gls{acr:psa}.
+The P4 deparser outputs the new protocol stack at egress, and transmits the histogram \gls{acr:udp} packet into the network.
+Although achieved in a somewhat roundabout way, this does have an upside in that it is compatible with the guaranteed core functions of the \gls{acr:psa}.
 In future, event-driven architecture proposals~\parencite{DBLP:conf/hotnets/IbanezABM19} may allow first-class support for packet generation.
 
 There are tangible reasons to prefer emitting histograms to the dataplane in spite of the added complexity and recirculations.
 Although the data volume and packet-per-second reductions offered by \seidr{} histograms are strong, the former case pushes the steering of all generated packets onto a single controller per switch.
 Intuitively, this is expensive and may very well interfere with regular operation of the control plane.
-On the other hand, outputting histograms over the dataplane allows administrators to make use of existing \glspl{acr:asic}-backed infrastructure to load-balance classifications across typical host machines.
-Alternatively, we might forward packets directly to dedicated, network-connected accelerators like \emph{BrainWave}~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18} whose outputs then inform control plane operation\sidenote{We can connect to such accelerators using a dedicated out-port, or by relying on the existing routing infrastructure if we need more flexibility.}.
-Both of these cases spare the control plane of extra load, at modest additional bandwidth cost due to the reduction in telemetry volume.
+On the other hand, outputting histograms over the dataplane allows administrators to make use of existing \gls{acr:asic}-backed infrastructure to load-balance classifications across typical host machines.
+Alternatively, we might forward packets directly to dedicated, network-connected accelerators like \emph{BrainWave}~\parencite{DBLP:conf/isca/FowersOPMLLAHAG18} whose outputs then inform control plane operation.\sidenote{We can connect to such accelerators using a dedicated out-port, or by relying on the existing routing infrastructure if we need more flexibility.}
+Both of these cases spare the control plane of extra load, at modest bandwidth cost due to the reduction in telemetry volume.
 Digests of course have their own benefits: in some \gls{acr:psa} implementations they may be built in the egress pipeline, adding flexibility for how \seidr{} might be integrated with existing forwarding plane designs (rather than forcing its inclusion in the \emph{ingress} pipeline).
 
 %?? outline benefits and drawbacks of each.
@@ -226,7 +226,7 @@ Digests of course have their own benefits: in some \gls{acr:psa} implementations
 %?? THis is probably not a problem with digests.
 %?? WHen emitting to dataplane, however? Will have plat-dependent limits on output. Header size limits, PHV limits, register access reqs that could prevent digest access? Need to mark in-progress histo emissions, progress for each, and emit bitslices spread over multiple egress pkts. Logic: CLONE LOOP WHile still pkts to write, block updates to histo if progress (1 bit?). Limitation: Histo emission freq must be reduced to prevent massive traffic amp. slicing logic could be extended to include the digest case? Are there PHV limits in the digest case that make this really suck?
 
-Another design constraint where these two differ is in header-size limits\sidenote{These designs and implementations again focus on using Netronome \gls{acr:nfp} SmartNICs, as opposed to Tofino \gls{acr:rmt} hardware where such limits do in fact apply.}.
+Another design constraint where these two differ is in header-size limits.\sidenote{These designs and implementations again focus on using Netronome \gls{acr:nfp} SmartNICs, as opposed to Tofino \gls{acr:rmt} hardware where such limits do in fact apply.}
 In the case of digests we can assume that a P4 switch is capable of emitting larger packets: following the specification, switches are free to collate generated digests together before handing them off to the control plane.
 For transit via the dataplane, however, platform-dependent limits will apply to output packets---particularly as we must use rewritten header fields for this purpose.
 This leads to a problem which \cref{alg:measure} does not directly account for: histogram data may be larger than headers allow for.

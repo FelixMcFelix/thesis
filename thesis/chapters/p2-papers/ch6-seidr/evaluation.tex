@@ -34,7 +34,7 @@ Application-limited traffic leads to specific behaviour in \emph{BBR} and some o
 
 \gls{acr:iat} streams are broken down into overlapping sequences of the required length, before being histogrammed as required into \num{100} buckets over \qtyrange{0}{1}{\milli\second}.
 The use of overlapping sequences extends the training and testing sets significantly, while ensuring that larger sequences don't result in a far smaller training corpus.
-Cross-validation occurs on a per-flow basis rather than per-sequence, \ie sequences from the same flow must only appear in \emph{either} the test or training set.
+Cross-validation occurs on a per-flow basis rather than per-sequence, \ie, sequences from the same flow must only appear in \emph{either} the test or training set.
 This ensures stringent data hygiene, and prevents adjacent sequences from inducing overfitting.
 All classifier evaluation which follows uses 4-fold cross-validation.
 The data is comprised of \num{4994} flows (\num{832} in \emph{2-class}), or \numrange{18}{31} million sequences (\numrange{3.2}{5.2} million in \emph{2-class}).
@@ -78,7 +78,7 @@ Naturally, this is undesirable for many network deployments, where easy relocati
     }
 \end{figure}
 
-\Cref{fig:4c-results} shows in the \emph{4-class} case that we observe a sharp loss in classification accuracy, peaking at \qty{59.5 +- 2}{\percent} for \glspl{acr:cnn} and \SI{64.5 +- 1.6}{\percent} for \glspl{acr:knn}.
+\Cref{fig:4c-results} shows in the \emph{4-class} case that we observe a sharp loss in classification accuracy, peaking at \qty[uncertainty-mode=separate]{59.5 +- 2}{\percent} for \glspl{acr:cnn} and \qty[uncertainty-mode=separate]{64.5 +- 1.6}{\percent} for \glspl{acr:knn}.
 This suggests that \gls{acr:iat} histograms don't generalise as an effective feature for other \gls{acr:tcp} flavours.
 Exploratory work with \glspl{acr:lstm} on \gls{acr:iat} streams confirmed that this persists before aggregation.
 Likewise, exclusive pairwise training did not lead to an increase in accuracy.
@@ -118,8 +118,8 @@ In identifying \gls{acr:tcp} \emph{BIC}, \emph{Cubic}, and \emph{Reno}, they ach
 % ??Their work aims to capture the dynamics of loss-based CCAs, but we claim that the shared factor is in fact the reliance upon a sliding congestion window.
 Yet their approach cannot work for detecting \emph{BBR}. 
 \emph{BBR} is not based upon the notion of a sliding congestion window, so there is no parameter $\beta$ to infer.
-Although \gls{acr:iat} histograms are suitable for \emph{BBR} detection due to the intrinsic properties of its algorithm, we envision that our approach could be augmented by using a negative \emph{BBR} classification to trigger \texttt{cwnd} estimation.
-Having seen that some predictive power is preserved for \texttt{cwnd}-based \glspl{acr:cca}, we expect that this will increase the accuracy of a universal classifier.
+Although \gls{acr:iat} histograms are suitable for \emph{BBR} detection due to the intrinsic properties of its algorithm, we envision that this approach could be augmented by using a negative \emph{BBR} classification to trigger \texttt{cwnd} estimation.
+Having seen that some predictive power from \glspl{acr:iat} is preserved for \texttt{cwnd}-based \glspl{acr:cca}, we expect that this will increase the accuracy of a universal classifier.
 It is important, however, that this step be taken adaptively; this incurs higher resource requirements for bytes-in-flight tracking and for efficient handling of potential return-path asymmetry.
 \seidr{} on its own does not add such overheads or operational complexity, and does not require a telemetry system to see or detect \texttt{cwnd} adjustments by the sender.
 
@@ -136,7 +136,7 @@ It is important, however, that this step be taken adaptively; this incurs higher
 Typical test and training times for these \gls{acr:ml} classifiers and problem formulations are lsited in \cref{tab:train-test-times}.
 Training times for \glspl{acr:knn} include the time taken to load and process the entire training set, and are incurred \emph{every time} the model is started on a new host.
 \glspl{acr:cnn} trained for online analysis (flow subsequences) achieve the lowest per-flow inference times, and are increased during offline analysis due to worse batching and cache behaviour on the smaller data set.
-While \glspl{acr:knn} are effective in many cases, I find it is only computationally viable when offline (\ie, full-flow histograms), as the entire test data corpus must remain in memory.
+While \glspl{acr:knn} are effective in many cases, I find they are only computationally viable when offline (\ie, full-flow histograms), as the entire test data corpus must remain in memory.
 A single \emph{4-class} cross-validation fold (\num{2000} packets) required 3 days to train and test over the entire dataset, which was deemed to be outright infeasible.
 In contrast while online \glspl{acr:cnn} take longer to train, they have a considerably lower memory footprint, the training cost is paid only once, and flows may be classified in real-time with milliseconds of total observations.
 

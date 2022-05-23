@@ -34,7 +34,7 @@ Even the most sophisticated software solutions process packets orders of magnitu
 
 %?? So better data and better approximators.
 Following the logic above (and throughout \cref{chap:ddn}), improvements to traffic classification and other \gls{acr:ddn} goals come from two directions: better data and more advanced \gls{acr:ml} techniques.
-While the community has come a long way in enabling in-network \gls{acr:ml}---enabling the in-situ processing that \gls{acr:pdp}-generated data can require---these nascent techniques still have their limits.
+While the community has come a long way in enabling in-network \gls{acr:ml}---and the in-situ processing that \gls{acr:pdp}-generated data can require---these nascent techniques still have their limits.
 Not all \gls{acr:ml} models are small enough to be expressed in these devices.
 Equally, some operational tasks rely on detecting spatial or temporal properties in data which can only be captured by more complex function approximators like \glspl{acr:cnn}, \glspl{acr:rnn}, or \glspl{acr:lstm}.
 Barring the use of experimental architectures like \emph{Taurus}~\parencite{DBLP:conf/asplos/SwamyR0GO22}, we have no mechanism to express these primitives in the dataplane.
@@ -68,7 +68,7 @@ The representation we choose must also preserve structural or temporal features 
 
 % To solve the aforementioned challenges, this paper presents an architecture that marries the precision timing and fast data aggregation capabilities of the dataplane with software classifiers that can run complex classification models due on a the reduced data rate.
 
-To solve these prior challenges, I present \seidr{}\sidenote{Pronounced ``SAY-ther'', \seidr{} (a \emph{cord}, \emph{string}, or \emph{snare}) is an old Norse form of divination magic focussed on the reading and weaving of threads to know or alter fate. The admittedly tenuous connection is that flows are these threads to be read.}, a dataplane-assisted flow classification solution.
+To solve these prior challenges, I present \seidr{}\sidenote{Pronounced ``SAY-ther'', \seidr{} (a \emph{cord}, \emph{string}, or \emph{snare}) is an Old Norse form of divination magic focussed on the reading and weaving of threads to know or alter fate. The admittedly tenuous connection is that flows are these threads to be read.}, a dataplane-assisted flow classification solution.
 The design philosophy of \seidr{} achieves the above goals: dataplane devices create accurately timestamped, aggregated histogram data structures for later analysis, while a scalable software stack performs more complex \gls{acr:ml}-based classification on commodity machines.
 %As in-network aggregation reduces the data rate by a factor of $\sim$\num{740}, our solution can analyse aggregated data from a total rate of \SI{10}{\tera\bit\per\second} original traffic using a single commodity processing machine.
 As a concrete use-case, we look at fine temporal dynamics of \gls{acr:tcp} \glspl{acr:cca}.

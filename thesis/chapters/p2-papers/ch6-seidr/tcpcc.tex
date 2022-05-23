@@ -110,7 +110,7 @@
 
 % Having assigned each packet in a flow with a nanosecond-accurate timestamp ?? tbc
 
-\Cref{fig:tcp-hist-app} suggests that a notable use-case for this type of measurement is detecting \gls{acr:tcp} flows' choice of \gls{acr:cca}.
+\Cref{fig:tcp-hist-app} suggests that a notable use case for this type of measurement is detecting \gls{acr:tcp} flows' choice of \gls{acr:cca}.
 In a \gls{acr:tcp} connection, each machine is free to choose the \gls{acr:cca} it uses to send bytes, and thus how it responds to network congestion signals.
 This choice is entirely local, and so is invisible to both the other machine and the network.
 In data centre networks, operators choose these ahead of time to ensure optimal behaviour, where the environment makes it easy to consistently deploy this choice across all nodes.
@@ -141,10 +141,10 @@ We make use of the following standard classification algorithms on a fixed-size 
 % \fakepara{Long Short-Term Memory~\parencite{DBLP:journals/neco/HochreiterS97} units (LSTMs)} A class of recurrent neural network used for stream classification, forecasting, and prediction of variable-length data. Memory cost is fixed, with longer training times (and more data required) than similarly sized CNNs.
 % Of these, we apply $k$-NN and CNNs to histograms of packet IATs, and LSTMS to raw IAT streams.
 
-When examining \gls{acr:knn} classifiers, I measured accuracy across choices of $k \in \left[2, 8\right]$; I found $k=2$ to be the most effective choice with these input data using the $\ell_2$ metric.
+When examining \gls{acr:knn} classifiers, I measured accuracy across choices of $k \in \left[2, 8\right]$; I found $k=$~\num{2} to be the most effective choice with these input data using the $\ell_2$ metric.
 Our \gls{acr:cnn} architecture is described in \cref{tab:cnn-arch}, using ReLu activation and $1 \times 1$ stride in convolutional layers unless stated otherwise.
 Training occurred over 5 epochs using the Adam optimiser with categorical cross-entropy as a loss metric, and a batch size of \num{64} histograms (\num{8} for full sequences due to the smaller data volume).
-For \emph{BBR vs.\ Cubic}, the complete model consists of \qtyproduct{104898 x 32}{\bit} floating-point parameters (\qty{409.76}{\kibi\byte}), while the full classification task adds a further \num{130} parameters (\qty{0.51}{\kibi\byte}).
+For \emph{BBR vs.\ Cubic}, the complete model consists of \qtyproduct[product-units=single]{104898 x 32}{\bit} floating-point parameters (\qty{409.76}{\kibi\byte}), while the full classification task adds a further \num{130} parameters (\qty{0.51}{\kibi\byte}).
 
 \begin{table}
     \centering
