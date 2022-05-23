@@ -30,7 +30,7 @@ In-network aggregation of per-packet statistics to histograms made the handling 
 
 What is far more interesting, however, are the wider takeaways and lessons learnt in the development of this work, and by collecting together a wide family of solutions falling under the \gls{acr:ddn} or \gls{acr:pdp} umbrella.
 Each has its own impact on the design and deployment of the other.
-Equally, it's worth mulling over the horizon of networking capabilities and form factors in the short- and long-term.
+Equally, it's worth mulling over the horizon of networking capabilities and form factors in the short and long term.
 %Synthesis of implications, takeaways on design, deployment...
 %?? which I will try to opine on here.
 
@@ -110,7 +110,7 @@ Attacks and defences still appear to be rapidly iterating against one another, a
 I argue that \gls{acr:ddn} deployment can be safe so long as there is a reasonable degree of isolation between a hypothetical attacker (or self-serving client) and the model.
 %?? spec. attacks: evasion, poisoning, data extraction.
 The meaning of `isolation' in this context changes depending on the attacks we want to defend our \gls{acr:ddn} system against.
-For instance, destructive steps in processing, true isolation as in many resource placement problems (i.e., \gls{acr:ddn} applied at design-time), or aggregation of input data may aid against evasion, poisoning, and adversarial behaviour.
+For instance, destructive steps in processing, true isolation as in many resource placement problems (i.e., \gls{acr:ddn} applied at design-time of a network or circuit), or aggregation of input data may aid against evasion, poisoning, and adversarial behaviour.
 The network itself offers some degree of isolation of many outputs, which might make model stealing and evasion more difficult.
 Transient network conditions make flow statistics noisier, pushing them away from the intended perturbation, while routing and \gls{acr:qos} decisions might only be inferred indirectly with added noise and delay.
 %Hiding outputs as appropriate to prevent model stealing and similar attacks [probably can't even see most of the time, but might be able to infer approx later?]).
@@ -202,7 +202,7 @@ Hearkening back to my earlier thoughts in \cref{sec:pdp-summary}, the hardware a
 I expect that we will see many more points along the capacity-capability Pareto front---blurring the lines between compute classes as \gls{acr:cpu}-\gls{acr:nic} co-designs are beginning to do.
 Currently, the solution is to mix and match devices as a hybrid \gls{acr:soc} board (as in Intel's IPUs), but we should hope for a radical shake up in much the same vein as \gls{acr:rmt} sooner or later.
 %?? Faster adaptability and installation?
-Perhaps this will tear down some of the roadblocks which make online (and otherwise in-\gls{acr:pdp}) \gls{acr:ml} difficult today---such as on-device state modification, or even piece-wise replacement of tables and logic (e.g., encoded as smaller P4 of \gls{acr:ebpf} subprograms).
+Perhaps this will tear down some of the roadblocks which make online (and otherwise in-\gls{acr:pdp}) \gls{acr:ml} difficult today---such as on-device state modification, or even piece-wise replacement of tables and logic (e.g., encoded as smaller P4 or \gls{acr:ebpf} subprograms).
 %?? blurring the lines between compute classes (see cpu-nic co-designs)
 %?? hybridisation,
 %?? OS level changes?

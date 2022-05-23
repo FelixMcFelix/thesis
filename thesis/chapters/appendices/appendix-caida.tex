@@ -24,7 +24,7 @@ Traces are examined at a packet-level granularity, and IPv4 and v6 packets are c
 	\item[\gls{acr:tcp}] Packets with a \emph{protocol} or \emph{next header} value of \mintinline{rust}|0x06|.
 	\item[\gls{acr:udp} (QUIC)] Packets with a \emph{protocol} or \emph{next header} value of \mintinline{rust}|0x11|, and a source or destination port of 80 or 443.\sidenote{This category is not necessarily definitive, and is based on then-current descriptions from Google on how Chrome was initiating QUIC sessions. These packets aren't \emph{provably} QUIC, but are speculated to be so. \gls{acr:caida}'s payload stripping removes any bytes past the \gls{acr:udp} header, making this impossible to conclusively verify.}
 	\item[\gls{acr:udp} (Non-QUIC)] Packets with a \emph{protocol} or \emph{next header} value of \mintinline{rust}|0x11| and any other source and/or destination ports. This includes \gls{acr:udp} packets whose ports had been truncated or removed entirely due to \gls{acr:ip} options.
-	\item[Other] All other packets.
+	\item[Other] All other packets, including non-\gls{acr:ip} traffic.
 \end{description}
 For each one hour period, I store individual packet counts and payload bytes for each category in \mintinline{rust}|u64|s.
 Category counts from sub-traces in the same month are summed together, and once totalled I locally store the counts and proportions of each traffic class (bytes and packets).

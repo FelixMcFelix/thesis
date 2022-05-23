@@ -41,7 +41,7 @@ This WebSocket session is maintained over the call's lifetime to provide informa
 
 Audio is encoded using the Opus codec, split into \qty{20}{\milli\second} \gls{acr:rtp}~\parencite{rfc3550} packets at the session's target bitrate.
 In practice, these include \gls{acr:rtp} extensions to denote (among other functions) hosts' \gls{acr:ntp} timestamps and per-packet loudness.
-Clients additionally send random \qty{4}{\byte} keepalive values to the \gls{acr:turn} server every \qty{5}{\second}, along with \gls{acr:rtcp} reports generated at the intervals defined in the specification.
+Clients additionally send random \qty{4}{\byte} \gls{acr:udp} keepalive values to the \gls{acr:turn} server every \qty{5}{\second}, along with \gls{acr:rtcp} reports generated at the intervals defined in the specification.
 \gls{acr:rtp} and \gls{acr:rtcp} are multiplexed over the same socket~\parencite{rfc5761}, while payloads are encrypted using XSalsa20-Poly1305~\parencite{xsalsa20,rfc8439}.
 The method of doing so is not quite adherent to the Secure \gls{acr:rtp} specification~\parencite{rfc3711}---encryption and placement of the message authentication code occur using fixed offsets in the parent \gls{acr:udp} packet.
 When users cease speaking, they will send up to 5 silent frames of audio before they stop transmitting packets (resuming on the next significant audio data).
@@ -79,7 +79,7 @@ For processing, user IDs and \glspl{acr:ssrc} are converted into opaque identifi
 Felyne tracks users who have opted in and out according to per-server configuration (using opt-in `roles' and explicit global opt-outs): any \gls{acr:rtp}, \gls{acr:rtcp}, or speech events from such users are filtered out.
 Join and disconnect events from these users are not removed, so as to correctly preserve fan-out behaviour of the \gls{acr:turn} server for this call
 A list of all opt-out IDs is stored to make it clear how accurate a trace is (e.g., making it clear whether packet events are present for 6/8 users over the duration).
-\gls{acr:rtp} extensions are kept intact if the type is known to include no personal data (i.e., loudness indicators)---otherwise, extension payloads are zeroed.
+\gls{acr:rtp} extensions are kept intact if the type is known to include no personal data (i.e., loudness indicators)---otherwise, extension payloads are zeroed while their types are kept, including those encoded past the one- and two-byte header extensions~\parencite{rfc8285}.
 \gls{acr:rtcp} packets are sanitised such that \gls{acr:ntp} timestamps begin at zero, and \glspl{acr:ssrc} are anonymised as above.
 
 \section{Traffic generation}
@@ -91,7 +91,7 @@ The server program receives \gls{acr:udp} traffic on a given port, where it refl
 Inbound flow 5-tuples plus \glspl{acr:ssrc} are assigned to these rooms: each is given a uniformly random capacity from \numrange{2}{8} participants, and one room-in-progress is held at a time.
 
 Clients randomly draw (without replacement) from the set of all traces, generating \gls{acr:rtp} packets every \qty{20}{\milli\second} during speaking phases.
-Source \gls{acr:ip} addresses, ports, and \glspl{acr:ssrc} are randomly generated, and packet bodies are filled with pre-generated white noise.
+Source \gls{acr:ip} addresses, ports, and \glspl{acr:ssrc} are randomly generated, and packet bodies are filled with pre-generated random bytes.
 Sent packets include enough extra bytes on top of the payload to store the Poly1305 message authentication code (\qty{16}{\byte}).
 Additionally, hosts punctuate these \gls{acr:rtp} frames with a \qty{4}{\byte} keepalive every \qty{5}{\second}.
 Due to the lengthy talk and silence bursts introduced by users in tabletop role-playing servers, silent periods are trimmed to a maximum \qty{5}{\second}.
