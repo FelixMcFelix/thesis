@@ -30,7 +30,7 @@ While the question of data formats is well-considered, training these models onl
 If we can bring online learning to the dataplane, then we can take advantage of rich, local state while minimising state-action latencies as in-network \gls{acr:ml} does, while also reducing their impact on the learnt policy.
 This would also make it easier to train and prototype agent designs which can learn as the network environment evolves, or enable live training in testbeds and production networks when there is too little data to model and simulate a problem.
 
-The work presented in this chapter considers how online \gls{acr:rl} can be made possible in \gls{acr:pdp} hardware, and is based upon \citetitle{DBLP:conf/conext/SimpsonP21}~\parencite{DBLP:conf/conext/SimpsonP21} and \citetitle{noms-220816}~\parencite{noms-220816}.
+The work presented in this chapter considers how online \gls{acr:rl} can be made possible in \gls{acr:pdp} hardware, and is based upon \citetitle{DBLP:conf/conext/SimpsonP21}~\parencite{DBLP:conf/conext/SimpsonP21} and \citetitle{DBLP:conf/noms/SimpsonP22}~\parencite{DBLP:conf/noms/SimpsonP22}.
 Through \cref{sec:opal-design}, I discuss and justify the data formats which are necessary to allow both inference and learning in reasonable timescales on \gls{acr:pdp} hardware.
 Additionally, I also investigate how to make best use of common architectural features of SmartNIC hardware---primarily their high count of low clock-rate cores---to act and learn at low latency based on locally acquired state, without affecting packet forwarding performance.
 By considering efficient, parallelisable function approximation alongside these data format choices, the novel wait-free \emph{ParSa} algorithm can then be described.
