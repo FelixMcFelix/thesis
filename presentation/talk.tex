@@ -1,0 +1,256 @@
+% !TeX program = lualatex
+
+\documentclass[aspectratio=169,xcolor={dvipsnames}]{beamer}
+\usetheme[background=light, numbering=fraction]{metropolis}
+
+\usepackage{appendixnumberbeamer}
+\usepackage{pgfpages}
+\usepackage{FiraMono}
+
+\setmonofont[
+Scale=MatchLowercase,
+Contextuals={Alternate}
+]{Fira Mono}
+
+\usepackage[newfloat]{minted}
+% \usemintedstyle{autumn}
+\usemintedstyle{tango}
+
+% You will need to modify these, the authors down below,
+% and likely the \addbibresource statements below.
+\newcommand{\mytitle}{Online Learning on the Programmable Dataplane}
+\newcommand{\myemail}{k.simpson.1@research.gla.ac.uk}
+\newcommand{\myurl}{https://mcfelix.me}
+\newcommand{\mygithub}{FelixMcFelix}
+
+%\usepackage[T1]{fontenc}
+
+\usepackage{bm}
+\usepackage{mathtools}
+
+\usepackage[labelfont=bf,textfont={it}]{caption}
+\usepackage{subcaption}
+\captionsetup[figure]{justification=centering}
+\captionsetup[subfigure]{justification=centering}
+
+\usepackage{tikz}
+\usepackage{varwidth}
+\usetikzlibrary{arrows.meta, calc, fit, positioning, shapes}
+
+\usepackage[title]{appendix}
+
+\usepackage{etoolbox}
+\usepackage[per-mode=symbol]{siunitx}
+\robustify\bfseries
+\robustify\emph
+%\robustify\uline
+\sisetup{detect-all, range-phrase=--, range-units=single, detect-weight=true, table-format=1.3}
+\DeclareSIUnit{\packet}{p}
+
+\usepackage[siunitx]{circuitikz}
+
+%\usepackage{fontspec}
+%\setsansfont{Fira Sans Mono}
+
+\usepackage[UKenglish]{babel}
+\usepackage{csquotes}
+
+\usepackage{amssymb}
+
+\usepackage{lipsum}
+%\usepackage[basic]{complexity}
+\usepackage[super,negative]{nth}
+
+\usepackage{booktabs}
+
+%bib
+\usepackage[maxnames=3,maxbibnames=99,mincrossrefs=5,sortcites
+%,backend=bibtex
+,style=authortitle
+]{biblatex}
+\addbibresource{../bibliography/papers-off.bib}
+\addbibresource{../bibliography/confs-off.bib}
+
+% official colours
+\definecolor{uofguniversityblue}{rgb}{0, 0.219608, 0.396078}
+
+\definecolor{uofgheather}{rgb}{0.356863, 0.32549, 0.490196}
+\definecolor{uofgaquamarine}{rgb}{0.603922, 0.72549, 0.678431}
+\definecolor{uofgslate}{rgb}{0.309804, 0.34902, 0.380392}
+\definecolor{uofgrose}{rgb}{0.823529, 0.470588, 0.709804}
+\definecolor{uofgmocha}{rgb}{0.709804, 0.564706, 0.47451}
+
+\definecolor{uofglawn}{rgb}{0.517647, 0.741176, 0}
+\definecolor{uofgcobalt}{rgb}{0, 0.615686, 0.92549}
+\definecolor{uofgturquoise}{rgb}{0, 0.709804, 0.819608}
+\definecolor{uofgsunshine}{rgb}{1.0, 0.862745, 0.211765}
+\definecolor{uofgpumpkin}{rgb}{1.0, 0.72549, 0.282353}
+\definecolor{uofgthistle}{rgb}{0.584314, 0.070588, 0.447059}
+\definecolor{uofgpillarbox}{rgb}{0.701961, 0.047059, 0}
+\definecolor{uofglavendar}{rgb}{0.356863, 0.301961, 0.580392}
+
+\definecolor{uofgsandstone}{rgb}{0.321569, 0.278431, 0.231373}
+\definecolor{uofgforest}{rgb}{0, 0.317647, 0.2}
+\definecolor{uofgburgundy}{rgb}{0.490196, 0.133333, 0.223529}
+\definecolor{uofgrust}{rgb}{0.603922, 0.227451, 0.023529}
+
+\definecolor{inferno0}{rgb}{0.001462 0.000466 0.013866}
+\definecolor{inferno64}{rgb}{0.341500 0.062325 0.429425}
+\definecolor{inferno128}{rgb}{0.735683 0.215906 0.330245}
+\definecolor{inferno192}{rgb}{0.978422 0.557937 0.034931}
+\definecolor{inferno255}{rgb}{0.988362 0.998364 0.644924}
+
+%picky abt et al.
+\usepackage{xpatch}
+
+\makeatletter\let\expandableinput\@@input\makeatother
+
+\xpatchbibmacro{name:andothers}{%
+	\bibstring{andothers}%
+}{%
+	\bibstring[\emph]{andothers}%
+}{}{}
+
+%opening!
+
+\usepackage{cleveref}
+\newcommand{\crefrangeconjunction}{--}
+
+\usepackage{fontawesome5}
+
+\addtobeamertemplate{footnote}{\vspace{-6pt}\advance\hsize-0.5cm}{\vspace{6pt}}
+\makeatletter
+% Alternative A: footnote rule
+\renewcommand*{\footnoterule}{\kern -3pt \hrule \@width 2in \kern 8.6pt}
+% Alternative B: no footnote rule
+% \renewcommand*{\footnoterule}{\kern 6pt}
+\makeatother
+
+\usepackage[export]{adjustbox}
+\usetikzlibrary{arrows.meta, calc, fit, positioning, shapes.misc}
+
+% \expandableinput is useful for some tables etc.
+\makeatletter\let\expandableinput\@@input\makeatother
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\usepackage{array}
+
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+%-------------------------------------%
+%-------------------------------------%
+
+\title{\mytitle}
+\author{\vspace{-1em}\textbf{Kyle A.\ Simpson}\\
+	\faEnvelopeOpen{} \href{mailto:\myemail}{\nolinkurl{\myemail}}\\
+	\vspace{1em}\small{\faGithub{} \href{https://github.com/\mygithub}{\mygithub} \hspace{0.5em} \faGlobe{} \url{\myurl}}}
+\institute{University of Glasgow}
+\date{September 16, 2022}
+
+\begin{document}
+	\begin{frame}
+		\maketitle
+		\begin{tikzpicture}[overlay, remember picture]
+			%		\node[above right=0.8cm and 0.9cm of current page.south west] (esnet-logo) {\includegraphics[width=2.75cm]{netlab-trim}};
+			%		\node[right=1cm of esnet-logo] {\adjincludegraphics[height=2cm,trim={0 {.4\height} 0 {.05\height}},clip]{uofg}};
+			\node[above right=-0.1cm and 0.8cm of current page.south west] (uofg-logo) {\adjincludegraphics[height=2cm,trim={0 {.4\height} 0 {.05\height}},clip]{branding/uofg}};
+			\node[right=0.5cm of uofg-logo] {\includegraphics[width=2.75cm]{branding/netlab-trim}};
+		\end{tikzpicture}
+	\end{frame}
+%	\section{First Section}
+	\begin{frame}{Main Thesis -- Summarised}
+		\strong{The sum of data-driven networking (DDN) and programmable dataplane (PDP) developments are key tools in improving management of computer networks.}
+		% 
+		
+		\begin{itemize}
+			\item DDN automates, \alert{increases efficacy} in control/optimisation problems.
+			\item PDP hardware allows \alert{more precise input data} for DDN, faster.
+			\item ML/RL in PDP hardware lets us \alert{learn from \& act on network events with less delay}.
+			\item PDP useful to reduce data rates -- \alert{make host classification work at scale}.
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Motivation (I)}
+		Many control/design mechanisms are already heuristic -- CCAs, routing, network defence, content delivery/placement...
+		\begin{itemize}
+			\item DDN can offer improved mechanisms, or tailored control over tuning parameters.
+			\item Catch: need these to run \alert{fast}!
+		\end{itemize}
+		
+		Many problems already feedback-loop like:
+		\begin{itemize}
+			\item Constant measure-act cycles.
+			\item Clear optimisation criteria. % no need to manually classify
+		\end{itemize}
+	
+		\strong{Problem}: costs of ML inference and learning are high.
+		
+		\strong{Problem}: traditional network data are low-quality, sampled state.
+
+	\end{frame}
+
+	\begin{frame}{Motivation (II)}
+		Advances in PDP and In-Network Compute help here:
+		\begin{itemize}
+			\item Architectures designed for line-rate processing.
+			\item More fine-grained state -- timestamps, flow monitoring.
+			\item Per-packet flow state \emph{must} be handled in-situ.
+		\end{itemize}
+	
+		Host-based execution has steering, stack costs that add to latency and harm throughput.
+		
+%		\begin{itemize}
+%			\item Need to choose exec environment, awareness of all accelerators and dataplane tooling.
+%		\end{itemize}
+%	
+%		?? Precise timestamping, 
+%		
+%		?? fine-grained measurements?
+%		
+%		?? need awareness of all accelerators and dataplane tooling
+%		
+%		?? The intersection relies on exploiting the best features of both fields? PDP and DDN
+%		
+%		?? Need to choose exec environment. -- cuts into the stack, algo considerations, ... Cost of ML inference + learning can be high
+	\end{frame}
+
+	\begin{frame}{Supporting the thesis}
+		How is this explored? \strong{Three strands of work:}
+		
+		\begin{table}
+			\centering\begin{tabular}{@{}C{4cm}C{4cm}C{4cm}@{}}
+			\toprule Pure DDN & ML \strong{\emph{in}} PDP & PDP \strong{\emph{for}} ML \\
+			\midrule \alert{Ch.\ 4 \& 6} & \alert{Ch.\ 5} & \alert{Ch.\ 6} \\
+			RL for anti-DDoS,\newline CCA detection & Online RL in the dataplane & In-dataplane telemetry reduction \\ % to suit large scale/BW networks
+			\strong{More effective (env. dependent)} & \strong{Strong online latency + t'put benefits} & \strong{Significant packet rate reduction} \\
+			\emph{Need to really understand environment, protocols} & \emph{Limited devices, sacrificed model capacity} & \emph{Data reduction needs tailored to problem} \\
+			\bottomrule
+		\end{tabular}
+			\end{table}
+	
+		Other use cases and methods supported by recent literature -- \alert{Ch.\ 2--3}.
+	
+%		Networks for ML covered in lit.
+	\end{frame}
+	\begin{frame}{Wider takeaways and conclusions}
+		\begin{itemize}
+			\item DDN can be very effective \emph{when it works}:
+			\begin{itemize}
+				\item Hard to deploy and design.
+				\item \alert{Deep knowledge of environments needed.}
+			\end{itemize}
+			\item Co-design is key!
+			\begin{itemize}
+				\item Expertise on system dynamics -- \strong{network and HW/SW architectures}.
+				\item PDPs excellent for general offload...
+				\item ...but ML offload still needs deep human insight.
+				\item Future online works will need more insight at HW level \emph{\'a la} Taurus.
+			\end{itemize}
+			\item Security and explainability look bleak:
+			\begin{itemize}
+				\item Extraordinary care needed around input data, training experience, and scope of outputs.
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+\end{document}
