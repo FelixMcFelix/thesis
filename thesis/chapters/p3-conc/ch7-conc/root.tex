@@ -182,7 +182,7 @@ How could we enable online learning for these more complex approximators?
 Practically speaking, minibatches and replay buffers are necessities and will require storage in high-speed memory.
 This is somewhat counter to the design of \gls{acr:pdp} hardware, but it wouldn't be too onerous a requirement in bespoke designs.
 Computing gradients themselves in a way which is scalable and tailored to the execution model (many weaker cores or \glspl{acr:fu}) remains a challenge.
-We might find value in combining insights from the field of distributed model-training (\cref{sec:distributed-training}), such as wait-free backpropagation, to achieve low-latency forward passes and parallelised updates to the policy when using model-parallel inference.
+We might find value in combining insights from the field of distributed model-training, such as wait-free backpropagation, to achieve low-latency forward passes and parallelised updates to the policy when using model-parallel inference.
 Here though, we would constrain the scope of such algorithms to a single device, which might enable some shortcuts and further optimisations.
 This continues to make use of the many cores or \glspl{acr:fu} that we might expect on SmartNICs or \gls{acr:fpga} devices---\emph{N3IC}~\parencite{DBLP:journals/corr/abs-2009-02353} offers a model-parallel \gls{acr:nfp} implementation of the \gls{acr:nn} forward pass which might be compatible in theory.
 \glspl{acr:bnn} are not, however, suited for this purpose, given that training requires incremental real-valued adjustments to the model parameters.

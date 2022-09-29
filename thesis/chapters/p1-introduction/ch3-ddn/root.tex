@@ -22,9 +22,11 @@ In truth, over the past \num{19} years we have moved no closer to such a unified
 A later attempt to combine this with \gls{acr:sdn} as \emph{Knowledge}-defined networking~\parencite{DBLP:journals/corr/MestresRCBASMMB16} takes key steps in clarifying the field, through concrete problems and promising \gls{acr:ml} developments, but effectively curtails the scale of knowledge sharing.
 \gls{acr:ddn} itself is named and defined by \Textcite{DBLP:conf/comsnets/JiangSSZ17}, who again expand the scope for optimisation beyond network control to include \emph{end-points}; towards application and transport layer optimisation for hosts and servers, as well as control of the underlying fabric.
 
+%?? Para on what is all offered here? or interpose below with `why'?
+
 Starting out with the aim of emphasising and motivating the value of \gls{acr:ddn}, I discuss and introduce some of the recent developments and applications of \gls{acr:ml} and \gls{acr:rl} techniques in computer networking (\cref{sec:use-cases}), before then moving onto to explain the `building blocks' underlying these approaches.
-Specifically, I introduce relevant function approximations (\cref{sec:function-approximation}), techniques to learn these representations including \gls{acr:rl} (\cref{sec:learning-an-approximation}), networked training (\cref{sec:ddn-collaborative-training}), and representations for different target devices (\cref{sec:numerical-representations-for-embedded-ml}).
-\Cref{sec:ddn-challenges} discusses additional challenges inherent to \gls{acr:ddn}, while \cref{sec:ddn-security} then presents an overview of security perspective surrounding current \gls{acr:ml} and \gls{acr:ddn} approaches.
+Specifically, I introduce relevant function approximations (\cref{sec:function-approximation}), techniques to learn these representations including \gls{acr:rl} (\cref{sec:learning-an-approximation}), and representations for different target devices (\cref{sec:numerical-representations-for-embedded-ml}).\sidenote{There are other intersections between networked systems and data-driven techniques which I omit here but deserve a cursory mention: advancements in \gls{acr:fl} and distributed \gls{acr:ml} training, which show how computer networks can aid the wider \gls{acr:ml} field.}
+\Cref{sec:ddn-challenges} discusses additional challenges inherent to \gls{acr:ddn}, while \cref{sec:ddn-security} then presents an overview of the security perspective surrounding current \gls{acr:ml} and \gls{acr:ddn} approaches.
 Although this context and its challenges are rapidly evolving, an understanding of security issues is key to offering a complete picture of the viability of \gls{acr:ddn} and the care which must be taken in its research.
 Sadly, full examination and further development lies beyond the scope of this thesis---it is, in fact, a thesis-worthy topic in its own right~\parencite{papernot-thesis}.
 
@@ -37,8 +39,8 @@ Sadly, full examination and further development lies beyond the scope of this th
 \section{Learning an approximation}\label{sec:learning-an-approximation}%
 \input{chapters/p1-introduction/ch3-ddn/learning-approx.tex}
 
-\section{Collaborative training}\label{sec:ddn-collaborative-training}
-\input{chapters/p1-introduction/ch3-ddn/distributed-ml.tex}
+%\section{Collaborative training}\label{sec:ddn-collaborative-training}
+%\input{chapters/p1-introduction/ch3-ddn/distributed-ml.tex}
 
 \section{Numerical representations for embedded ML}\label{sec:numerical-representations-for-embedded-ml}
 \input{chapters/p1-introduction/ch3-ddn/representations.tex}
@@ -52,7 +54,7 @@ Sadly, full examination and further development lies beyond the scope of this th
 \section{Summary}
 I have introduced and discussed a wide variety of problems in the networking domain where \gls{acr:ml} and \gls{acr:rl} techniques are able to provide tangible improvements in performance and resilience of modern networks.
 We have also covered the basics of \gls{acr:ml} techniques and function approximations, as well as the intuition and \gls{acr:mdp} formalism underpinning \gls{acr:rl} algorithms.
-Finally, we have examined modern \gls{acr:rl} algorithms, techniques for the network to improve \gls{acr:ml} training, concessions and design decisions required to bring \gls{acr:rl} and \gls{acr:ml} to network devices, and open challenges pertinent to \gls{acr:ddn}.
+Finally, we have examined modern \gls{acr:rl} algorithms, concessions and design decisions required to bring \gls{acr:rl} and \gls{acr:ml} to network devices, and open challenges pertinent to \gls{acr:ddn}.
 
 Unfortunately, the security context around \gls{acr:ddn} remains an uncomfortably open question.
 While not all the attacks presented can \emph{immediately} generalise to networks or other problem-space representations, the absence of research into specific attacks in this field does not inspire confidence.

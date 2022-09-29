@@ -217,7 +217,7 @@ On average, this produces \qty[per-symbol=p,sticky-per=true]{25}{\mega\packet\pe
 \section{Contributions}
 Grouped according to the claims (\stmtno{\numrange{0}{3}}) in the thesis statement:
 \begin{itemize}
-	\item \emph{A thorough summary of the literature on modern, programmable computer networks (including recent hardware trends) (\cref{chap:nets}), and of machine learning techniques suitable for their control (\cref{chap:ddn})}. This includes the history of a spectrum of tools developed to optimise dataplane processing---both automatically and by bespoke design. Not just how \gls{acr:ml} benefits networks, but how creative networking can benefit \gls{acr:ml} use cases (\stmtno{0,2}).
+	\item \emph{A thorough summary of the literature on modern, programmable computer networks (including recent hardware trends) (\cref{chap:nets}), and of machine learning techniques suitable for their control (\cref{chap:ddn})}. This includes the history of a spectrum of tools developed to optimise dataplane processing---both automatically and by bespoke design. Not just how \gls{acr:ml} benefits networks, but how creative \gls{acr:pdp}-enhanced networking can benefit \gls{acr:ml} use cases (\stmtno{0,2}).
 	
 	\item \emph{A novel synthesis of best practices, design decisions, and environmental tradeoffs to consider in the design of \gls{acr:ml}-led system control (\cref{sec:ddn-use-takeaways}, \stmtno{1})}.
 	
@@ -263,7 +263,7 @@ Broadly speaking, this thesis is presented in two halves.
 The first offers in-depth background on both the fields of \gls{acr:ddn} and \gls{acr:pdp}:
 \begin{description}
 	\item[\Cref{chap:nets}] describes the evolution of computer networks from fixed-function devices towards increased programmability in both the control plane and dataplane---critically examining early research directions in contrast with modern successes. It then describes how modern dataplanes improve or allow new networked applications---namely, offloading and in-network compute.
-	\item[\Cref{chap:ddn}] provides an introduction to the new field of data-driven networking by critically reviewing the design of many recent \gls{acr:ml} solutions to network problems and relevant function approximation and learning methods. This includes methods for networked infrastructure to improve training, and data formats needed to run \gls{acr:ml} techniques in resource-constrained environments. This concludes with some discussion on the limitations and security context of \gls{acr:ml}.
+	\item[\Cref{chap:ddn}] provides an introduction to the new field of data-driven networking by critically reviewing the design of many recent \gls{acr:ml} solutions to network problems and relevant function approximation and learning methods. This includes data formats needed to run \gls{acr:ml} techniques in resource-constrained environments, and concludes with some discussion on the limitations and security context of \gls{acr:ml}.
 \end{description}
 The second half presents novel, concrete use cases which each demonstrate a part of the thesis statement (as discussed above):
 \begin{description}

@@ -77,7 +77,7 @@ Surveys of today divide the ideas of this movement into two main streams of rese
 	\item[Capsules,] which consisted of compact programs bundled with network packets; either at a per-packet level, or installed on a per-flow basis during the handshake process.
 	\item[Programmable switches,] which allowed arbitrary programs to be installed by system administrators to their own infrastructure for dataplane processing.
 \end{description}
-These are two key tools rather than opposing schools---and works we'll examine from tail end of the \emph{active networks} movement feature a high degree of interplay between both ideas.
+These are two key tools rather than opposing schools---and works we'll examine from the tail end of the \emph{active networks} movement feature a high degree of interplay between both ideas.
 It must be said that in the absence of specialist supporting hardware, the vast majority of works in this field relied entirely upon execution of high-level code via commodity host machines.
 \gls{acr:udp} tunnelling and overlay networks like \emph{PlanetLab}\sidenote{PlanetLab also had a wider effect on distributed systems research. Sadly, it was shutdown in May of 2020~\parencite{planetlab-rip}.}~\parencite{DBLP:journals/ccr/ChunCRBPWB03} were necessary to do so; the former modelling a cooperative multi-\gls{acr:as} Internet in a testbed setting, and the latter providing hosts with \gls{acr:cpu} and memory slices across the world in a ticketed, quid-pro-quo manner.
 
@@ -156,7 +156,7 @@ In the event of a complete or partial node failure, this may not be trivially po
 Even when retrieving programs from the last hop, failover may be needed for a live high-bandwidth flow, requiring costly per-flow buffering at a node until capsule program setup is complete.
 
 The capabilities of programmable switch hardware were, to some extent, overshadowed by the community's focus on the more intoxicating idea of capsule networking.
-Naturally, the overwhelming majority of these platform were prototyped on host machines, which limited forwarding and processing performance far below that of even early Ethernet.
+Naturally, the overwhelming majority of these platforms were prototyped on host machines, which limited forwarding and processing performance far below that of even early Ethernet.
 The repeated emphasis on high-level prototypes reduced the focus on the sorts of low-level, capable languages a performant system would require---proposals were instead marred by in-vogue high-level \gls{acr:vm}-based languages such as Java and Caml, which did their credibility little good.
 This likely also added to industry scepticism---one gets the sense of a paradigm driven by research trends instead of limiting its own boundaries to produce something truly capable and scalable.
 
@@ -316,7 +316,7 @@ While the above works relate mainly to the higher-level composition and intercon
 Click itself views the dataplane as a configurable graph of interconnected, predefined building blocks which are then composed into a single, pipelined program.
 \emph{ClickOS}~\parencite{DBLP:conf/nsdi/MartinsAROHBH14} introduces a micro-\gls{acr:os} designed only to run Click programs as part of a Xen hypervisor stack, achieving substantial packet rate and spool-up time improvements, while \emph{Fastclick}~\parencite{DBLP:conf/ancs/BarbetteSM15} innovates in performance by porting Click on Linux hosts to use Intel's \gls{acr:dpdk}.
 \emph{ClickNF}~\parencite{DBLP:conf/usenix/GalloL18} then introduces support for higher-level stateful protocols such as the \gls{acr:tcp} stack, enabling \gls{acr:http} caches and proxies as network functions.
-\emph{NetBricks}~\parencite{DBLP:conf/osdi/PandaHJWRS16} maintains the directed graph model and \gls{acr:dpdk} support, however it takes user-generated functions rather than pre-specified blocks, and relies upon the \emph{Rust}~\parencite{rust} language compiler to enforce isolation of memory and packet data accesses.
+\emph{NetBricks}~\parencite{DBLP:conf/osdi/PandaHJWRS16} maintains the directed graph model and \gls{acr:dpdk} support, however it takes user-written functions rather than pre-specified blocks, and relies upon the \emph{Rust}~\parencite{rust} language compiler to enforce isolation of memory and packet data accesses.
 \emph{OpenBox}~\parencite{DBLP:conf/sigcomm/Bremler-BarrHH16} makes use of a similar framework of smaller configurable processing blocks, though its main focus lies in fusing \gls{acr:nf} components in larger chains across several machines.
 When functions are co-hosted on any machine, OpenBox merges their processing graphs to deduplicate more expensive operations (reducing processing latency) while allowing some degree of metadata transfer between hardware-optimised functions and commodity hosts.
 
@@ -352,7 +352,7 @@ These devices fell behind \glspl{acr:asic} in deployment and use for the longest
 \emph{SmartNICs} present the logical evolution of this low port-density form factor, offering line-rate packet processing for modern Ethernet (\qtyrange{10}{100}{\giga\bit\per\second}).
 What sets them apart is that SmartNICs optionally function as a \gls{acr:nic} compatible with common \glspl{acr:os}---supporting for instance the standard offloads such as checksumming and segmentation.
 Modern day SmartNICs such as the NVIDIA/Mellanox BlueField~\parencite{nvidia-bluefield} and Netronome Agilio~\parencite{netronome-smartnic} series trace their lineage back to these \glspl{acr:npu}, to some extent realising the architecture which some authors thought programmable switches might adopt~\parencite{DBLP:journals/jsac/WolfT01}.
-That is to say, large numbers of weaker \emph{general-purpose} \gls{acr:risc} \glspl{acr:cpu} which can route to one another or an output \gls{acr:mac} via a shared interconnect, with ample coprocessors (for, e.g., cryptography) and resources like \gls{acr:tcam} for accelerated processing.
+That is to say, large numbers of weaker \emph{general-purpose} \gls{acr:risc} \glspl{acr:cpu} which can route to one another or an output \gls{acr:mac} via a shared interconnect, with ample coprocessors (for, e.g., cryptography) and resources for accelerated packet processing like \gls{acr:tcam}.
 This contrasts the network-specific \glspl{acr:isa} used in their predecessors,\sidenote{Mellanox \glspl{acr:nic} in particular use standard ARM cores, while Netronome's offerings use a proprietary \gls{acr:isa} with full C language compatibility.} while acting as a usable \gls{acr:nic} for the host machine in addition to their bump-in-the-wire capabilities.
 Packet throughput requirements are met by sheer parallelism in these devices---Netronome's NFP-6480 contains \num{112} cores acting in a non-pipelined way (\cref{adx:nfp-arch})---but such \gls{acr:npu}-type SmartNICs often impose greater latency on carried packets due to architectural overhead.
 
@@ -1157,7 +1157,7 @@ On \gls{acr:ml} training, most research on how \gls{acr:pdp} hardware may be app
 The main use case here involves many nodes in a network exchanging gradient vectors to be combined with a shared model---however, latency-optimal schemes based on central \glspl{acr:ps} have strongly synchronised inbound traffic which causes high, bursty losses and significant bandwidth consumption near the traffic destination.
 Aggregating these gradients is simply vector addition, which any interim node may perform to reduce the upstream traffic burden.
 \gls{acr:pdp} hardware provides a sound basis for the kinds creative co-design needed to ensure optimal training behaviour here, making better use of the network \emph{and} improving final training times and performance.
-\Cref{sec:distributed-training} covers the surrounding context and solutions in more detail.
+%\Cref{sec:distributed-training} covers the surrounding context and solutions in more detail.
 At a high-level, \emph{iSwitch}~\parencite{DBLP:conf/isca/LiLYCSH19} uses the plasticity of \gls{acr:fpga} devices to implement a dedicated floating-point adder and gradient storage; gradient packets are signalled to the dataplane using a reserved pool 2 \gls{acr:dscp}~\parencite{rfc2474} value, triggering their aggregation (and eventual retransmission to the \gls{acr:ps}).
 Solutions targeting general \gls{acr:pdp} switches---e.g., \emph{ATP}~\parencite{DBLP:conf/nsdi/LaoLMCWAS21} and \emph{SwitchML}~\parencite{DBLP:conf/nsdi/SapioC0NKKKMPR21}---instead must rely on fixed-point data formats to enable this in these environments.
 %\emph{iSwitch}~\parencite{DBLP:conf/isca/LiLYCSH19} uses NetFPGA-SUME hardware to implement special handling for RL model update packets, building floating-point adders and limited storage space into bump-in-the-wire \glspl{acr:nic} to achieve \qtyrange{3.66}{3.71}{\times} faster training.
