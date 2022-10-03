@@ -1,5 +1,11 @@
 \gls{acr:ml} training and inference work in the domain of real numbers, and thus require a suitable data format for representation of weights, gradients, and values.
-\emph{Floating-point arithmetic} allows commodity machines and accelerators to approximate real numbers in a fixed-size representation, dividing available bits among a \emph{sign}, \emph{exponent}, and \emph{mantissa}.
+To consider how to perform inference and learning in different classes of \gls{acr:pdp} hardware, and thus enable online \gls{acr:rl} as in \cref{chap:in-net-rl}, we must weigh up the impacts and hardware requirements of suitable data formats.
+
+%?? diff formats have diff impacts, requirements?
+%
+%?? analysis to balance learn and inference capabilities of different formats (float, int) wrt hardware needs -- thus, suitability towards execution locations
+
+\emph{Floating-point arithmetic} is the canonical data format for this purpose, and allows commodity machines and accelerators to approximate real numbers using a fixed-size representation, dividing available bits among a \emph{sign}, \emph{exponent}, and \emph{mantissa}.
 This captures several important properties, principally \emph{dynamic range} (as the exponent describes the magnitude of a number).
 For instance, \qty{32}{\bit} floating-point numbers (FP32) use \qtylist{1; 8; 23}{\bit} to store each component, which is sometimes known as a 1-8-23 representation.
 

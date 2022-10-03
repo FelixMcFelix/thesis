@@ -51,6 +51,15 @@ Finally, to further motivate in-network compute I describe point solutions which
 %Control plane programmability: routing etc? Dataplane programmability: per-packet computations.
 %?? focus on programmable \emph{dataplane} rather than control plane
 
+%?? Historical value -- early attempts at programmability
+%?? cost-first, crucial, execution + perf essential
+%?? 
+
+For historical value, and to provide some context on the design and architectural decisions of modern programmable network stacks (\cref{sec:modern-pdps}), it is important to consider early developments and advances which laid the groundwork for the \gls{acr:pdp} ecosystem as we know it.
+This includes the ill-fated active networking movement, leading into the development of control plane programmability via \gls{acr:sdn}.
+
+%?? ctx on why 
+
 Initially, network fabrics were \emph{fixed-function}, supporting only the routing algorithms provided by permanent \glspl{acr:asic} integrated with their silicon, and offering transit only for protocols considered at their construction.
 However, from the Internet's origin as ARPAnet through today, programmability of networks has increased over time to simplify the management, use, and adaptability of network infrastructure~\parencite{DBLP:journals/ccr/FeamsterRZ14}.
 Programmability in computer networks tends to be categorised into two distinct forms.
@@ -245,6 +254,17 @@ The architecture evolved fairly cleanly over the following 5 years, coping with 
 Nowadays, their data centre and \gls{acr:wan} networks are managed by a single higher-level microservice \gls{acr:sdn} architecture, \emph{Orion}~\parencite{DBLP:conf/nsdi/FergusonGHKMMOP21}.
 
 \section{Modern programmable dataplanes}\label{sec:modern-pdps}
+In parallel with \gls{acr:sdn}'s development, dataplane programmability has become more commonplace and performant---primarily through a mixture of novel hardware architectures and more developed software stacks on host machines.
+These tools offer a useful mixture of capabilities, performance characteristics, and drawbacks to consider.
+To better understand how best to use these tools in service of \gls{acr:ddn}---for building full systems built on device-local state (\cref{chap:seidr}) or the primitives for inference and online learning (\cref{chap:in-net-rl})---this section details current hardware and software dataplane architectures and their predecessors.
+This also gives us cause to examine the wider context of these recent \gls{acr:pdp} developments, and why they have succeeded as compared with past research forays.
+
+%?? data plane programmability 
+%?? What tools at our disposal and how best to use them -- hardware/software architectures and capabilities.
+%
+%?? why? for both building primitives and full systems.
+%?? Wider context -- emph importance of perf in successes of PDP's return
+
 While active network research may have dried up in the last 20 years,\sidenote{Barring some very obvious throwback works such as \emph{Tiny Packet Programs}~\parencite{DBLP:conf/sigcomm/JeyakumarAGKM14}---which have directly influenced new in-network telemetry schemes like those we cover in \cref{sec:network-monitoring}.} interest in dataplane processing has remained strong.
 Network operators have, in fact, always had a need for complex packet processing to measure, protect, and enhance \emph{their own} networks---rather than to provide the sort of communal good that active networks promised.
 To offer some examples:
@@ -708,7 +728,12 @@ Not all programs may be moved down to \gls{acr:pdp} hardware unaltered.
 
 We'll cover here technologies in use for host offloading, such as \gls{acr:xdp}, as well as the rationale and costs of host processing (\cref{sec:host-offloading-technologies}).
 Through \cref{sec:frameworks-for-automatic-offloading}, I'll cover recent works making use of host offloading techniques and \gls{acr:pdp} hardware to provide automatic acceleration and for dataplane programs.
-Although in-network compute has been justified and explained here, its use cases will be left until later (\cref{sec:in-network-compute-use-cases}).
+This expands on the raw tooling introduced throughout \cref{sec:modern-pdps} with a higher level of abstraction, and allows us to better understand how we can push general program logic on-path (as part of a full data processing pipeline).
+It provides us also with some insight into the limitations of bespoke designs and automatic offloading.
+In-network compute's use cases will be left until the sequel (\cref{sec:in-network-compute-use-cases}).
+
+%?? Importance of in-path
+%?? Overview of the HW and SW tooling that lets us achieve e.g. in-NIC RL, pushing general programs and applications down the stack
 
 \subsection{Host offloading technologies}\label{sec:host-offloading-technologies}
 Commodity host machines are designed in such a way that packet processing often incurs higher latency than using an \gls{acr:asic} positioned at the same point in the network.
@@ -966,7 +991,7 @@ Chains are allocated in the network using a combination of topology and current 
 Flightplan's compiler breaks its input dataplane's \gls{acr:ir} into blocks according to user annotations in the supplied P4 code.
 Further user-given annotations denote manual implementations of specific \texttt{extern}s, to enable device-specific acceleration of key functions such as compression or error correction.
 Their disaggregation procedure inserts logic before and after splits to handle metadata and state passing.
-These blocks are statically analysed to extract the data dependencies between sub-functions, which are then composed into a chain over the routing infrastructure using a set of program, resource, and network rules.
+These blocks are statically analysed to extract the data dependencies between sub-functions, which are then composed into a chain over the routing infrastructure.
 
 %\paragraph{Misc P4 translations.}
 %T4P4S~\parencite{DBLP:conf/hpsr/VorosHKLTL18} converts P4 programs into C, which are linked against a target-specific network hardware abstraction layer.
@@ -980,11 +1005,15 @@ These blocks are statically analysed to extract the data dependencies between su
 %?? P4 Verification~\parencite{DBLP:conf/sigcomm/TianGLZCZDYMTLW21}---also shows use of \gls{acr:pdp} switches in real large-scale networks (\gls{acr:isp}?)
 
 \section{In-network compute use cases}\label{sec:in-network-compute-use-cases}
+%?? Lends credence to goals of pushing logic down the stack and the complexity of programs we can execute
+%?? shows existing ML in PDP (overall thesis)
+%?? shows the kind of new input data/state we can feed to DDN
+
 %?? Lead-in, describe...
 To make the value of \glspl{acr:pdp} and in-network compute clearer, I present here a selection of specific applications that have been improved or enabled outright by these new capabilities.
 These include advances in network monitoring and telemetry, application acceleration by in-network services, and how the network may allow improved or more dynamic transport and routing.
 Finally, as it is of particular importance to this thesis and the overall goal of \gls{acr:ddn}, we shall examine in close detail \gls{acr:ml}-related use cases.
-It must be said that the works shown here are indicative, rather then exhaustive.
+It must be said that the works shown here are indicative, rather then exhaustive; benefiting the system designs in \crefrange{chap:ddos-rl}{chap:seidr} by demonstrating the new kinds of network data and state we can use as (on-path) inputs to \gls{acr:ddn} systems.
 Interested readers should also examine dedicated surveys such as that of \Textcite{DBLP:journals/access/KfouryCB21}.
 
 \subsection{Network monitoring}\label{sec:network-monitoring}

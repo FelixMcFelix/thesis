@@ -1,6 +1,8 @@
 Having introduced function approximation schemes of relevance to this thesis (and the most prominent in \gls{acr:ddn} at present), we now turn our attention to how these approximators are trained in practice.
 Due to its relevance in \gls{acr:dnn} and \gls{acr:drl}, this comprises a brief discussion of gradient descent techniques and stochastic optimisers, followed by a more in-depth introduction to and overview of the field of \gls{acr:rl}.
+This allows us to comment on these methods' (and key variations') suitability to network control problems and different execution environments (primarily \gls{acr:pdp} hardware) as required by \cref{chap:in-net-rl}.
 Tying these back to the realities of \gls{acr:ddn}, many of these techniques and advances are likely feasible in a \gls{acr:pdp} context with small datasets and no minibatches, such as \gls{acr:sgd} and its variants, but their use is left to future work.
+Finally, this allows us to consider various problems in deployment and system design where we must expand or diverge from baseline algorithms---(a)synchrony,  exploration, and dynamic learning---as needed by applications (\cref{chap:ddos-rl,chap:seidr}) or \gls{acr:pdp} co-designed algorithms (\cref{chap:in-net-rl}).
 
 We can begin by assuming that our approximate function is backed by some \emph{parameter vector} $\wvec{}$, such that $\hat{\symbfit{y}} = f{\left(\symbfit{x}~|~\wvec{}\right)}$---an input vector $\symbfit{x}$ produces some output $\hat{\symbfit{y}}$, and ideally after training $\hat{\symbfit{y}}\eqsim\symbfit{y}$ across all input $\symbfit{x}$.
 For all intents and purposes, we can understand $\wvec{}$ as a large block of real numbers residing in \gls{acr:ram}, and that we update this block over time.

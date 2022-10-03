@@ -3,7 +3,13 @@ The aims of this section are threefold: to offer a rough intuition of the capabi
 In the case of \gls{acr:rl}-based works, I devote extra space towards highlighting the state space \prllitstate{}, action space (\rllitact{} if discrete, \rllitactreal{} if continuous), and reward source \prllitreward.
 If live-control approaches are evaluated using network traces instead of a live environment or suitable simulation, I mark them with a `$\dagger$'---this does not invalidate those authors' findings, but should invite a hint of scepticism based on the discussions of \cref{sec:ddn-challenges}.
 Mirroring some of the problems introduced through \cref{sec:ch-networks}, I present a brief critical survey of solutions offered by \gls{acr:ddn}: network management and optimisation, including classification and \gls{acr:to}; transport- and link-level protocol design, primarily of \glspl{acr:cca}; security and verification; client- and server-side multimedia optimisation; and resource placement and job scheduling.
-Readers anxious to see the design elements and takeaways common to this broad spectrum of applications might skip to \cref{sec:ddn-use-takeaways}.
+
+The main implication for this thesis is that many network control or optimisation problems can be cast as \glspl{acr:mdp} or otherwise fit into the \gls{acr:ddn} mould and are generally very effective.
+However, there are decidedly \emph{right} ways to go about their design, and it is these insights which this section extracts and collates.
+%?? Justify and show successes of ML + RL in networks at all scales + endpoints
+Readers anxious to see these design elements and takeaways common to this broad spectrum of applications might skip to \cref{sec:ddn-use-takeaways}.
+These findings directly feed into design of systems throughout \crefrange{chap:ddos-rl}{chap:seidr} concerning how they interact with network data in a scalable way, how problems are formulated to account for inference costs, and how we can use in- or out-of-pathcompute to its fullest.
+However, the critical analysis of the \emph{Marl} \gls{acr:rl} \gls{acr:ddos} mitigation strategy (as part of \cref{sec:ddn-uses-security}) is notable for identifying key flaws in its evaluation and design which directly feed into the motivation and formulation of \cref{chap:ddos-rl}.
 %
 %?? Optimisation
 %
@@ -99,7 +105,7 @@ This is particularly relevant for encrypted traffic, as temporal features are of
 \paragraph{Performance analysis}
 Bayesian optimisation using Gaussian processes has seen some successes in identifying unexpected performance ``hotspots'' in \gls{acr:ovs} through \emph{NetBOA}~\parencite{DBLP:conf/sigcomm/ZerwasKHRKB019}, and cloud instance configuration via \emph{CherryPick}~\parencite{DBLP:conf/nsdi/AlipourfardLCVY17}.
 This mirrors its successes in \gls{acr:ml} hyperparameter optimisation~\parencite{DBLP:conf/lion/HutterHL11,DBLP:conf/aaai/FeurerSH15}, as this family of techniques is effective at minimising a cost function using limited data (i.e., when there's a high monetary or compute cost to acquire each sample).
-For optimisation tasks their use is straightforward, but it must be noted that hotspot identification still requires high-level operator knowledge.\sidenote{In particular, human knowledge is currently needed to show that a so-called adversarial scenario is more than just an expected scaling characteristic; not to mention the subsequent root-cause analysis.}
+For optimisation tasks their use is straightforward, but it must be noted that hotspot identification still requires operator knowledge.\sidenote{In particular, human knowledge is currently needed to show that a so-called adversarial scenario is more than just an expected scaling characteristic; not to mention the subsequent root-cause analysis.}
 
 \subsection{Protocol optimisation and design}
 \paragraph{Congestion control}
@@ -112,7 +118,7 @@ As a result, automated \gls{acr:cca} learning is a particularly attractive prosp
 %For context, a congestion-aware flow's \emph{cwnd} determines how much traffic may be ``on the wire'' at any point in time, where a higher cwnd implies higher bandwidth consumption.
 %Typically, the cwnd value oscillates to prevent congestion and packet loss while maximising throughput.
 An agent then controls the congestion window size; incrementing, decrementing, halving, doubling, or keeping its value \prllitact{} to optimise throughput and latency \prllitreward.
-In contrast with many prior \gls{acr:rl} works built on the OpenAI Gym, their \gls{acr:rl} agent takes actions asynchronously by coalescing state updates over time, between action choices.\sidenote{The \gls{acr:ddos} mitigation use case I develop and describe in \cref{chap:ddos-rl} uses a similar trick, though this arises due to delayed \emph{reaction} times in the environment rather than inference cost. See \cref{sec:systems-considerations}.}
+In contrast with many prior \gls{acr:rl} works, their \gls{acr:rl} agent takes actions asynchronously by coalescing state updates over time, between action choices.\sidenote{The \gls{acr:ddos} mitigation use case I develop and describe in \cref{chap:ddos-rl} uses a similar trick, though this arises due to delayed \emph{reaction} times in the environment rather than inference cost. See \cref{sec:systems-considerations}.}
 Input states are comprised of \gls{acr:rtt} statistics, byte transmission and receive counts and loss information, combined with the last \num{5} actions \prllitstate.
 By applying fully-connected \glspl{acr:nn} followed by an \gls{acr:lstm} for policy approximation, this work is competitive with the state-of-the-art due to \glspl{acr:lstm}' particular suitability for identifying long-term relations in time-series data.
 Their work raises again the primary drawback of applying \glspl{acr:dnn} in latency sensitive applications like \gls{acr:cca} design: they observe up to \qty{30}{\milli\second} action computation time, and have only trained agents via parallel simulation, requiring vast amounts of training data.
@@ -182,7 +188,7 @@ Agents are punished when the network is overloaded \emph{and} their team contrib
 %Our results show that their technique underperforms at high host density and when congestion-aware traffic dominates---that their results do not demonstrate this suggests an evaluation driven purely by traces (rather than live application dynamics).
 %?? Mention why congestion-aware traffic gets screwed.
 Applying filtering actions indiscriminately to all flows carried by a switch means that legitimate traffic is easily caught in the crossfire, indirectly harming harmless flows.
-Although their results appear competitive, their simulation environment uses only congestion-unaware \gls{acr:udp} traffic, in opposition to the realities of Internet traffic as discussed in \cref{sec:ddos-contributing-factors,adx:caida-traffic}.
+Although their results appear competitive, their simulation environment uses only congestion-unaware \gls{acr:udp} traffic, counter to the realities of Internet traffic as discussed in \cref{sec:ddos-contributing-factors,adx:caida-traffic}.
 Congestion-aware protocols dominate in many networks; incorrectly applying a packet drop action imposes greater \emph{pushback}~\parencite{DBLP:journals/ccr/MahajanBFIPS02a} on these legitimate flows than it would on attack traffic.
 For congestion-aware traffic, this is non-negligible; when packet loss occurs with probability $p\ne0$, the Mathis equation~\parencite{DBLP:journals/ccr/MathisSMO97} states that \gls{acr:tcp} bandwidth is proportional to $1/\sqrt{p}$, while modern \gls{acr:tcp} Cubic is proportional to $1/p^{0.75}$~\parencite{rfc8312}.
 Congestion-unaware, \gls{acr:cbr} traffic then occupies bandwidth proportional to $1 - p$, and in \cref{sec:problems-in-modern-networks} we will show from the literature that volumetric \gls{acr:ddos} attack traffic mainly falls into this category.
