@@ -31,7 +31,7 @@ The usual term for such processes is \gls{acr:to}/\gls{acr:te}, aiming to minimi
 
 \textcite{DBLP:conf/hotnets/ValadarskySST17} show how \gls{acr:rl} can be used to route traffic by mapping the last $k$ demand matrices \prllitstate{} into a set of edge weights \prllitactreal.
 The calculated weights are used to compute probabilistic forwarding strategies based on classical hop-by-hop routing, which then allow predicted congestion to be computed for the following demand matrix \prllitreward.
-Policy approximation is provided by a fully connected \gls{acr:nn}, trained using the TRPO algorithm.
+%Policy approximation is provided by a fully connected \gls{acr:nn}, trained using the TRPO algorithm.
 This is striking work because it presents an environment where RL categorically beats supervised learning---where predicting a set of actions to take is more effective than predicting the next state and then computing an optimal assignment---and is able to outperform the non-ML \emph{oblivious routing}~\parencite{DBLP:conf/stoc/AzarCFKR03} for some problem models.
 There are several key takeaways from this work: their exploratory designs show that system performance and learning rate rely heavily upon output model size, emphasising the need for a minimal representation of actions/predictions made;\sidenote{Even though a smaller model size is arguably less expressive, the fact that there are fewer parameters to learn can be instrumental in converging to a more effective solution more quickly.} policy execution occurs outside the packet path, and so learns feasibly online; and that using \gls{acr:ddn} outputs as the input for a well-defined algorithm can offer more interpretability and trust in an optimised system.
 A drawback worth discussion is their \gls{acr:nn} architecture's input and output dimensions depend on the network under control ($k\cdot\left|V\right|^2\rightarrow\left|E\right|$), and so learnt policies are not portable even under simple alterations like runtime switch and link additions.
@@ -46,7 +46,7 @@ Flows in all but the last priority class are routed using \gls{acr:ecmp}.
 \emph{lRLA} then makes bespoke decisions for the remaining elephant flows which---with high probability---will continue long enough to be meaningfully benefited.
 For all live and completed flows, it uses the 5-tuple with the current priority (if live) or the \gls{acr:fct} and size (if complete) \prllitstate{} to choose the flow's priority, rate, and route as an XPath ID~\parencite{DBLP:journals/ton/Hu0W0L0ZG16} \parenglance{$\rllitactraw\times\rllitactrealraw$}.
 This is conditioned on the ratio of average throughputs between two timesteps \prllitreward.
-AuTO uses a \gls{acr:dnn} for policy approximation in both agents, trained using the DDPG algorithm, offering an average \qty{8.71}{\percent} improvement over heuristics in evolving traffic after \qty{8}{\hour} of online training.
+%AuTO uses a \gls{acr:dnn} for policy approximation in both agents, trained using the DDPG algorithm, offering an average \qty{8.71}{\percent} improvement over heuristics in evolving traffic after \qty{8}{\hour} of online training.
 The main design feature of interest to us is this agent separation; that an RL agent can be used to control a time-sensitive system by generating a compact set of parameters for another, more efficient algorithm.
 However, the reliance on XPath route numbers as an action ties the lRLA policy to the network it was learnt in, preventing shared training in spite of the fixed-size architecture.
 
@@ -85,7 +85,8 @@ This does present a large tradeoff against the above: simpler decision trees can
 In the case that we lack \emph{a priori} knowledge of labelling rules (but do have labelled training data), it becomes straightforward to train and apply \gls{acr:ml} for classification.
 Historically, packet bodies have been useful in this task as a variation of \gls{acr:dpi} investigated using, e.g., $n$-gram models~\parencite{DBLP:journals/ton/YunW0Z16} and segmented packets~\parencite{DBLP:conf/iwqos/LiXNZX18} as inputs to \glspl{acr:lstm} or \glspl{acr:gru}.
 This is no longer the case in the wild; a key issue nowadays is that encryption of traffic is fairly ubiquitous due to the proliferation of application-level security (HTTPS), secure transports (QUIC) and \glspl{acr:vpn}---all of which severely limit the input data we can glean from packets.\sidenote{This ubiquitous encryption also affects non-\gls{acr:ml} \glspl{acr:ids} and anomaly detection use cases discussed earlier, like \gls{acr:ids} software like Snort~\parencite{DBLP:conf/lisa/Roesch99,SnortManual} or Zeek~\parencite{zeek,DBLP:conf/uss/Paxson98}.}
-Using headers alone, there have been successes on common datasets using Na\"{i}ve Bayes~\parencite{DBLP:conf/sigmetrics/MooreZ05}, Bayesian \glspl{acr:nn}~\parencite{DBLP:journals/tnn/AuldMG07}, \glspl{acr:cnn}~\parencite{DBLP:journals/soco/LotfollahiSZS20}, and self-attention mechanisms~\parencite{DBLP:conf/sigcomm/Xie0JDSLSX20} which have enjoyed success in natural language processing~\parencite{DBLP:conf/nips/VaswaniSPUJGKP17}.
+Using headers alone, there have been successes on common datasets using Na\"{i}ve Bayes~\parencite{DBLP:conf/sigmetrics/MooreZ05}, Bayesian \glspl{acr:nn}~\parencite{DBLP:journals/tnn/AuldMG07}, \glspl{acr:cnn}~\parencite{DBLP:journals/soco/LotfollahiSZS20}, and self-attention mechanisms~\parencite{DBLP:conf/sigcomm/Xie0JDSLSX20}.
+% which have enjoyed success in natural language processing~\parencite{DBLP:conf/nips/VaswaniSPUJGKP17}.
 What is often not masked, however, are application-level timing characteristics of this traffic such as patterns of up/down rates, interarrival times, and statistics gathered over traffic bursts.
 This additional information makes the task tractable on e.g., \gls{acr:knn} and decision tree classifiers~\parencite{DBLP:conf/icissp/Draper-GilLMG16}, or \glspl{acr:lstm} and \glspl{acr:cnn}~\parencite{DBLP:journals/tnsm/AcetoCMP19}.
 This extends towards passive \gls{acr:cca} identification: for window-based algorithms, \glspl{acr:cnn} have been used to estimate the \texttt{cwnd} parameter and observe its reaction to loss events~\parencite{DBLP:conf/icccn/HagosEYK18}, and modern \glspl{acr:cca} are handled using both \glspl{acr:cnn} and \glspl{acr:lstm} in DeePCCI~\parencite{DBLP:conf/sigcomm/SanderRHW19}.
@@ -96,13 +97,13 @@ Some of these input features are also difficult to collect in-network without tr
 This is particularly relevant for encrypted traffic, as temporal features are often some of its only exposed characteristics.
 
 \paragraph{Performance analysis}
-Bayesian optimisation using Gaussian processes has seen some degree of success in identifying unexpected performance ``hotspots'' in \gls{acr:ovs} through \emph{NetBOA}~\parencite{DBLP:conf/sigcomm/ZerwasKHRKB019}, and cloud instance configuration via \emph{CherryPick}~\parencite{DBLP:conf/nsdi/AlipourfardLCVY17}.
+Bayesian optimisation using Gaussian processes has seen some successes in identifying unexpected performance ``hotspots'' in \gls{acr:ovs} through \emph{NetBOA}~\parencite{DBLP:conf/sigcomm/ZerwasKHRKB019}, and cloud instance configuration via \emph{CherryPick}~\parencite{DBLP:conf/nsdi/AlipourfardLCVY17}.
 This mirrors its successes in \gls{acr:ml} hyperparameter optimisation~\parencite{DBLP:conf/lion/HutterHL11,DBLP:conf/aaai/FeurerSH15}, as this family of techniques is effective at minimising a cost function using limited data (i.e., when there's a high monetary or compute cost to acquire each sample).
 For optimisation tasks their use is straightforward, but it must be noted that hotspot identification still requires high-level operator knowledge.\sidenote{In particular, human knowledge is currently needed to show that a so-called adversarial scenario is more than just an expected scaling characteristic; not to mention the subsequent root-cause analysis.}
 
 \subsection{Protocol optimisation and design}
 \paragraph{Congestion control}
-As discussed and introduced earlier in \cref{sec:pdp-uses-transports} (and as a motivating example in the \cref{chap:intro}), the design of effective \glspl{acr:cca} very much remains an open topic.
+As introduced earlier in \cref{sec:pdp-uses-transports} (and as a motivating example in \cref{chap:intro}), the design of effective \glspl{acr:cca} very much remains an open topic.
 The degree of diversity in networks, from long-fat Internet-style networks to dense low-\gls{acr:rtt} data centres, in buffering and forwarding behaviours of different path segments, \emph{and} the unforeseen interactions between disparate \gls{acr:cca} mechanisms, presents a huge problem space to work in.
 Incorrect assumptions can have knock-on effects in not just overall performance, but in fairness of longer-lived flows to other traffic, or in catastrophic increases to the \glspl{acr:fct} of short flows.
 As a result, automated \gls{acr:cca} learning is a particularly attractive prospect; more so when we recall the dominance of congestion-aware traffic in the wider Internet (\cref{adx:caida-traffic}).
@@ -115,21 +116,22 @@ In contrast with many prior \gls{acr:rl} works built on the OpenAI Gym, their \g
 Input states are comprised of \gls{acr:rtt} statistics, byte transmission and receive counts and loss information, combined with the last \num{5} actions \prllitstate.
 By applying fully-connected \glspl{acr:nn} followed by an \gls{acr:lstm} for policy approximation, this work is competitive with the state-of-the-art due to \glspl{acr:lstm}' particular suitability for identifying long-term relations in time-series data.
 Their work raises again the primary drawback of applying \glspl{acr:dnn} in latency sensitive applications like \gls{acr:cca} design: they observe up to \qty{30}{\milli\second} action computation time, and have only trained agents via parallel simulation, requiring vast amounts of training data.
-Moreover, MVFST-RL was unable to generate policies which are simultaneously applicable to different environmental delay and bandwidth characteristics.
+%Moreover, MVFST-RL was unable to generate policies which are simultaneously applicable to different environmental delay and bandwidth characteristics.
 
 \emph{DRL-CC}~\parencite{DBLP:journals/jsac/XuTYWX19} examines how one \gls{acr:rl} agent can jointly optimise \gls{acr:mptcp} subflows and \gls{acr:tcp} flows.
-\gls{acr:mptcp} differs from traditional transports by allowing data segments in a single logical connection to be sent over several interfaces, who naturally then have their own per-subflow congestion control in addition to shared coordination.
+\gls{acr:mptcp} differs from traditional transports by allowing data segments in a single logical connection to be sent over several interfaces, who have their own per-subflow congestion control in addition to shared coordination.
 The state of any (sub)flow is its rate, goodput, \gls{acr:rtt} statistics, and congestion window size.
 DRL-CC passes all current states into an \gls{acr:lstm} to obtain a fixed-size representation for all flows, which is then combined with the overall state for a target flow \prllitstate.\sidenote{This \gls{acr:nn} architecture, manipulating input state for further action and value metworks, is often known as a \emph{two-headed network}. This allows end-to-end training of a feature extraction network and downstream \glspl{acr:nn} (in this case, the actor and critic networks). Training of the actor and critic component networks jointly improves the base feature extractor.}
 Using actor-critic methods, an \gls{acr:nn} produces a vector of congestion window deltas for all the target flow's subflows \prllitactreal, conditioned on the sum of log-goodputs of live flows \prllitreward.
 Inference latency is kept to a moderate \qty{0.5}{\milli\second} using the \gls{acr:cpu}, and performance is comparable to classical \gls{acr:mptcp} \glspl{acr:cca} on lossy networks---where a high packet loss of \qtyrange{0.5}{4}{\percent} can be justified by the focus of \gls{acr:mptcp} on cellular networks.
-While it is shown to be fair to itself, it's unclear how DRL-CC multiplexes with other \glspl{acr:cca}.
+%While it is shown to be fair to itself, it's unclear how DRL-CC multiplexes with other \glspl{acr:cca}.
 
 The \emph{PCC} family of \glspl{acr:cca}~\parencite{DBLP:conf/nsdi/DongLZGS15,DBLP:conf/nsdi/DongMZAGGS18}, \emph{Copa}~\parencite{DBLP:conf/nsdi/ArunB18}, and their \gls{acr:mptcp} variant \emph{MPCC}~\parencite{DBLP:conf/conext/GiladSGRS20} offer a control-theoretic perspective on effective congestion control, improving on heuristic methods.
 These approaches combine flow throughput, loss, latency and goodput for each (sub)flow into a single utility score, choosing target rates which maximise this score via simple gradient ascent.
 Although this branch of research doesn't \emph{learn} any function approximation, the fact that operational modes and behaviours are all well-defined allows for convergence to be proven under typical network conditions.
 
-\emph{Aurora}~\parencite{DBLP:conf/icml/JayRGST19} then modifies rate selection in the PCC framework to use a simple fully-connected \gls{acr:nn}, trained using the PPO algorithm.
+\emph{Aurora}~\parencite{DBLP:conf/icml/JayRGST19} then modifies rate selection in the PCC framework to use a simple \gls{acr:nn} trained via \gls{acr:rl}.
+%, trained using the PPO algorithm.
 It computes multiplicative increases or decreases to a flow's send rate \prllitactreal{} given an $m$-long history of latency statistics and loss rates \prllitstate.
 The agent then acts to maximise packet-per-second rate, penalising latency and packet loss \prllitreward.
 By keeping the explicit operational modes of the PCC family, the policies it learns from offline training effectively generalise to unseen network characteristics and designs.
@@ -138,7 +140,7 @@ However, this formulation was later shown to be unfair to other \glspl{acr:cca}~
 \emph{Orca}~\parencite{DBLP:conf/sigcomm/AbbaslooYC20} eschews the ``clean-slate'' approach common thus far, using a classical \gls{acr:cca} (\gls{acr:tcp} Cubic) as its basis.
 This decision is empirically and strongly motivated; doing so greatly simplifies the learning task for an \gls{acr:rl} agent (improving the learnt policy) \emph{and} reduces \gls{acr:cpu} and \gls{acr:gpu} utilisation in deployment.\sidenote{Recall that \glspl{acr:cca} almost always control how data is \emph{sent} across the network, and that clients typically send small requests for servers to transmit larger content. This leaves the burden of performing expensive per-packet and per-flow operations with the server, which by this same assumption has to handle many such flows!}
 Orca tracks $m$-long histories of a flow's current (and best) throughput and \gls{acr:rtt} information alongside its loss rate and congestion window \prllitstate.
-Using the TD3 actor-critic algorithm, Orca chooses some $\alpha\in\left(-2, 2\right)$ every \qty{20}{\milli\second}, multiplying the congestion window by $2^\alpha$ \prllitactreal, and allows the baseline classical \gls{acr:cca} to otherwise act as normal.
+Using an actor-critic algorithm, Orca chooses some $\alpha\in\left(-2, 2\right)$ every \qty{20}{\milli\second}, multiplying the congestion window by $2^\alpha$ \prllitactreal, and allows the baseline classical \gls{acr:cca} to otherwise act as normal.
 Each flow acts to improve the current ratio between its current \emph{power} and the best estimate of the Gail-Kleinrock optimal operating point~\parencite{KleinrockPoint1,KleinrockPoint2}---with some tradeoffs to minimise loss and allow small \gls{acr:rtt} variance \prllitreward.
 While this naturally requires higher resource use than a heuristic method such as Cubic or BBRv2, this strategy reduces resource costs beyond even the control-theoretic PCC family of \glspl{acr:cca} (with better, fairer operation).
 Reducing the length of time between \gls{acr:drl} actions predictably increases resource demands, but leads to better flow performance, allowing a runtime trade-off to be made.
@@ -148,7 +150,7 @@ An exciting, perhaps unexpected, network environment is within \glspl{acr:cpu} t
 This design class is necessitated by the limitations of a shared bus at high core counts.
 Core-to-core communication is either packet-switched using local routers (incurring latency costs) or wireless (potentially leading to collisions).
 \emph{NeuMAC}~\parencite{DBLP:conf/nsdi/JogLFFATH21} approaches optimal wireless transmission via \gls{acr:drl}.
-Training of a small fully-connected \gls{acr:nn} occurs offline from simulation, using the REINFORCE algorithm on complete execution traces.
+Monte Carlo \gls{acr:rl} training of a small \gls{acr:nn} occurs offline from simulation, using complete execution traces.
 In deployment, an agent is quantised to \qty{8}{\bit} fixed-precision values on low-latency \gls{acr:sram}.\sidenote{See \cref{sec:numerical-representations-for-embedded-ml} for an in-depth discussion around the topic of embedded \gls{acr:ml} design decisions such as this.}
 Each core has a dedicated transmission timeslot, while the agent chooses a list of per-core probabilities every \qty{10}{\micro\second} to allow transmissions outside this window \prllitactreal{}, which are halved on a collision.
 An agent passively listens to broadcast signals, observing the successful transmissions per core and the total number of collisions observed \prllitstate{}, minimising the cycles spent running a program to completion \prllitreward{}.
@@ -200,30 +202,33 @@ Most modern malware makes use of evasion techniques or alters its behaviour to a
 \emph{TAMALES} makes use of this principle to great effect~\parencite{DBLP:conf/acsac/CoptyDEEMZ18}; where most analysis tools aim to mimic a real OS as closely as possible, their ``extreme abstraction'' relies upon deviating from specifications and expected behaviour to induce anomalous behaviours.
 Using \emph{random forest classifiers}~\parencite{DBLP:journals/ml/Breiman01}, they combine static program features with dynamic behaviours observed from buggy \gls{acr:os} emulation.
 The most interesting (and general) feature of this design is that more expensive features and analyses are added to the classifier over time while the output classification remains ambiguous.
-However, this solution regularly marked benign programs which had been processed by an executable packer as though they were malicious.
+%However, this solution regularly marked benign programs which had been processed by an executable packer as though they were malicious.
 
 \Textcite{DBLP:conf/networking/QinPLT20} attempt to combine the distributed training offered by \gls{acr:fl} with the recent advances in \gls{acr:bnn} use in the dataplane (\cref{sec:numerical-representations-for-embedded-ml}) for attack traffic detection.
 P4-capable edge switches or \glspl{acr:nic} host a \gls{acr:bnn} computed from a local (full-precision) model trained on a co-hosted machine, which communicates model updates to and from a central parameter server as is common in \gls{acr:fl}.
 Their work supports the hypotheses that \glspl{acr:bnn} achieve sufficient accuracy on existing \gls{acr:ids} datasets and that overall model convergence makes \gls{acr:fl} suitable for this type of data.
 However, this work neither mentions nor considers the central limitation of \gls{acr:fl}; that edge models need some local means of generating labels for new data.\sidenote{\gls{acr:fl} can still be used to train \emph{unsupervised methods} without a local oracle, but clustering and forecasting have limited application for this class of flow filtering.}
 As a result, it's not clear whether \gls{acr:fl} is even a suitable choice for this task, and so this remains far from a feasible system.
-A core element of the design---that the P4-enabled device can add rules to its own tables from inside the \gls{acr:rmt} pipeline---is currently impossible on current hardware implementations, barring future proposals like the \emph{Portable \gls{acr:nic} Architecture} (\cref{sec:frontiers-in-programmable-networks}).
-This is approximated using a \num{65535}-entry register file and primitive flow-key reduction into this space.
-The claim of line-rate operation is unsubstantiated, given that the evaluation focusses only on a software-based BMv2 implementation (costing a heavy \qtyrange{10}{25}{\milli\second} per-packet classification latency) and fails to quantify the costs of flow state extraction.
+However, it is only tested on BMV2 (thus it's unclear how suitable this is for a line-rate system) and relies on in-band table alterations which are only possible in future architectures like the \emph{Portable \gls{acr:nic} Architecture} (\cref{sec:frontiers-in-programmable-networks}).
+
+%A core element of the design---that the P4-enabled device can add rules to its own tables from inside the \gls{acr:rmt} pipeline---is currently impossible on current hardware implementations, barring future proposals like the \emph{Portable \gls{acr:nic} Architecture} (\cref{sec:frontiers-in-programmable-networks}).
+%This is approximated using a \num{65535}-entry register file and primitive flow-key reduction into this space.
+%The claim of line-rate operation is unsubstantiated, given that the evaluation focusses only on a software-based BMv2 implementation (costing a heavy \qtyrange{10}{25}{\milli\second} per-packet classification latency) and fails to quantify the costs of flow state extraction.
 
 \paragraph{Verification}
-\emph{\textsc{P4rl}}~\parencite{DBLP:conf/sigcomm/ShuklaHH019} applies the DDQN \gls{acr:drl} algorithm towards guided fuzzing of complete P4 dataplanes.
+\emph{\textsc{P4rl}}~\parencite{DBLP:conf/sigcomm/ShuklaHH019} applies \gls{acr:drl} to the guided fuzzing of complete P4 dataplanes.
 Fuzzing (as opposed to static analysis) allows for the detection of bugs that lie outside of the P4 language itself, e.g., through interactions with the control plane or in hardware-specific behaviour.
 The key drawback of fuzzing without some manner of guidance, however, is the colossal size of the input value state space.
 Beginning with a set of invariants extracted from their \emph{p4q} \gls{acr:dsl}, \textsc{P4rl} iteratively modifies the header bytes of an output packet, starting from an initially valid state \prllitstate{}.
 The \gls{acr:rl} agent then chooses a field and value pair (choosing either random values or boundary values known from \emph{p4q}) \prllitact{}, conditioned on whether that packet violated any given invariant \prllitreward{}.
-This notably improves on the number of packets needed to trigger any bugs versus a random baseline, but it is not shown whether this reduces the wall-clock time needed to output such a packet.
+This notably reduces the number of packets needed to trigger any bugs versus a random baseline, but it is not shown whether this reduces the wall-clock time needed to output such a packet.
 
 \emph{DeepMPLS}~\parencite{DBLP:conf/networking/Geyer019} applies \glspl{acr:gnn} towards network verification in the face of link failures for \gls{acr:mpls} routed networks.
 \gls{acr:mpls} is commonly used in \gls{acr:isp} networks~\parencite{DBLP:conf/imc/VanaubelMPD15}, and has comprehensive (though slow) tools for discovering routing violations given complex predicates~\parencite{DBLP:conf/conext/JensenKM0ST18}.
 Given that \glspl{acr:gnn} can be applied to variable-size input graphs, this allows for a useful model to be trained over many instances.
-This offers two orders-of-magnitude speedup over conventional solvers, \emph{and} enables the new use case of suggesting additional links and actions to meet the constraint.
-The main caveat is that outputs are only \qtyrange{80}{90}{\percent} likely to be valid, while an algorithmic solution is correct by construction.
+This offers two orders-of-magnitude speedup over conventional solvers, with the main caveat that outputs are only \qtyrange{80}{90}{\percent} likely to be valid, while an algorithmic solution is correct by construction.
+%This offers two orders-of-magnitude speedup over conventional solvers, \emph{and} enables the new use case of suggesting additional links and actions to meet the constraint.
+%The main caveat is that outputs are only \qtyrange{80}{90}{\percent} likely to be valid, while an algorithmic solution is correct by construction.
 
 \subsection{Multimedia}
 
@@ -235,12 +240,13 @@ However, chunk selection is delegated to the client using heuristic approaches s
 An exciting question to consider is whether data-driven metrics can do better still.
 
 \emph{Pensieve}~\parencite{DBLP:conf/sigcomm/MaoNA17} applies \gls{acr:drl} to client-side observations of network state and video performance metrics for effective optimisation of bitrate selection in multimedia streaming.
-Using the A3C algorithm with \glspl{acr:cnn}, throughputs and download times for the last $k$ chunks are combined with current chunk and buffer length statistics \prllitstate{} to choose the next chunk's quality from the standard list (masking any illegal choices) \prllitact{}.
+%Using the A3C algorithm with \glspl{acr:cnn},
+Throughputs and download times for the last $k$ chunks are combined with current chunk and buffer length statistics \prllitstate{} to choose the next chunk's quality from the standard list (masking any illegal choices) \prllitact{}.
 Pensieve acts to maximise an aggregate \gls{acr:qoe} score, maximising quality\sidenote{This can be a linear or log-linear function of actual bitrate, or can explicitly penalise non-HD choices.}, while penalising bitrate changes and the time spent rebuffering \prllitreward{}.
 To reconcile the costs of \gls{acr:drl} inference with the limited resources of mobile devices, Pensieve is server-hosted and periodically queried by clients (though it remains effective even under $\sim$\qty{100}{\milli\second} \gls{acr:rtt}).
 
-\emph{Stick}~\parencite{DBLP:conf/infocom/HuangZZW0S20} uses the DDPG \gls{acr:drl} algorithm to train a smaller \gls{acr:cnn} to provide the target buffer occupancy allocated for heuristic, buffer-based chunk selection methods \prllitactreal{}.
-The main rationale for doing this is to reduce runtime execution costs and retain the interpretable behaviour of traditional \gls{acr:abr} strategies.
+\emph{Stick}~\parencite{DBLP:conf/infocom/HuangZZW0S20} trains smaller \gls{acr:rl} \glspl{acr:cnn} to provide the target buffer occupancy allocated for heuristic, buffer-based chunk selection methods \prllitactreal{}.
+This reduces runtime execution costs and retains the interpretable behaviour of traditional \gls{acr:abr} strategies.
 Stick uses the same input as Pensieve, adding in the current reward \prllitstate{}, optimising the (linear) \gls{acr:qoe} score discussed above \prllitreward{}.
 To further reduce inference costs, a very small \gls{acr:cnn} is used to estimate whether the current state is likely to cause a large change in the buffer's target occupancy.
 Overall, this leads to slightly better client \gls{acr:qoe} and offers far lower execution costs, completely removing the impact of server \gls{acr:rtt} as all rate selection can be managed on-device.
@@ -255,8 +261,9 @@ However, their evaluation is unclear in how \emph{only} the underlying video \gl
 \paragraph{Server- and network-driven QoE enhancements}
 \emph{LiveNAS}~\parencite{DBLP:conf/sigcomm/KimJYYH20} extends recent work on offline \gls{acr:ml}-driven video upscaling towards live content.\sidenote{Optimal upscaling relies on having a content-specific \gls{acr:dnn}, as generic models can still generate noticeable errors compared to the input stream. Successful online training of such a model from incomplete data is an exciting challenge.}
 The main value in doing so is that \gls{acr:ml} can be applied to both increase user \gls{acr:qoe} and reduce upstream bandwidth requirements in livestreaming (i.e., in the event that a popular streamer is limited by their own network).
-Server-side upscaling is provided when high-quality video is needed but the sender cannot offer this due to their own network limitations, training a per-stream \gls{acr:dnn} model.
-LiveNAS solves the local training problem (i.e., of acquiring ground-truth data) by having each sender also encode their stream at a higher quality level than their connection can support.
+This requires a server-side \gls{acr:dnn} to be trained for each user from high-quality data they are typically unable to upload.
+%Server-side upscaling is provided when high-quality video is needed but the sender cannot offer this due to their own network limitations, training a per-stream \gls{acr:dnn} model.
+LiveNAS solves this training problem by having each sender also encode their stream at a higher quality level than their connection can support.
 Small high-quality patches with maximal error versus a bilinear upscale are included alongside the lower-quality stream, acting as valuable ground truth for the model to learn from at moderate bandwidth cost.
 This offers strong \gls{acr:qoe} improvements, low deviation from the true input video, and can in principle cut the bandwidth requirements for high-profile streamers.
 
@@ -265,7 +272,7 @@ For instance, the detection of \emph{low} \gls{acr:qoe} scores would allow cellu
 These methods are most effective at splitting low- and high-\gls{acr:qoe} flows (with a high degree of confusion in middling flows), suggesting that they could be used as a stage-1 metric to enable more expensive per-packet analysis.
 
 \emph{Alohamora}~\parencite{DBLP:conf/nsdi/KansalRN21} uses \gls{acr:drl} to generate \gls{acr:http}/2 asset push and preload policies to reduce page load times over limited networks or on constrained devices.
-The approach trains offline using \glspl{acr:lstm} with the A3C algorithm by grouping page families into clusters, and inferring policies at runtime as needed.
+The approach trains offline using \glspl{acr:lstm} by grouping page families into clusters, and inferring policies at runtime as needed.
 Link capacity and \gls{acr:rtt} statistics, client \gls{acr:cpu} capacity, and the target page's resource dependency graph \prllitstate{} are used to output a sequence of push/preload item and prerequisite pairs until an end-token or illegal state is output \prllitact{}.
 Alohamora optimises the relative \gls{acr:qoe} change according to cheap and accurate simulations, with explicit bonuses added whenever a better incumbent policy is produced \prllitreward{}.
 While considerably more effective than past works on policy generation, the ablation studies shown by the authors indicate a strong dependency on device-specific state (especially the \gls{acr:cpu} speed of each client).
@@ -311,8 +318,8 @@ This comes at a cost of latency; a totalled \qty{65}{\milli\second} for a batch 
 \emph{MacoCache}~\parencite{DBLP:conf/infocom/Wang0LSS20} examines a more targeted form of resource caching at cellular base stations via multi-agent \gls{acr:drl} to minimise latency and bandwidth demands in mobile edge networks \prllitreward.
 Agents estimate a cache probability for every video file, choosing the top $k$ entries \prllitactreal{} based on per-item demand rates and cache status \prllitstate.
 Agents don't share information directly, but do receive a portion of their neighbours' rewards and use neighbours' policies and cache state as further inputs to account for their impact on the overall system.
-Although \glspl{acr:lstm} are used to allow variable-size processing of local and neighbour state vectors, one element which remains suspect is that each node's state (and the model's output) contains a value \emph{for each cacheable item}.
-Given that the total number of cached video files is never specified, this does not suggest great scalability; this is only worsened when we consider that such resource is explicitly said to be a \gls{acr:dash} chunk (thus, hundreds of individual resources per video).
+%Although \glspl{acr:lstm} are used to allow variable-size processing of local and neighbour state vectors, one element which remains suspect is that each node's state (and the model's output) contains a value \emph{for each cacheable item}.
+%Given that the total number of cached video files is never specified, this does not suggest great scalability; this is only worsened when we consider that such resource is explicitly said to be a \gls{acr:dash} chunk (thus, hundreds of individual resources per video).
 
 \paragraph{System and network planning}
 In network planning, \glspl{acr:ilp} are often used for short- and long-term bring-up of fibre placements and \gls{acr:ip} route provisioning.
@@ -323,11 +330,11 @@ Training is accelerated by stopping each episode once either the constraints are
 
 Chip floorplanning, the process of placing and interconnecting \glspl{acr:fu} for fabrication, can equally be considered as a resource placement, routing, and networking problem.
 \Textcite{Mirhoseini2021} show that \gls{acr:drl} can successfully learn to output compliant designs in around \qty{6}{\hour} of datacentre training, compared to months of human iteration.
-Using Edge-\glspl{acr:gnn} and PPO to process hypergraphs of macros, standard cells, and their interconnections, an \gls{acr:rl} agent places macros onto a masked \numproduct{128 x 128} grid \prllitact, from large to small.
+Using Edge-\glspl{acr:gnn} to process hypergraphs of macros, standard cells, and their interconnections, an \gls{acr:rl} agent places macros onto a masked \numproduct{128 x 128} grid \prllitact, from large to small.
 The feature extraction part of the network processes the complete hypergraph, the dimensions of  each macro node, required connections, and associated metadata as inputs for the policy network and value network \prllitstate.
 An agent receives a single reward at the end of an episode: a negative weighted sum of wirelength, congestion and density \prllitreward.
-Effective and fast, this technique has been put into action in the design of forthcoming tensor accelerator hardware---interestingly, it appears to learn more `radial' macro placements than humans often consider.
-A more generally useful insight of their work is that completed placements are easy to estimate a reward for; as such, it is possible to bootstrap the learning of a feature extraction network as a supervised, offline problem.
+Effective and fast, this technique has been put into action in the design of forthcoming tensor accelerator hardware.%---interestingly, it appears to learn more `radial' macro placements than humans often consider.
+A more generally useful insight of their work is that completed placements are easy to estimate a reward for; as such, learning the feature extraction network can be bootstrapped as a supervised, offline problem.
 
 \subsection{Takeaways for effective data-driven networking}\label{sec:ddn-use-takeaways}
 Although we've covered a vast, varied collection of problem domains, this selection shows how the tools developed by the \gls{acr:ml} community can be of great use in the design, optimisation, and control of modern networks.

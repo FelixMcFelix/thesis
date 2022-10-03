@@ -2,6 +2,9 @@
 
 Post-viva changes and minor corrections \[section references describe old ToCs\]:
 
+* Sec 3.1 – Use cases: reduced mention of specific RL algorithms, commentary on correctness and specific weaknesses of DDN use cases.
+  * Rationale: main focus is on design, ways to express solutions as MDPs.
+
 * Removed Sec 3.4 – Collaborative training.
   * Mention of FL and distributed ML placed into Intro to Ch 3 as 'out-of-scope'.
   * Contribs, summaries in Ch.1 adapted to limit mention of "how networks can benefit ML" to PDP use cases.
@@ -18,4 +21,4 @@ Post-viva changes and minor corrections \[section references describe old ToCs\]
 
 * Acknowledgments -- slight extension.
 
-* Original publications -- added note of SICSA award to 
+* Original publications -- added note of SICSA award to OPaL paper.
