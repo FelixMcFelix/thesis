@@ -61,7 +61,7 @@ Both servers host identical services.
 We set $n \in \{6, 12, 24, 48\}$ hosts per learner (keeping $N_{\mathit{hosts}}$ identical to each tier of the single-host topology), and restrict $U_{s_0} = U_{s_1} = U_s / 2$.
 
 \subsection{Parameters}
-The algorithm parameters were set at $\alpha=0.05$, linearly annealing $\epsilon=$ \num{0.2} $\rightarrow$ 0 by $t=$~\num{3000} in the case of Marl (\num{8000} actions per agent in the \emph{Instant/Guarded} models).
+The algorithm parameters were set at $\alpha=$~\num{0.05}, linearly annealing $\epsilon=$ \num{0.2} $\rightarrow$ 0 by $t=$~\num{3000} in the case of Marl (\num{8000} actions per agent in the \emph{Instant/Guarded} models).
 
 Benign hosts each occupied \qtyrange{0}{1}{\mega\bit\per\second}, and hosts were redrawn at each episode's start with $\operatorname{P}(\mathit{malicious})=$~\num{0.4}.
 %The original introduction of this approach to direct-control reinforcement learning as introduced by \textcite{DBLP:journals/eaai/MalialisK15} fails to consider key cases: the absence of a suitable heuristic classifier $g(\cdot)$, disjoint ranges of traffic distribution (i.e., the presence of benign heavy-hitters), the accurate simulation of TCP-like behaviour (and its effects on collateral damage), and high densities of hosts at egress points.

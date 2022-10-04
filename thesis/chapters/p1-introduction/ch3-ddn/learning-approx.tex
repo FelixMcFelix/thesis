@@ -250,13 +250,13 @@ In the \gls{acr:pdp} case, this can be important for a wide variety of reasons; 
 \begin{figure}
 	\begin{subfigure}{0.45\linewidth}
 		\centering
-		\resizebox{0.975\linewidth}{!}{\input{diagrams/rl/sa-slip1}}
+		\resizebox{0.975\linewidth}{!}{\input{diagrams/rl/sa-slip1}\hspace{-0.5em}}
 		\caption{Theory: state measurement, action computation, and learning are zero-cost.}
 	\end{subfigure}
 	\hspace{0.05\linewidth}
 	\begin{subfigure}{0.45\linewidth}
 		\centering
-		\resizebox{0.75\linewidth}{!}{\input{diagrams/rl/sa-slip2}}
+		\resizebox{0.75\linewidth}{!}{\input{diagrams/rl/sa-slip2}\hspace{-0.5em}}
 		\caption{Reality: costs of measurement and action lead to \emph{state drift}---over a time delay $t_1+t_2+t_3$, inaction transforms state $S$ into $S'$.}
 	\end{subfigure}
 	\caption[Illustrating state slippage in an asynchronous RL agent.]{One issue which arises when we aim to introduce \gls{acr:rl} into temporally fine-grained environments is that the \gls{acr:mdp} formulation can fail to capture how state drifts during computation. Input states may take some time to acquire and transmit to an agent over the network ($t_1$), the function approximator itself has an associated computational cost for inference ($t_2$), and enacting said action can involve network latency \emph{and} expensive table preprocessing in the case of hardware P4 implementations ($t_3$). As a result, the system actually undergoes the transition $(S', A)\rightarrow(S'')$, introducing noise or variance into the value function being learnt. \label{fig:state-slip}}

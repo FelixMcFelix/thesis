@@ -4,11 +4,11 @@ In the case of \gls{acr:rl}-based works, I devote extra space towards highlighti
 If live-control approaches are evaluated using network traces instead of a live environment or suitable simulation, I mark them with a `$\dagger$'---this does not invalidate those authors' findings, but should invite a hint of scepticism based on the discussions of \cref{sec:ddn-challenges}.
 Mirroring some of the problems introduced through \cref{sec:ch-networks}, I present a brief critical survey of solutions offered by \gls{acr:ddn}: network management and optimisation, including classification and \gls{acr:to}; transport- and link-level protocol design, primarily of \glspl{acr:cca}; security and verification; client- and server-side multimedia optimisation; and resource placement and job scheduling.
 
-The main implication for this thesis is that many network control or optimisation problems can be cast as \glspl{acr:mdp} or otherwise fit into the \gls{acr:ddn} mould and are generally very effective.
+The main implication for this thesis is that many network control or optimisation problems can generally be cast as \glspl{acr:mdp} (or otherwise fit into the \gls{acr:ddn} mould) very effectively.
 However, there are decidedly \emph{right} ways to go about their design, and it is these insights which this section extracts and collates.
 %?? Justify and show successes of ML + RL in networks at all scales + endpoints
 Readers anxious to see these design elements and takeaways common to this broad spectrum of applications might skip to \cref{sec:ddn-use-takeaways}.
-These findings directly feed into design of systems throughout \crefrange{chap:ddos-rl}{chap:seidr} concerning how they interact with network data in a scalable way, how problems are formulated to account for inference costs, and how we can use in- or out-of-pathcompute to its fullest.
+These findings directly feed into design of systems throughout \crefrange{chap:ddos-rl}{chap:seidr} concerning how they interact with network data in a scalable way, how problems are formulated to account for inference costs, and how we can use in- or out-of-path compute to its fullest.
 However, the critical analysis of the \emph{Marl} \gls{acr:rl} \gls{acr:ddos} mitigation strategy (as part of \cref{sec:ddn-uses-security}) is notable for identifying key flaws in its evaluation and design which directly feed into the motivation and formulation of \cref{chap:ddos-rl}.
 %
 %?? Optimisation

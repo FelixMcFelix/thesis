@@ -1,6 +1,6 @@
 # Changelog
 
-Post-viva changes and minor corrections \[section references describe old ToCs\]. Roughly 8 pages of removals, 1 page of added connections:
+Post-viva changes and minor corrections \[section references describe old ToCs\]. Roughly 8 pages of removals, 1 page of added connections between literature and content:
 
 * Sec 3.1 – Use cases: reduced mention of specific RL algorithms, commentary on correctness and specific weaknesses of DDN use cases.
   * Rationale: main focus is on design, ways to express solutions as MDPs.
@@ -18,16 +18,18 @@ Post-viva changes and minor corrections \[section references describe old ToCs\]
 * Removed "Tooling" paragraph from Sec 3.3.6 – Learning an approximation.
 
 * Added extra content to most opening paragraphs of sections in Ch 2--3 to reiterate value in overall thesis:
-  * 2.1 -- From fixed-function: Paragraph opening "For historical value..."
-  * 2.2 -- Modern programmable dataplanes: Paragraph opening "In parallel with SDN's development..."
-  * 2.3 -- Offloading and in-network compute: added sentences to final paragraph "This expands on the raw tooling..."
-  * 2.4 -- In-network compute use-cases: expanded justification "benefiting the system designs in..."
-  * 3.1 -- Use cases: Paragraph opening "The main implication for this thesis..."
-  * 3.2 -- Function approximation: further justify neural networks by sentence "Covering their basics also arms us with..."
-  * 3.3 -- Learning an approximation: Expanded exposition on value of discussing algorithms ("This allows us to comment on..."), and use considerations ("Finally, this allows us to consider...").
-  * 3.4 -- Numerical representations:  "To consider how to perform inference and learning in different classes of PDP hardware..."
+  * 2.1 -- From fixed-function \[p. 13\]: Paragraph opening "For historical value..."
+  * 2.2 -- Modern programmable dataplanes \[p. 21\]: Paragraph opening "In parallel with SDN's development..."
+  * 2.3 -- Offloading and in-network compute \[p. 39\]: added sentences to final paragraph "This expands on the raw tooling..."
+  * 2.4 -- In-network compute use-cases \[p. 49\]: expanded justification "benefiting the system designs in..."
+  * 3.1 -- Use cases \[p. 61\]: Paragraph opening "The main implication for this thesis..."
+  * 3.2 -- Function approximation \[p. 78\]: further justify neural networks by sentence "Covering their basics also arms us with..."
+  * 3.3 -- Learning an approximation \[pp. 82–83\]: Expanded exposition on value of discussing algorithms ("This allows us to comment on..."), and use considerations ("Finally, this allows us to consider...").
+  * 3.4 -- Numerical representations \[p. 90\]:  "To consider how to perform inference and learning in different classes of PDP hardware..."
 
-* Minor typos in Ch 2, 3.
+* Minor typos in Ch 2, 3, 4.
+
+* Adjusted centering of subfigs in Figure 3.7.
 
 * Acknowledgments -- slight extension.
 
